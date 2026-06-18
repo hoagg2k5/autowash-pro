@@ -17,7 +17,8 @@ import {
   listVouchers,
   createVoucher,
   editVoucher,
-  removeVoucher
+  removeVoucher,
+  removeCustomer
 } from '../controllers/adminController.js';
 import { createService, editService, removeService } from '../controllers/serviceController.js';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware.js';
@@ -31,6 +32,7 @@ router.use(requireRole(['admin']));
 // Customer management
 router.get('/customers', listCustomers);
 router.post('/customers/:id/adjust-points', adjustPoints);
+router.delete('/customers/:id', removeCustomer);
 
 // Rules management
 router.get('/rules', getRules);
