@@ -48,6 +48,28 @@ export default function AdminCustomers({ customers, onPointsAdjusted, API_BASE_U
     }
   };
 
+  const handleDeleteCustomer = async (customer) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa tài khoản khách hàng "${customer.fullName}" (${customer.phone}) không? Hành động này sẽ xóa toàn bộ thông tin xe và lịch đặt rửa xe liên quan!`)) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/customers/${customer.id}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Xóa tài khoản thất bại.');
+      
+      toast.success(data.message);
+      if (onPointsAdjusted) onPointsAdjusted();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   return (
     <div className="glass-panel" style={{ padding: '2rem' }}>
       <div className="flex-between" style={{ marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -117,13 +139,22 @@ export default function AdminCustomers({ customers, onPointsAdjusted, API_BASE_U
                     <td style={{ color: 'var(--primary)', fontWeight: 700 }}>{c.pointsBalance} đ</td>
                     <td>{c.bookingCount} ({c.completedCount} đã xong)</td>
                     <td>
-                      <button 
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                        onClick={() => handleOpenAdjustPointsModal(c)}
-                      >
-                        Sửa Điểm
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button 
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                          onClick={() => handleOpenAdjustPointsModal(c)}
+                        >
+                          Sửa Điểm
+                        </button>
+                        <button 
+                          className="btn btn-danger btn-sm"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                          onClick={() => handleDeleteCustomer(c)}
+                        >
+                          Xóa TK
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

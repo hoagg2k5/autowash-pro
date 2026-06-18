@@ -375,3 +375,25 @@ export const removeVoucher = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const removeCustomer = async (req, res) => {
+  try {
+    const customerId = req.params.id;
+
+    // 1. Cascade delete vehicles of the customer
+    await Vehicle.deleteMany({ userId: customerId });
+
+    // 2. Cascade delete bookings of the customer
+    await Booking.deleteMany({ userId: customerId });
+
+    // 3. Delete user account
+    const result = await User.deleteOne({ id: customerId, role: 'customer' });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Không tìm thấy tài khoản khách hàng." });
+    }
+
+    res.json({ message: "Xóa tài khoản khách hàng và toàn bộ dữ liệu liên quan thành công." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
