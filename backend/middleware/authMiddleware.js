@@ -1,0 +1,36 @@
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'secret-key-autowash';
+
+// Validate JWT Token Middleware
+export const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+
+  if (!token) {
+    return res.status(401).json({ error: "Yêu cầu đăng nhập để truy cập tài nguyên này." });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ error: "Token không hợp lệ hoặc đã hết hạn." });
+    }
+    req.user = decoded; // Attach user payload: { id, role }
+    next();
+  });
+};
+
+// Role Checking Middleware Factory
+export const requireRole = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Chưa xác thực thông tin." });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Bạn không có quyền truy cập chức năng này." });
+    }
+
+    next();
+  };
+};

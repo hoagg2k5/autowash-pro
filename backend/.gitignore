@@ -1,0 +1,19 @@
+# Environment variables
+.env
+.env.local
+
+# Dependency directories
+node_modules/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Custom helper/temporary scripts
+list-users.js
+test-security*.js
