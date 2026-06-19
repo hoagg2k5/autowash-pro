@@ -13,8 +13,9 @@ const userSchema = new mongoose.Schema({
   pointsExpiredSoon: { type: Number, default: 0 },
   tierExpiryDate: { type: Date },
   branch: { type: String }, // Tên chi nhánh cho tài khoản Staff/Branch Admin
-  email: { type: String, unique: true, sparse: true } // Email liên kết (bắt buộc khi đăng ký mới)
-});
+  email: { type: String, unique: true, sparse: true }, // Email liên kết (bắt buộc khi đăng ký mới)
+  sessionSalt: { type: String, default: '' }
+}, { id: false });
 
 const User = mongoose.model('User', userSchema);
 export default User;

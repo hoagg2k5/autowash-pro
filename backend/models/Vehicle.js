@@ -7,7 +7,9 @@ const vehicleSchema = new mongoose.Schema({
   brand: { type: String, default: 'Khác' },
   model: { type: String, default: 'Khác' },
   color: { type: String, default: 'Khác' }
-});
+}, { id: false });
+
+vehicleSchema.index({ userId: 1 });
 
 const Vehicle = mongoose.model('Vehicle', vehicleSchema);
 export default Vehicle;

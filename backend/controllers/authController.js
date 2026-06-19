@@ -73,6 +73,7 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: "Mã xác thực OTP đã hết hạn sử dụng." });
     }
 
+    const sessionSalt = Math.random().toString(36).substring(2) + Date.now().toString(36);
     // Khởi tạo tài khoản Người dùng (Mặc định vai trò 'customer')
     const newUser = new User({
       id: 'u-' + Math.random().toString(36).substr(2, 9),
@@ -86,7 +87,8 @@ export const register = async (req, res) => {
       totalSpent: 0,
       pointsBalance: 0,
       pointsExpiredSoon: 0,
-      tierExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      tierExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      sessionSalt
     });
     await newUser.save();
 
@@ -105,7 +107,7 @@ export const register = async (req, res) => {
     await Otp.deleteOne({ _id: otpRecord._id });
 
     // Sinh mã JWT Token
-    const token = jwt.sign({ id: newUser.id, role: newUser.role, branch: newUser.branch }, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: newUser.id, role: newUser.role, branch: newUser.branch, sessionSalt }, JWT_SECRET, { expiresIn: '24h' });
 
     res.status(201).json({ 
       message: "Đăng ký thành công", 
@@ -141,18 +143,24 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: "Mật khẩu không chính xác." });
     }
 
+    // Sinh mã session salt mới
+    const sessionSalt = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    user.sessionSalt = sessionSalt;
+
     // Tự động mã hóa mật khẩu plaintext thành bcrypt khi đăng nhập thành công
     if (!user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
-      try {
-        user.password = bcrypt.hashSync(password, 10);
-        await user.save();
-      } catch (err) {
-        console.error("Failed to migrate password on login:", err);
-      }
+      user.password = bcrypt.hashSync(password, 10);
     }
+    await user.save();
 
     // Sinh mã JWT Token
-    const token = jwt.sign({ id: user.id, role: user.role, branch: user.branch }, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: user.id, role: user.role, branch: user.branch, sessionSalt }, JWT_SECRET, { expiresIn: '24h' });
+
+    // Phát sự kiện qua Socket.io để đá phiên đăng nhập cũ
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user-${user.id}`).emit('force_logout', { message: 'Tài khoản đã đăng nhập ở thiết bị khác.' });
+    }
 
     if (user.role === 'customer') {
       const vehicles = await findVehiclesByUserId(user.id);

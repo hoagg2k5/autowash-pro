@@ -9,7 +9,7 @@ const promotionSchema = new mongoose.Schema({
   startDate: { type: String, required: true }, // YYYY-MM-DD
   endDate: { type: String, required: true }, // YYYY-MM-DD
   isActive: { type: Boolean, default: true }
-});
+}, { id: false });
 
 const Promotion = mongoose.model('Promotion', promotionSchema);
 export default Promotion;

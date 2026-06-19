@@ -24,7 +24,13 @@ const bookingSchema = new mongoose.Schema({
   comment: { type: String }, // Lời bình luận của khách
   feedbackCreatedAt: { type: Date },
   createdAt: { type: Date, default: Date.now }
-});
+}, { id: false });
+
+bookingSchema.index({ userId: 1 });
+bookingSchema.index({ vehicleId: 1 });
+bookingSchema.index({ bookingDate: 1 });
+bookingSchema.index({ status: 1 });
+bookingSchema.index({ branch: 1 });
 
 const Booking = mongoose.model('Booking', bookingSchema);
 export default Booking;

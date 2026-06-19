@@ -10,6 +10,7 @@ import Booking from '../models/Booking.js';
 import LoyaltyRules from '../models/LoyaltyRules.js';
 import Promotion from '../models/Promotion.js';
 import Voucher from '../models/Voucher.js';
+import PointHistory from '../models/PointHistory.js';
 
 // Cache cho logs giả lập
 let currentSyntheticLogs = [];
@@ -386,7 +387,10 @@ export const removeCustomer = async (req, res) => {
     // 2. Cascade delete bookings of the customer
     await Booking.deleteMany({ userId: customerId });
 
-    // 3. Delete user account
+    // 3. Cascade delete points history of the customer
+    await PointHistory.deleteMany({ userId: customerId });
+
+    // 4. Delete user account
     const result = await User.deleteOne({ id: customerId, role: 'customer' });
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: "Không tìm thấy tài khoản khách hàng." });
