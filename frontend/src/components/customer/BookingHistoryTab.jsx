@@ -9,6 +9,12 @@ export default function BookingHistoryTab({ bookings, onCancelBooking, recentlyU
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [selectedBookingForQr, setSelectedBookingForQr] = useState(null);
 
+  // Cancellation states
+  const [cancellingBooking, setCancellingBooking] = useState(null);
+  const [cancelReasonOption, setCancelReasonOption] = useState('Tôi đổi lịch bận đột xuất');
+  const [cancelCustomReason, setCancelCustomReason] = useState('');
+  const [isLateCancellation, setIsLateCancellation] = useState(false);
+
   // Payment states
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState(null);
   const [paymentTimeLeft, setPaymentTimeLeft] = useState(300);
@@ -108,6 +114,41 @@ export default function BookingHistoryTab({ bookings, onCancelBooking, recentlyU
     }
   };
 
+  const checkLateCancellation = (booking) => {
+    try {
+      const startHourStr = booking.timeSlot.split(" ")[0];
+      const [hours, minutes] = startHourStr.split(":").map(Number);
+      const parts = booking.bookingDate.split("-");
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const scheduledTime = new Date(year, month, day, hours, minutes, 0, 0);
+      const diffMs = scheduledTime.getTime() - Date.now();
+      return diffMs < 2 * 60 * 60 * 1000;
+    } catch (err) {
+      console.error("Error checking late cancellation:", err);
+      return false;
+    }
+  };
+
+  const handleOpenCancelModal = (booking) => {
+    setCancellingBooking(booking);
+    setCancelReasonOption('Tôi đổi lịch bận đột xuất');
+    setCancelCustomReason('');
+    setIsLateCancellation(checkLateCancellation(booking));
+  };
+
+  const handleConfirmCancel = () => {
+    if (!cancellingBooking) return;
+    const finalReason = cancelReasonOption === 'Khác' ? cancelCustomReason.trim() : cancelReasonOption;
+    if (!finalReason) {
+      toast.error("Vui lòng điền lý do hủy!");
+      return;
+    }
+    onCancelBooking(cancellingBooking.id, finalReason);
+    setCancellingBooking(null);
+  };
+
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
@@ -203,7 +244,7 @@ export default function BookingHistoryTab({ bookings, onCancelBooking, recentlyU
                           <button 
                             className="btn btn-danger btn-secondary" 
                             style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }} 
-                            onClick={() => onCancelBooking(b.id)}
+                            onClick={() => handleOpenCancelModal(b)}
                           >
                             Hủy
                           </button>
@@ -347,6 +388,100 @@ export default function BookingHistoryTab({ bookings, onCancelBooking, recentlyU
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Giao diện Modal Hủy Lịch */}
+      {cancellingBooking && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000
+        }}>
+          <div className="glass-panel" style={{
+            background: '#ffffff',
+            padding: '2rem',
+            width: '450px',
+            maxWidth: '95%',
+            borderRadius: '16px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)'
+          }}>
+            <h3 style={{ marginBottom: '0.5rem', fontFamily: 'var(--font-heading)', color: 'var(--status-cancelled)' }}>🛑 Xác Nhận Hủy Lịch Hẹn</h3>
+            <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Lịch rửa xe ngày {cancellingBooking.bookingDate} ({cancellingBooking.timeSlot})
+            </p>
+
+            {isLateCancellation && (
+              <div style={{
+                background: '#fef2f2',
+                borderLeft: '4px solid var(--status-cancelled)',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                marginBottom: '1.25rem',
+                color: '#991b1b',
+                fontSize: '0.85rem',
+                fontWeight: 500
+              }}>
+                ⚠️ <strong>Chú ý:</strong> Lịch hẹn của bạn sẽ bắt đầu trong vòng chưa đầy 2 tiếng nữa. Theo chính sách của cửa hàng, hủy lịch sát giờ hẹn sẽ bị phạt trừ <strong>10 điểm</strong> tích lũy.
+              </div>
+            )}
+
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Lý do hủy lịch *</label>
+              <select
+                className="form-input"
+                value={cancelReasonOption}
+                onChange={(e) => setCancelReasonOption(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              >
+                <option value="Tôi đổi lịch bận đột xuất">Tôi đổi lịch bận đột xuất</option>
+                <option value="Tôi chọn nhầm gói/chi nhánh">Tôi chọn nhầm gói/chi nhánh</option>
+                <option value="Thời tiết không thuận lợi">Thời tiết không thuận lợi</option>
+                <option value="Khác">Lý do khác...</option>
+              </select>
+            </div>
+
+            {cancelReasonOption === 'Khác' && (
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="cancel-custom-reason" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Chi tiết lý do khác *</label>
+                <textarea
+                  id="cancel-custom-reason"
+                  className="form-input"
+                  rows="3"
+                  value={cancelCustomReason}
+                  onChange={(e) => setCancelCustomReason(e.target.value)}
+                  placeholder="Vui lòng nhập lý do cụ thể..."
+                  style={{ resize: 'none', padding: '0.75rem', width: '100%', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setCancellingBooking(null)}
+                style={{ padding: '0.5rem 1rem' }}
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={handleConfirmCancel}
+                style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--status-cancelled)', border: 'none', color: '#fff', fontWeight: 600, borderRadius: '8px' }}
+              >
+                Xác Nhận Hủy
+              </button>
+            </div>
           </div>
         </div>
       )}

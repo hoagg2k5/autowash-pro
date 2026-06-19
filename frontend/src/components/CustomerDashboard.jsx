@@ -124,13 +124,20 @@ export default function CustomerDashboard({ user, onLogout }) {
   }, [user.id]);
 
 
-  const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn hủy lịch đặt này không?")) return;
+  const handleCancelBooking = async (bookingId, reason) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/bookings/cancel/${bookingId}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        },
+        body: JSON.stringify({ reason })
       });
-      if (!response.ok) throw new Error("Không thể hủy lịch.");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Không thể hủy lịch.");
+      }
       fetchDashboardData();
       toast.success("Hủy lịch đặt thành công!");
     } catch (err) {

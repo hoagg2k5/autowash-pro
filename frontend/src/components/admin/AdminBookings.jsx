@@ -198,6 +198,11 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
                       <span className={`status-badge ${getStatusClass(b.status)}`}>
                         {getStatusLabel(b.status)}
                       </span>
+                      {b.status === 'Cancelled' && b.cancelReason && (
+                        <div className="text-xs" style={{ color: 'var(--status-cancelled)', marginTop: '0.25rem', fontStyle: 'italic', maxWidth: '180px' }} title={b.cancelReason}>
+                          Lý do: {b.cancelReason}
+                        </div>
+                      )}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
