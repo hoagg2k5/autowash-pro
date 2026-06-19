@@ -152,8 +152,8 @@ const defaultPromotions = [
     description: "Giảm giá 5% cho tất cả khách hàng mới trải nghiệm dịch vụ.",
     discountPercentage: 5,
     targetTiers: ["Member"],
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    startDate: new Date().toLocaleDateString('sv-SE'),
+    endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE'),
     isActive: true
   }
 ];

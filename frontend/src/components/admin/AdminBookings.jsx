@@ -31,7 +31,7 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
     }
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toLocaleDateString('sv-SE');
 
   return (
     <div className="glass-panel" style={{ padding: '2rem' }}>

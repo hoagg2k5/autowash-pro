@@ -348,7 +348,7 @@ export const getByPlate = async (req, res) => {
     const user = await User.findOne({ id: vehicle.userId });
     const rules = await LoyaltyRules.findOne({});
     
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('sv-SE');
     const bookingQuery = {
       vehicleId: vehicle.id,
       bookingDate: todayStr,
@@ -508,7 +508,7 @@ export const getBookingDetail = async (req, res) => {
 export const listActiveVouchers = async (req, res) => {
   try {
     const { loyaltyTier } = req.user;
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('sv-SE');
     
     const vouchers = await Voucher.find({
       isActive: true,
