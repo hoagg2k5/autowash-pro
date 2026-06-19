@@ -200,6 +200,7 @@ export default function CustomerDashboard({ user, onLogout }) {
             pointsHistory={pointsHistory} 
             onCancelBooking={handleCancelBooking}
             recentlyUpdatedBookingId={recentlyUpdatedBookingId}
+            onRefresh={fetchDashboardData}
           />
         </div>
 
