@@ -1,14 +1,34 @@
 import React, { useState } from 'react';
+import { 
+  Sparkles, 
+  Car, 
+  ShieldCheck, 
+  Clock, 
+  Star, 
+  Zap, 
+  Gem, 
+  MapPin, 
+  Phone, 
+  ShowerHead, 
+  Lock, 
+  Calendar,
+  ChevronDown, 
+  Check,
+  Award,
+  Activity,
+  Shield,
+  HelpCircle,
+  ArrowRight
+} from 'lucide-react';
+import { Button } from '../ui/Button.jsx';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/Card.jsx';
+import { Badge } from '../ui/Badge.jsx';
 
 export default function Homepage({ onStartBooking, onStartAdmin }) {
   const [activeFaq, setActiveFaq] = useState(null);
 
   const toggleFaq = (index) => {
-    if (activeFaq === index) {
-      setActiveFaq(null);
-    } else {
-      setActiveFaq(index);
-    }
+    setActiveFaq(activeFaq === index ? null : index);
   };
 
   const faqData = [
@@ -31,353 +51,525 @@ export default function Homepage({ onStartBooking, onStartAdmin }) {
   ];
 
   return (
-    <div className="container" style={{ padding: 0, maxWidth: '100%' }}>
+    <div className="w-full bg-slate-50 min-height-screen font-body overflow-x-hidden">
       
-      {/* 1. HERO SECTION WITH RICH DETAIL */}
-      <section className="hero-section" style={{ position: 'relative', overflow: 'hidden', padding: '6rem 2rem 5rem 2rem' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', zIndex: 2, position: 'relative' }}>
+      {/* 1. HERO SECTION WITH PREMIUM DESIGN */}
+      <section className="relative overflow-hidden py-20 px-6 lg:py-32 bg-gradient-to-b from-sky-50/60 via-white to-transparent">
+        {/* Animated Background blur ornaments */}
+        <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-sky-200/20 rounded-full blur-3xl -z-10 animate-pulse" />
+        <div className="absolute top-1/2 right-1/10 w-80 h-80 bg-indigo-200/20 rounded-full blur-3xl -z-10 animate-pulse delay-700" />
+        
+        <div className="max-w-5xl mx-auto text-center z-10 relative">
           
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--secondary-glow)', border: '1px solid rgba(2, 132, 199, 0.2)', padding: '0.4rem 1rem', borderRadius: '30px', marginBottom: '1.5rem' }}>
-            <span style={{ fontSize: '1rem' }}>✨</span>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '0.05em' }}>
-              CÔNG NGHỆ RỬA XE KHÔNG CHẠM & CHĂM SÓC CHUYÊN SÂU
+          <div className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 px-4 py-1.5 rounded-full mb-8 shadow-sm">
+            <Sparkles className="w-4 h-4 text-sky-500 animate-spin-slow" />
+            <span className="text-xs font-bold text-sky-700 tracking-wider uppercase font-heading">
+              CÔNG NGHỆ RỬA XE KHÔNG CHẠM &amp; CHĂM SÓC CHUYÊN SÂU
             </span>
           </div>
 
-          <h1 className="hero-title" style={{ fontSize: '3.5rem', fontWeight: 800, marginBottom: '1.5rem', lineHeight: '1.1' }}>
+          <h1 className="text-4xl md:text-6xl font-black font-heading tracking-tight text-slate-900 leading-tight md:leading-none mb-6">
             Giải Pháp Rửa Xe Ô Tô<br />
-            <span style={{ color: 'var(--primary)' }}>Thông Minh Thế Hệ Mới</span>
+            <span className="bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">Thông Minh Thế Hệ Mới</span>
           </h1>
           
-          <p className="hero-subtitle" style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '750px', margin: '0 auto 2.5rem auto', lineHeight: '1.6' }}>
+          <p className="text-lg md:text-xl text-slate-500 max-w-3xl mx-auto mb-10 leading-relaxed font-body">
             AutoWash Pro tích hợp công nghệ nhận diện biển số tự động (LPR), lên lịch hẹn ưu tiên thông minh theo thứ hạng thành viên và tích lũy điểm đổi quà tự động. Mang lại trải nghiệm chăm sóc xe hoàn mỹ cho bạn.
           </p>
 
-          <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={onStartBooking}>
-              <span>🚗</span> Đặt Lịch Rửa Xe Ngay
-            </button>
-            <button className="btn btn-secondary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }} onClick={onStartAdmin}>
-              🔐 Bảng Quản Trị Admin
-            </button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button 
+              size="lg"
+              className="w-full sm:w-auto shadow-lg shadow-sky-600/20 font-bold"
+              onClick={onStartBooking}
+            >
+              <Car className="w-5 h-5 mr-2 animate-bounce-slow" /> Đặt Lịch Rửa Xe Ngay
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="lg"
+              className="w-full sm:w-auto font-semibold border-slate-200 shadow-sm"
+              onClick={onStartAdmin}
+            >
+              <Lock className="w-4 h-4 mr-2 text-slate-400" /> Bảng Quản Trị Admin
+            </Button>
           </div>
         </div>
 
-        {/* Decorative elements representing water droplets / shine */}
-        <div style={{ position: 'absolute', top: '20%', left: '10%', fontSize: '3rem', opacity: 0.15 }}>💧</div>
-        <div style={{ position: 'absolute', top: '70%', right: '15%', fontSize: '4.5rem', opacity: 0.12 }}>🫧</div>
-        <div style={{ position: 'absolute', top: '40%', right: '8%', fontSize: '2.5rem', opacity: 0.15 }}>✨</div>
-        <div style={{ position: 'absolute', bottom: '10%', left: '8%', fontSize: '3.5rem', opacity: 0.1 }}>🚿</div>
+        {/* Floating background details representing bubbles */}
+        <div className="absolute top-1/4 left-1/12 text-3xl opacity-10 select-none animate-bounce-slow">💧</div>
+        <div className="absolute bottom-1/4 right-1/12 text-4xl opacity-15 select-none animate-pulse">🫧</div>
+        <div className="absolute top-1/2 right-1/15 text-2xl opacity-15 select-none">✨</div>
       </section>
 
-      {/* 2. LIVE ACTIVITY STATS COUNTER */}
-      <section className="container" style={{ padding: '0 2rem' }}>
-        <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', padding: '2rem', textAlign: 'center', marginTop: '-2rem', background: '#ffffff', borderRadius: '16px' }}>
-          <div>
-            <span style={{ fontSize: '2rem', display: 'block' }}>🏆</span>
-            <strong style={{ fontSize: '1.75rem', color: 'var(--primary)', fontWeight: 800 }}>25.000+</strong>
-            <p className="text-sm" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Xe ô tô được chăm sóc</p>
+      {/* 2. STATS BAR (SHADCN CARD) */}
+      <section className="max-w-6xl mx-auto px-6 -mt-10 relative z-20">
+        <Card className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-8 text-center bg-white shadow-xl shadow-slate-100 border-slate-100 rounded-2xl">
+          <div className="flex flex-col items-center p-4">
+            <div className="p-3 bg-sky-50 rounded-xl mb-3 text-sky-600">
+              <Award className="w-6 h-6" />
+            </div>
+            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-heading">25.000+</span>
+            <span className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider font-heading">Xe được chăm sóc</span>
           </div>
-          <div style={{ borderLeft: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '2rem', display: 'block' }}>⭐</span>
-            <strong style={{ fontSize: '1.75rem', color: 'var(--primary)', fontWeight: 800 }}>4.9 / 5.0</strong>
-            <p className="text-sm" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Đánh giá hài lòng thực tế</p>
+
+          <div className="flex flex-col items-center p-4 border-t sm:border-t-0 sm:border-l border-slate-100">
+            <div className="p-3 bg-amber-50 rounded-xl mb-3 text-amber-600">
+              <Star className="w-6 h-6 fill-amber-500/20" />
+            </div>
+            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-heading">4.9 / 5.0</span>
+            <span className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider font-heading">Đánh giá hài lòng</span>
           </div>
-          <div>
-            <span style={{ fontSize: '2rem', display: 'block' }}>⚡</span>
-            <strong style={{ fontSize: '1.75rem', color: 'var(--primary)', fontWeight: 800 }}>15 Phút</strong>
-            <p className="text-sm" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Thời gian rửa vỏ trung bình</p>
+
+          <div className="flex flex-col items-center p-4 border-t lg:border-t-0 lg:border-l border-slate-100">
+            <div className="p-3 bg-indigo-50 rounded-xl mb-3 text-indigo-600">
+              <Clock className="w-6 h-6" />
+            </div>
+            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-heading">15 Phút</span>
+            <span className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider font-heading">Thời gian rửa vỏ nhanh</span>
           </div>
-          <div style={{ borderLeft: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '2rem', display: 'block' }}>🛡️</span>
-            <strong style={{ fontSize: '1.75rem', color: 'var(--primary)', fontWeight: 800 }}>100%</strong>
-            <p className="text-sm" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>An toàn sơn xe & Không trầy xước</p>
+
+          <div className="flex flex-col items-center p-4 border-t sm:border-t-0 sm:border-l border-slate-100">
+            <div className="p-3 bg-emerald-50 rounded-xl mb-3 text-emerald-600">
+              <Shield className="w-6 h-6" />
+            </div>
+            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-heading">100%</span>
+            <span className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider font-heading">An toàn cho nước sơn</span>
           </div>
-        </div>
+        </Card>
       </section>
 
-      {/* 3. SHOWCASE DETAILED WASH SERVICES */}
-      <section className="container" style={{ padding: '5rem 2rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-          <h2 style={{ fontSize: '2.25rem', marginBottom: '0.75rem' }}>Quy Trình Chăm Sóc Xe Chuyên Sâu</h2>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '650px', margin: '0 auto' }}>
+      {/* 3. SHOWCASE DETAILED SERVICES */}
+      <section className="max-w-6xl mx-auto px-6 py-24">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-extrabold font-heading tracking-tight text-slate-900 mb-4">
+            Quy Trình Chăm Sóc Xe Chuyên Sâu
+          </h2>
+          <p className="text-slate-500 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
             Chúng tôi sử dụng 100% dung dịch tẩy rửa sinh học an toàn cho bề mặt sơn, kết hợp vòi phun áp lực cao góc rộng và quy trình làm sạch nội thất khép kín.
           </p>
         </div>
 
-        <div className="packages-grid" style={{ pointerEvents: 'none' }}>
-          <div className="package-card" style={{ border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '4px', fontWeight: 700 }}>TIÊU CHUẨN</span>
-              <span style={{ fontSize: '1.5rem' }}>💧</span>
-            </div>
-            <h3 style={{ marginTop: '1rem', fontSize: '1.25rem' }}>Rửa Xe Express</h3>
-            <p className="text-xs" style={{ margin: '0.75rem 0 1.25rem 0', color: 'var(--text-muted)', minHeight: '40px' }}>
-              Làm sạch bụi bẩn vỏ ngoài xe nhanh chóng, phù hợp cho khách hàng bận rộn.
-            </p>
-            <ul style={{ fontSize: '0.8rem', color: 'var(--text-main)', paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              <li>Phun nước áp lực cao rã bùn đất</li>
-              <li>Rửa bọt tuyết chuyên dụng</li>
-              <li>Xịt rửa gầm xe cơ bản</li>
-              <li>Lau khô bằng khăn Microfiber</li>
-            </ul>
-            <div className="package-price">100.000 đ</div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Card 1: Express */}
+          <Card className="flex flex-col h-full bg-white border border-slate-100 shadow-sm relative overflow-hidden group">
+            <CardHeader className="relative">
+              <div className="flex justify-between items-start">
+                <Badge variant="secondary" className="bg-sky-50 text-sky-700 font-heading">TIÊU CHUẨN</Badge>
+                <div className="p-2.5 bg-sky-50 text-sky-600 rounded-lg">
+                  <ShowerHead className="w-5 h-5" />
+                </div>
+              </div>
+              <CardTitle className="mt-4 text-xl">Rửa Xe Express</CardTitle>
+              <CardDescription className="min-h-[40px] mt-1.5">
+                Làm sạch bụi bẩn vỏ ngoài xe nhanh chóng, phù hợp cho khách hàng bận rộn.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <ul className="space-y-3 text-sm text-slate-600">
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Phun nước áp lực cao rã bùn đất</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Rửa bọt tuyết chuyên dụng</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Xịt rửa gầm xe cơ bản</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Lau khô bằng khăn Microfiber</span>
+                </li>
+              </ul>
+            </CardContent>
+            <CardFooter className="border-t border-slate-50 bg-slate-50/50 p-6 flex justify-between items-center mt-auto">
+              <span className="text-xs font-semibold text-slate-400 uppercase font-heading">GIÁ VÉ GỐC</span>
+              <span className="text-2xl font-black text-sky-600 font-heading">100.000 đ</span>
+            </CardFooter>
+          </Card>
 
-          <div className="package-card" style={{ border: '2.5px solid var(--primary)', boxShadow: '0 8px 25px rgba(2, 132, 199, 0.08)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', background: '#0284c7', color: '#ffffff', borderRadius: '4px', fontWeight: 700 }}>PHỔ BIẾN NHẤT</span>
-              <span style={{ fontSize: '1.5rem' }}>✨</span>
+          {/* Card 2: Deluxe */}
+          <Card className="flex flex-col h-full bg-white border-2 border-sky-500 shadow-xl shadow-sky-600/5 relative overflow-hidden scale-105 z-10">
+            <div className="absolute top-0 right-0 left-0 bg-sky-500 text-white text-center py-1 text-[10px] font-bold uppercase tracking-wider font-heading">
+              ĐƯỢC LỰA CHỌN NHIỀU NHẤT
             </div>
-            <h3 style={{ marginTop: '1rem', fontSize: '1.25rem', color: 'var(--primary)' }}>Rửa Xe Deluxe</h3>
-            <p className="text-xs" style={{ margin: '0.75rem 0 1.25rem 0', color: 'var(--text-muted)', minHeight: '40px' }}>
-              Chăm sóc toàn diện từ ngoài vào trong, duy trì độ sáng bóng cho xế cưng.
-            </p>
-            <ul style={{ fontSize: '0.8rem', color: 'var(--text-main)', paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              <li><strong>Tất cả dịch vụ gói Express</strong></li>
-              <li>Hút bụi thảm và vệ sinh nội thất cơ bản</li>
-              <li>Vệ sinh khe cửa, kính lái chuyên sâu</li>
-              <li>Dưỡng bóng lốp bảo vệ cao su</li>
-              <li>Khử mùi ozone khoang cabin</li>
-            </ul>
-            <div className="package-price">200.000 đ</div>
-          </div>
+            <CardHeader className="pt-8">
+              <div className="flex justify-between items-start">
+                <Badge variant="primary" className="bg-sky-500 text-white font-heading">PHỔ BIẾN</Badge>
+                <div className="p-2.5 bg-sky-50 text-sky-600 rounded-lg">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+              </div>
+              <CardTitle className="mt-4 text-xl text-sky-600">Rửa Xe Deluxe</CardTitle>
+              <CardDescription className="min-h-[40px] mt-1.5">
+                Chăm sóc toàn diện từ ngoài vào trong, duy trì độ sáng bóng cho xế cưng.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <ul className="space-y-3 text-sm text-slate-700 font-medium">
+                <li className="flex items-start gap-2.5 text-slate-500">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Bao gồm tất cả dịch vụ gói Express</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Hút bụi thảm và vệ sinh nội thất</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Vệ sinh khe cửa, kính lái chuyên sâu</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Dưỡng bóng lốp bảo vệ cao su</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-indigo-600">
+                  <Sparkles className="w-4.5 h-4.5 text-indigo-500 shrink-0 mt-0.5" />
+                  <span>Khử mùi ozone khoang cabin VIP</span>
+                </li>
+              </ul>
+            </CardContent>
+            <CardFooter className="border-t border-sky-50 bg-sky-50/30 p-6 flex justify-between items-center mt-auto">
+              <span className="text-xs font-semibold text-sky-700 uppercase font-heading">GIÁ VÉ GỐC</span>
+              <span className="text-2xl font-black text-sky-600 font-heading">200.000 đ</span>
+            </CardFooter>
+          </Card>
 
-          <div className="package-card" style={{ border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', background: '#f3e8ff', color: '#6b21a8', borderRadius: '4px', fontWeight: 700 }}>VIP SPECIAL</span>
-              <span style={{ fontSize: '1.5rem' }}>💎</span>
-            </div>
-            <h3 style={{ marginTop: '1rem', fontSize: '1.25rem' }}>Premium Ultimate</h3>
-            <p className="text-xs" style={{ margin: '0.75rem 0 1.25rem 0', color: 'var(--text-muted)', minHeight: '40px' }}>
-              Gói dịch vụ cao cấp nhất, kết hợp bảo vệ nước sơn và làm sạch khoang máy.
-            </p>
-            <ul style={{ fontSize: '0.8rem', color: 'var(--text-main)', paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              <li><strong>Tất cả dịch vụ gói Deluxe</strong></li>
-              <li>Tẩy ố lazang và làm sạch sâu phanh đĩa</li>
-              <li>Xịt gầm áp lực cao loại bỏ muối mặn</li>
-              <li>Phủ nano bảo vệ bề mặt sơn chống nước mưa</li>
-              <li>Dưỡng chi tiết nhựa khoang động cơ</li>
-            </ul>
-            <div className="package-price">400.000 đ</div>
-          </div>
+          {/* Card 3: Premium */}
+          <Card className="flex flex-col h-full bg-white border border-slate-100 shadow-sm relative overflow-hidden">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 font-heading">VIP SPECIAL</Badge>
+                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                  <Gem className="w-5 h-5" />
+                </div>
+              </div>
+              <CardTitle className="mt-4 text-xl">Premium Ultimate</CardTitle>
+              <CardDescription className="min-h-[40px] mt-1.5">
+                Gói dịch vụ cao cấp nhất, kết hợp bảo vệ nước sơn và làm sạch khoang máy.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <ul className="space-y-3 text-sm text-slate-600">
+                <li className="flex items-start gap-2.5 text-slate-400">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Bao gồm tất cả dịch vụ gói Deluxe</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Tẩy ố lazang và làm sạch sâu phanh đĩa</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Xịt gầm áp lực cao loại bỏ muối mặn</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-indigo-600">
+                  <Gem className="w-4.5 h-4.5 text-indigo-500 shrink-0 mt-0.5" />
+                  <span>Phủ nano bảo vệ bề mặt sơn xe</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Dưỡng nhựa cao cấp khoang động cơ</span>
+                </li>
+              </ul>
+            </CardContent>
+            <CardFooter className="border-t border-slate-50 bg-slate-50/50 p-6 flex justify-between items-center mt-auto">
+              <span className="text-xs font-semibold text-slate-400 uppercase font-heading">GIÁ VÉ GỐC</span>
+              <span className="text-2xl font-black text-sky-600 font-heading">400.000 đ</span>
+            </CardFooter>
+          </Card>
         </div>
       </section>
 
       {/* 4. THE 5-STEP CUSTOMER JOURNEY */}
-      <section className="container" style={{ padding: '2rem 2rem 5rem 2rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 style={{ fontSize: '2.25rem', marginBottom: '0.75rem' }}>Quy Trình Đặt Lịch & Thực Hiện Rửa Xe</h2>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '550px', margin: '0 auto' }}>
-            Trải nghiệm dịch vụ 5 bước hiện đại và nhanh chóng tại AutoWash Pro.
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem' }}>
-          
-          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', margin: '0 auto 1rem auto' }}>1</div>
-            <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Đăng Ký & Liên Kết</h4>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Đăng ký tài khoản nhanh chóng bằng Số điện thoại + Biển số xe ô tô.
+      <section className="bg-slate-100/50 py-24 px-6 border-y border-slate-200/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold font-heading tracking-tight text-slate-900 mb-4">
+              Quy Trình Đặt Lịch &amp; Thực Hiện Rửa Xe
+            </h2>
+            <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base">
+              Trải nghiệm dịch vụ 5 bước hiện đại và nhanh chóng tại AutoWash Pro.
             </p>
           </div>
 
-          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', margin: '0 auto 1rem auto' }}>2</div>
-            <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Đặt Lịch Trực Tuyến</h4>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Chọn ngày, khung giờ rảnh và gói rửa. Áp dụng mã giảm giá tự động.
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            {[
+              { title: "Đăng Ký & Liên Kết", desc: "Đăng ký nhanh chóng bằng Số điện thoại + Biển số xe ô tô." },
+              { title: "Đặt Lịch Trực Tuyến", desc: "Chọn ngày, khung giờ và gói rửa. Áp dụng voucher giảm giá tự động." },
+              { title: "Nhận Diện Biển Số", desc: "Lái xe đến trung tâm, Camera LPR tự động quét biển số để check-in." },
+              { title: "Chăm Sóc Xe", desc: "Xe được chăm sóc chuyên nghiệp theo đúng dịch vụ bởi kỹ thuật viên." },
+              { title: "Hoàn Tất & Tích Điểm", desc: "Thanh toán tiện lợi, nhận điểm thưởng và thăng hạng thành viên." }
+            ].map((step, idx) => (
+              <Card key={idx} className="bg-white border border-slate-200/60 p-6 text-center hover:-translate-y-1 hover:shadow-lg rounded-2xl relative">
+                <div className="w-10 h-10 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold font-heading mx-auto mb-4 shadow-md shadow-sky-500/10">
+                  {idx + 1}
+                </div>
+                <h4 className="font-bold font-heading text-sm text-slate-900 mb-2">{step.title}</h4>
+                <p className="text-[11px] leading-relaxed text-slate-400">{step.desc}</p>
+              </Card>
+            ))}
           </div>
-
-          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', margin: '0 auto 1rem auto' }}>3</div>
-            <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Nhận Diện Biển Số</h4>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Lái xe đến trung tâm, Camera LPR tự động quét biển số xe để check-in.
-            </p>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', margin: '0 auto 1rem auto' }}>4</div>
-            <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Chăm Sóc Xe</h4>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Xe được chăm sóc theo đúng gói dịch vụ đã chọn bởi kỹ thuật viên lành nghề.
-            </p>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', margin: '0 auto 1rem auto' }}>5</div>
-            <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Hoàn Tất & Tích Điểm</h4>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Thanh toán tiền mặt, nhận điểm thưởng tích lũy và nâng hạng thành viên.
-            </p>
-          </div>
-
         </div>
       </section>
 
       {/* 5. LOYALTY TIER PROGRAM */}
-      <section className="container" style={{ padding: '3rem 2rem' }}>
-        <div className="homepage-tiers-section">
-          <h2 style={{ textAlign: 'center', fontSize: '2.25rem' }}>Hạng Hội Viên & Đặc Quyền Độc Quyền</h2>
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-            Khách hàng thân thiết tích lũy chi tiêu nhiều hơn, nhận được ưu đãi lớn hơn và đặt lịch trước thuận tiện hơn.
-          </p>
+      <section className="max-w-6xl mx-auto px-6 py-24">
+        <div className="bg-gradient-to-r from-sky-900 to-indigo-900 text-white rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl -z-0" />
+          
+          <div className="relative z-10">
+            <h2 className="text-3xl font-extrabold font-heading text-center mb-4">Hạng Hội Viên &amp; Đặc Quyền Độc Quyền</h2>
+            <p className="text-sky-200/80 text-center max-w-2xl mx-auto mb-12 text-sm leading-relaxed">
+              Khách hàng thân thiết tích lũy chi tiêu nhiều hơn, nhận được ưu đãi lớn hơn và đặt lịch trước thuận tiện hơn.
+            </p>
 
-          <div className="tier-card-row">
-            <div className="tier-detail-card" style={{ borderTop: '4px solid var(--tier-member)' }}>
-              <span className="tier-indicator tier-Member">MEMBER</span>
-              <h3 style={{ margin: '1rem 0 0.5rem 0', fontSize: '1.25rem' }}>Thành Viên Mới</h3>
-              <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>Ngưỡng chi tiêu: 0 đ</p>
-              <ul style={{ paddingLeft: '1.25rem', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', color: 'var(--text-muted)' }}>
-                <li>Khung ngày đặt trước: <strong>7 ngày</strong></li>
-                <li>Hệ số tích điểm: <strong>x1.0 điểm gốc</strong></li>
-                <li>Dịch vụ chăm sóc cơ bản</li>
-              </ul>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {/* Member */}
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 flex flex-col justify-between">
+                <div>
+                  <Badge variant="outline" className="border-white/20 text-white bg-white/5 font-heading">MEMBER</Badge>
+                  <h3 className="font-bold font-heading text-lg mt-4 mb-1">Thành Viên Mới</h3>
+                  <p className="text-[10px] text-sky-200 mb-6">Chi tiêu tích lũy: 0 đ</p>
+                  <ul className="space-y-3 text-xs text-sky-100">
+                    <li className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Đặt trước: <strong>7 ngày</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Hệ số tích điểm: <strong>x1.0</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Shield className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Chăm sóc cơ bản</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
 
-            <div className="tier-detail-card" style={{ borderTop: '4px solid var(--tier-silver)' }}>
-              <span className="tier-indicator tier-Silver">SILVER</span>
-              <h3 style={{ margin: '1rem 0 0.5rem 0', fontSize: '1.25rem' }}>Thành Viên Bạc</h3>
-              <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>Tích lũy đạt từ: 200,000 đ</p>
-              <ul style={{ paddingLeft: '1.25rem', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', color: 'var(--text-muted)' }}>
-                <li>Khung ngày đặt trước: <strong>10 ngày</strong></li>
-                <li>Hệ số tích điểm: <strong>x1.2 điểm</strong></li>
-                <li><strong>Giảm ngay 10%</strong> gói Deluxe</li>
-                <li>Ưu tiên đặt giờ cao điểm</li>
-              </ul>
-            </div>
+              {/* Silver */}
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 flex flex-col justify-between">
+                <div>
+                  <Badge variant="outline" className="border-slate-300/40 text-slate-200 bg-slate-300/10 font-heading">SILVER</Badge>
+                  <h3 className="font-bold font-heading text-lg mt-4 mb-1">Thành Viên Bạc</h3>
+                  <p className="text-[10px] text-sky-200 mb-6">Tích lũy từ: 200.000 đ</p>
+                  <ul className="space-y-3 text-xs text-sky-100">
+                    <li className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Đặt trước: <strong>10 ngày</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Tích điểm: <strong>x1.2</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2 text-amber-300">
+                      <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300/20" />
+                      <span><strong>Giảm 10%</strong> gói Deluxe</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
 
-            <div className="tier-detail-card" style={{ borderTop: '4px solid var(--tier-gold)' }}>
-              <span className="tier-indicator tier-Gold">GOLD</span>
-              <h3 style={{ margin: '1rem 0 0.5rem 0', fontSize: '1.25rem' }}>Thành Viên Vàng</h3>
-              <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>Tích lũy đạt từ: 500,000 đ</p>
-              <ul style={{ paddingLeft: '1.25rem', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', color: 'var(--text-muted)' }}>
-                <li>Khung ngày đặt trước: <strong>12 ngày</strong></li>
-                <li>Hệ số tích điểm: <strong>x1.5 điểm</strong></li>
-                <li><strong>Giảm ngay 15%</strong> Deluxe / Premium</li>
-                <li>Tặng <strong>Hút bụi cabin miễn phí</strong></li>
-              </ul>
-            </div>
+              {/* Gold */}
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-amber-500/20 flex flex-col justify-between shadow-lg shadow-amber-500/5">
+                <div>
+                  <Badge variant="outline" className="border-amber-400/40 text-amber-300 bg-amber-400/10 font-heading">GOLD</Badge>
+                  <h3 className="font-bold font-heading text-lg mt-4 mb-1 text-amber-300">Thành Viên Vàng</h3>
+                  <p className="text-[10px] text-sky-200 mb-6">Tích lũy từ: 500.000 đ</p>
+                  <ul className="space-y-3 text-xs text-sky-100">
+                    <li className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Đặt trước: <strong>12 ngày</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Tích điểm: <strong>x1.5</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2 text-amber-300">
+                      <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300/20" />
+                      <span><strong>Giảm 15%</strong> Deluxe/Premium</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-sky-300">
+                      <Sparkles className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Hút bụi miễn phí</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
 
-            <div className="tier-detail-card" style={{ borderTop: '4px solid var(--tier-platinum)', boxShadow: '0 8px 30px rgba(124, 58, 237, 0.12)' }}>
-              <span className="tier-indicator tier-Platinum">PLATINUM</span>
-              <h3 style={{ margin: '1rem 0 0.5rem 0', fontSize: '1.25rem', color: 'var(--tier-platinum)' }}>Thành Viên Kim Cương</h3>
-              <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>Tích lũy đạt từ: 1,000,000 đ</p>
-              <ul style={{ paddingLeft: '1.25rem', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', color: 'var(--text-muted)' }}>
-                <li>Khung ngày đặt trước: <strong>14 ngày</strong></li>
-                <li>Hệ số tích điểm: <strong>x2.0 điểm</strong></li>
-                <li><strong>Giảm ngay 20%</strong> mọi hóa đơn</li>
-                <li>Miễn phí <strong>Detailing bóng lốp + gầm</strong></li>
-                <li><strong>Làn ưu tiên</strong> không cần xếp hàng</li>
-              </ul>
+              {/* Platinum */}
+              <div className="bg-white/15 backdrop-blur-md rounded-2xl p-6 border border-indigo-400/40 flex flex-col justify-between shadow-xl shadow-indigo-500/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/20 rounded-full blur-xl -z-0" />
+                <div className="relative z-10">
+                  <Badge variant="outline" className="border-indigo-300/50 text-indigo-200 bg-indigo-500/20 font-heading animate-pulse">PLATINUM</Badge>
+                  <h3 className="font-bold font-heading text-lg mt-4 mb-1 text-indigo-200">Hạng Kim Cương</h3>
+                  <p className="text-[10px] text-sky-200 mb-6">Tích lũy từ: 1.000.000 đ</p>
+                  <ul className="space-y-3 text-xs text-sky-100">
+                    <li className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Đặt trước: <strong>14 ngày</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-sky-300" />
+                      <span>Tích điểm: <strong>x2.0</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2 text-amber-300">
+                      <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300/20" />
+                      <span><strong>Giảm 20%</strong> mọi hóa đơn</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-indigo-300">
+                      <Gem className="w-3.5 h-3.5 text-indigo-300" />
+                      <span>Làn ưu tiên VIP (Không chờ)</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
       </section>
 
       {/* 5.5 BRANCHES NETWORK SECTION */}
-      <section className="container" style={{ padding: '3rem 2rem' }}>
-        <h2 style={{ textAlign: 'center', fontSize: '2.25rem', marginBottom: '1rem' }}>Hệ Thống Chi Nhánh AutoWash Pro</h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '3rem', maxWidth: '600px', margin: '0 auto 3rem auto' }}>
-          Hệ thống trạm rửa xe tự động thông minh của chúng tôi đã có mặt tại 2 thành phố lớn Hà Nội & TP. Hồ Chí Minh với trang thiết bị LPR hiện đại.
-        </p>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-          {/* HN Branches */}
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <h3 style={{ borderBottom: '2px solid var(--primary)', paddingBottom: '0.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontSize: '1.3rem' }}>
-              📍 KHU VỰC HÀ NỘI
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                <strong style={{ fontSize: '1.05rem', display: 'block', marginBottom: '0.25rem' }}>AutoWash Pro - Cầu Giấy</strong>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>📍 Địa chỉ: 12 Đường Cầu Giấy, Láng Thượng, Cầu Giấy, Hà Nội</p>
-                <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--primary)', fontWeight: 600 }}>🕒 Hoạt động: 08:00 - 18:00 | 📞 Hotline: 024.339.888</p>
-              </div>
-              <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                <strong style={{ fontSize: '1.05rem', display: 'block', marginBottom: '0.25rem' }}>AutoWash Pro - Tây Hồ</strong>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>📍 Địa chỉ: 88 Đường Xuân Diệu, Quảng An, Tây Hồ, Hà Nội</p>
-                <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--primary)', fontWeight: 600 }}>🕒 Hoạt động: 08:00 - 18:00 | 📞 Hotline: 024.339.999</p>
-              </div>
-            </div>
+      <section className="bg-slate-100/30 py-24 px-6 border-y border-slate-200/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold font-heading tracking-tight text-slate-900 mb-4">
+              Hệ Thống Chi Nhánh AutoWash Pro
+            </h2>
+            <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base">
+              Hệ thống trạm rửa xe tự động thông minh của chúng tôi đã có mặt tại 2 thành phố lớn Hà Nội &amp; TP. Hồ Chí Minh với trang thiết bị LPR hiện đại.
+            </p>
           </div>
 
-          {/* HCMC Branches */}
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <h3 style={{ borderBottom: '2px solid var(--primary)', paddingBottom: '0.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontSize: '1.3rem' }}>
-              📍 KHU VỰC TP. HỒ CHÍ MINH
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                <strong style={{ fontSize: '1.05rem', display: 'block', marginBottom: '0.25rem' }}>AutoWash Pro - Quận 1</strong>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>📍 Địa chỉ: 45 Lê Thánh Tôn, Bến Nghé, Quận 1, TP. HCM</p>
-                <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--primary)', fontWeight: 600 }}>🕒 Hoạt động: 08:00 - 18:00 | 📞 Hotline: 028.777.111</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* HN Branches */}
+            <Card className="p-8 border-slate-200/60 bg-white">
+              <h3 className="border-b-2 border-sky-500 pb-3 mb-6 flex items-center gap-2.5 text-sky-600 font-bold font-heading text-lg">
+                <MapPin className="w-5 h-5" /> KHU VỰC HÀ NỘI
+              </h3>
+              <div className="space-y-4">
+                <div className="bg-slate-50 p-4 rounded-xl border-l-4 border-sky-500">
+                  <strong className="text-slate-800 text-sm font-heading block mb-1">AutoWash Pro - Cầu Giấy</strong>
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> 12 Đường Cầu Giấy, Láng Thượng, Cầu Giấy, Hà Nội</p>
+                  <p className="text-[10px] mt-2 text-sky-600 font-semibold flex items-center gap-3">
+                    <span>🕒 08:00 - 18:00</span>
+                    <span>📞 024.339.888</span>
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-xl border-l-4 border-sky-500">
+                  <strong className="text-slate-800 text-sm font-heading block mb-1">AutoWash Pro - Tây Hồ</strong>
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> 88 Đường Xuân Diệu, Quảng An, Tây Hồ, Hà Nội</p>
+                  <p className="text-[10px] mt-2 text-sky-600 font-semibold flex items-center gap-3">
+                    <span>🕒 08:00 - 18:00</span>
+                    <span>📞 024.339.999</span>
+                  </p>
+                </div>
               </div>
-              <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                <strong style={{ fontSize: '1.05rem', display: 'block', marginBottom: '0.25rem' }}>AutoWash Pro - Quận 7</strong>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>📍 Địa chỉ: 200 Nguyễn Văn Linh, Tân Thuận Tây, Quận 7, TP. HCM</p>
-                <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--primary)', fontWeight: 600 }}>🕒 Hoạt động: 08:00 - 18:00 | 📞 Hotline: 028.777.222</p>
+            </Card>
+
+            {/* HCMC Branches */}
+            <Card className="p-8 border-slate-200/60 bg-white">
+              <h3 className="border-b-2 border-sky-500 pb-3 mb-6 flex items-center gap-2.5 text-sky-600 font-bold font-heading text-lg">
+                <MapPin className="w-5 h-5" /> KHU VỰC TP. HỒ CHÍ MINH
+              </h3>
+              <div className="space-y-4">
+                <div className="bg-slate-50 p-4 rounded-xl border-l-4 border-sky-500">
+                  <strong className="text-slate-800 text-sm font-heading block mb-1">AutoWash Pro - Quận 1</strong>
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> 45 Lê Thánh Tôn, Bến Nghé, Quận 1, TP. HCM</p>
+                  <p className="text-[10px] mt-2 text-sky-600 font-semibold flex items-center gap-3">
+                    <span>🕒 08:00 - 18:00</span>
+                    <span>📞 028.777.111</span>
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-xl border-l-4 border-sky-500">
+                  <strong className="text-slate-800 text-sm font-heading block mb-1">AutoWash Pro - Quận 7</strong>
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> 200 Nguyễn Văn Linh, Quận 7, TP. HCM</p>
+                  <p className="text-[10px] mt-2 text-sky-600 font-semibold flex items-center gap-3">
+                    <span>🕒 08:00 - 18:00</span>
+                    <span>📞 028.777.222</span>
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-xl border-l-4 border-sky-500">
+                  <strong className="text-slate-800 text-sm font-heading block mb-1">AutoWash Pro - Bình Thạnh</strong>
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> 15 Điện Biên Phủ, Bình Thạnh, TP. HCM</p>
+                  <p className="text-[10px] mt-2 text-sky-600 font-semibold flex items-center gap-3">
+                    <span>🕒 08:00 - 18:00</span>
+                    <span>📞 028.777.333</span>
+                  </p>
+                </div>
               </div>
-              <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                <strong style={{ fontSize: '1.05rem', display: 'block', marginBottom: '0.25rem' }}>AutoWash Pro - Bình Thạnh</strong>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>📍 Địa chỉ: 15 Điện Biên Phủ, Phường 15, Bình Thạnh, TP. HCM</p>
-                <p className="text-xs" style={{ marginTop: '0.25rem', color: 'var(--primary)', fontWeight: 600 }}>🕒 Hoạt động: 08:00 - 18:00 | 📞 Hotline: 028.777.333</p>
-              </div>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* 6. INTERACTIVE FAQ SECTION */}
-      <section className="container" style={{ padding: '3rem 2rem 5rem 2rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-          <h2 style={{ fontSize: '2.25rem', marginBottom: '0.75rem' }}>Giải Đáp Thắc Mắc Thường Gặp</h2>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto' }}>
+      <section className="max-w-4xl mx-auto px-6 py-24">
+        <div className="text-center mb-16">
+          <div className="inline-flex p-3 bg-sky-50 rounded-xl mb-4 text-sky-600">
+            <HelpCircle className="w-6 h-6" />
+          </div>
+          <h2 className="text-3xl font-extrabold font-heading tracking-tight text-slate-900 mb-4">
+            Giải Đáp Thắc Mắc Thường Gặp
+          </h2>
+          <p className="text-slate-500 text-sm md:text-base max-w-lg mx-auto">
             Thông tin chi tiết hỗ trợ bạn hiểu rõ hơn về quy trình vận hành và ưu đãi thành viên.
           </p>
         </div>
 
-        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="space-y-4">
           {faqData.map((item, index) => {
             const isOpen = activeFaq === index;
             return (
-              <div 
+              <Card 
                 key={index} 
-                className="glass-panel" 
-                style={{ padding: '1.25rem 1.5rem', cursor: 'pointer', transition: 'all 0.2s ease', background: isOpen ? 'rgba(2, 132, 199, 0.02)' : '#ffffff', borderColor: isOpen ? 'var(--primary)' : 'var(--border-color)' }}
+                className={`cursor-pointer transition-all duration-200 border border-slate-200 bg-white rounded-xl overflow-hidden ${isOpen ? 'ring-2 ring-sky-500/20 border-sky-500 shadow-sm' : 'hover:border-slate-300'}`}
                 onClick={() => toggleFaq(index)}
               >
-                <div className="flex-between" style={{ fontWeight: 700, fontSize: '1rem', color: isOpen ? 'var(--primary)' : 'var(--text-main)' }}>
-                  <span>{item.q}</span>
-                  <span style={{ fontSize: '1.2rem', transition: 'transform 0.2s', transform: isOpen ? 'rotate(45deg)' : 'none' }}>+</span>
+                <div className="flex justify-between items-center p-5 select-none">
+                  <span className={`font-bold text-sm md:text-base font-heading ${isOpen ? 'text-sky-600' : 'text-slate-800'}`}>
+                    {item.q}
+                  </span>
+                  <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-sky-500' : ''}`} />
                 </div>
                 {isOpen && (
-                  <p className="text-sm" style={{ marginTop: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.6', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                  <div className="px-5 pb-5 pt-3 border-t border-slate-100 text-slate-500 text-xs md:text-sm leading-relaxed font-body">
                     {item.a}
-                  </p>
+                  </div>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>
       </section>
 
       {/* 7. CUSTOM CALL TO ACTION */}
-      <section className="container" style={{ textAlign: 'center', padding: '0 2rem 5rem 2rem' }}>
-        <div className="glass-panel" style={{ padding: '3.5rem 2rem', background: 'linear-gradient(135deg, #ffffff, rgba(14, 165, 233, 0.03))', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
-          <h3 style={{ fontSize: '2rem', marginBottom: '0.75rem', fontWeight: 800 }}>Chăm sóc chiếc xe của bạn tốt nhất ngay hôm nay!</h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', maxWidth: '600px', margin: '0 auto 2rem auto', fontSize: '1.05rem' }}>
+      <section className="max-w-6xl mx-auto px-6 pb-24 text-center">
+        <Card className="p-12 md:p-20 bg-gradient-to-r from-sky-50 to-indigo-50/50 border-slate-200/50 rounded-3xl relative overflow-hidden shadow-lg">
+          {/* Bubble decorations */}
+          <div className="absolute -bottom-10 -right-10 text-9xl opacity-5 select-none rotate-12">🚗</div>
+          <div className="absolute top-10 left-10 text-4xl opacity-5 select-none">🫧</div>
+          
+          <h3 className="text-2xl md:text-3xl font-extrabold font-heading text-slate-900 mb-4 tracking-tight">
+            Chăm sóc chiếc xe của bạn tốt nhất ngay hôm nay!
+          </h3>
+          <p className="text-slate-500 max-w-xl mx-auto mb-8 text-sm md:text-base leading-relaxed">
             Tham gia chương trình khách hàng thân thiết AutoWash Pro để nhận các gói quà tặng chăm sóc, giảm giá tức thì và ưu tiên đặt chỗ.
           </p>
-          <button className="btn btn-primary" style={{ padding: '0.85rem 3rem', fontSize: '1.1rem', boxShadow: '0 6px 20px var(--primary-glow)' }} onClick={onStartBooking}>
-            🚀 Đặt lịch hẹn trực tuyến
-          </button>
-          
-          <div style={{ position: 'absolute', bottom: '-20px', right: '-20px', fontSize: '6rem', opacity: 0.05 }}>🚗</div>
-        </div>
+          <Button 
+            size="lg"
+            className="shadow-xl shadow-sky-600/25 px-10 py-3"
+            onClick={onStartBooking}
+          >
+            🚀 Đặt lịch hẹn trực tuyến <ArrowRight className="w-4 h-4 ml-2 animate-pulse" />
+          </Button>
+        </Card>
       </section>
     </div>
   );

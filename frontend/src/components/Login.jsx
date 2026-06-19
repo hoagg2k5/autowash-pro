@@ -1,5 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config.js';
+import { Button } from './ui/Button.jsx';
+import { Input } from './ui/Input.jsx';
+import { 
+  KeyRound, 
+  Mail, 
+  User, 
+  Phone, 
+  ShieldAlert, 
+  BadgeCheck, 
+  Car, 
+  Palette, 
+  Compass, 
+  RefreshCw, 
+  Send,
+  ArrowRight,
+  ShieldCheck,
+  HelpCircle
+} from 'lucide-react';
 
 export default function Login({ onLoginSuccess }) {
   const [isRegister, setIsRegister] = useState(false);
@@ -222,8 +240,8 @@ export default function Login({ onLoginSuccess }) {
   };
 
   return (
-    <div className="glass-panel auth-card" style={{ maxWidth: '500px', margin: '3rem auto', padding: '2.5rem' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', fontFamily: 'var(--font-heading)' }}>
+    <div className="glass-panel auth-card max-w-[480px] w-full mx-auto my-12 p-8 md:p-10 bg-white border border-slate-200/80 shadow-xl rounded-3xl">
+      <h2 className="text-2xl font-black font-heading text-center text-slate-900 tracking-tight uppercase mb-8">
         {isForgotPassword 
           ? 'KHÔI PHỤC MẬT KHẨU' 
           : isRegister 
@@ -232,45 +250,58 @@ export default function Login({ onLoginSuccess }) {
         }
       </h2>
 
-      {error && <div className="alert alert-danger" style={{ animation: 'fadeIn 0.3s ease' }}>{error}</div>}
-      {success && <div className="alert alert-success" style={{ animation: 'fadeIn 0.3s ease' }}>{success}</div>}
+      {error && (
+        <div className="alert alert-danger flex items-start gap-2.5 bg-red-50 text-red-700 border border-red-100 p-4 rounded-xl text-xs md:text-sm font-medium mb-6 animate-fade-in">
+          <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+      
+      {success && (
+        <div className="alert alert-success flex items-start gap-2.5 bg-emerald-50 text-emerald-700 border border-emerald-100 p-4 rounded-xl text-xs md:text-sm font-medium mb-6 animate-fade-in">
+          <BadgeCheck className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{success}</span>
+        </div>
+      )}
 
       {isForgotPassword ? (
         // FORM QUÊN MẬT KHẨU
-        <form onSubmit={handleResetPassword}>
-          <div className="form-group">
-            <label htmlFor="forgot-email">Email Đã Đăng Ký *</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input
+        <form onSubmit={handleResetPassword} className="space-y-5">
+          <div className="form-group flex flex-col gap-2">
+            <label htmlFor="forgot-email" className="text-xs font-bold text-slate-400 font-heading">EMAIL ĐÃ ĐĂNG KÝ *</label>
+            <div className="flex gap-2">
+              <Input
                 id="forgot-email"
                 type="email"
-                className="form-input"
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
                 placeholder="Ví dụ: customer@gmail.com"
                 required
                 disabled={loading || forgotOtpSent}
-                style={{ flex: 1 }}
+                className="flex-grow"
               />
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary"
+                variant="outline"
                 onClick={() => handleSendOtp(forgotEmail, 'forgot-password')}
                 disabled={loading || forgotOtpCountdown > 0}
-                style={{ whiteSpace: 'nowrap', minWidth: '110px', fontSize: '0.85rem', padding: '0 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="shrink-0 text-xs font-semibold px-4 h-10 border-slate-200"
               >
-                {forgotOtpCountdown > 0 ? `${forgotOtpCountdown}s` : 'Gửi mã OTP'}
-              </button>
+                {forgotOtpCountdown > 0 ? (
+                  <span className="flex items-center gap-1.5"><RefreshCw className="w-3 h-3 animate-spin" /> {forgotOtpCountdown}s</span>
+                ) : (
+                  <span className="flex items-center gap-1.5"><Send className="w-3.5 h-3.5" /> Gửi OTP</span>
+                )}
+              </Button>
             </div>
           </div>
 
           {forgotOtpSent && (
-            <div className="form-group" style={{ animation: 'fadeIn 0.3s ease' }}>
-              <label htmlFor="forgot-otp">Mã Xác Thực OTP (6 số) *</label>
-              <input
+            <div className="form-group flex flex-col gap-2 animate-fade-in">
+              <label htmlFor="forgot-otp" className="text-xs font-bold text-slate-400 font-heading">MÃ XÁC THỰC OTP (6 SỐ) *</label>
+              <Input
                 id="forgot-otp"
                 type="text"
-                className="form-input"
                 value={forgotOtp}
                 onChange={(e) => setForgotOtp(e.target.value.trim())}
                 placeholder="Nhập 6 chữ số OTP nhận được"
@@ -280,12 +311,11 @@ export default function Login({ onLoginSuccess }) {
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="forgot-new-password">Mật Khẩu Mới (Tối thiểu 6 ký tự) *</label>
-            <input
+          <div className="form-group flex flex-col gap-2">
+            <label htmlFor="forgot-new-password" className="text-xs font-bold text-slate-400 font-heading">MẬT KHẨU MỚI (TỐI THIỂU 6 KÝ TỰ) *</label>
+            <Input
               id="forgot-new-password"
               type="password"
-              className="form-input"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Nhập mật khẩu mới"
@@ -294,12 +324,11 @@ export default function Login({ onLoginSuccess }) {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="forgot-confirm-password">Xác Nhận Mật Khẩu Mới *</label>
-            <input
+          <div className="form-group flex flex-col gap-2">
+            <label htmlFor="forgot-confirm-password" className="text-xs font-bold text-slate-400 font-heading">XÁC NHẬN MẬT KHẨU MỚI *</label>
+            <Input
               id="forgot-confirm-password"
               type="password"
-              className="form-input"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Nhập lại mật khẩu mới"
@@ -307,13 +336,13 @@ export default function Login({ onLoginSuccess }) {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.8rem', marginTop: '1rem' }} disabled={loading}>
+          <Button type="submit" className="w-full font-bold shadow-lg shadow-sky-600/10 mt-6 h-11" disabled={loading}>
             {loading ? 'Đang Xử Lý...' : 'Đặt Lại Mật Khẩu'}
-          </button>
+          </Button>
 
-          <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          <p className="text-center text-sm text-slate-400 mt-6">
             <span 
-              style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }}
+              className="text-sky-600 hover:underline cursor-pointer font-bold font-heading"
               onClick={() => { setIsForgotPassword(false); resetFormState(); }}
             >
               Quay lại Đăng nhập
@@ -322,13 +351,12 @@ export default function Login({ onLoginSuccess }) {
         </form>
       ) : isRegister ? (
         // FORM ĐĂNG KÝ
-        <form onSubmit={handleRegister}>
-          <div className="form-group">
-            <label htmlFor="reg-phone">Số Điện Thoại *</label>
-            <input
+        <form onSubmit={handleRegister} className="space-y-4">
+          <div className="form-group flex flex-col gap-1.5">
+            <label htmlFor="reg-phone" className="text-xs font-bold text-slate-400 font-heading">SỐ ĐIỆN THOẠI *</label>
+            <Input
               id="reg-phone"
               type="tel"
-              className="form-input"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Ví dụ: 0987654321"
@@ -336,12 +364,11 @@ export default function Login({ onLoginSuccess }) {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="reg-name">Họ và Tên *</label>
-            <input
+          <div className="form-group flex flex-col gap-1.5">
+            <label htmlFor="reg-name" className="text-xs font-bold text-slate-400 font-heading">HỌ VÀ TÊN *</label>
+            <Input
               id="reg-name"
               type="text"
-              className="form-input"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Ví dụ: Nguyễn Văn A"
@@ -349,39 +376,41 @@ export default function Login({ onLoginSuccess }) {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="reg-email">Email Liên Kết *</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input
+          <div className="form-group flex flex-col gap-1.5">
+            <label htmlFor="reg-email" className="text-xs font-bold text-slate-400 font-heading">EMAIL LIÊN KẾT *</label>
+            <div className="flex gap-2">
+              <Input
                 id="reg-email"
                 type="email"
-                className="form-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Ví dụ: khachhang@gmail.com"
                 required
                 disabled={loading || otpSent}
-                style={{ flex: 1 }}
+                className="flex-grow"
               />
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary"
+                variant="outline"
                 onClick={() => handleSendOtp(email, 'register')}
                 disabled={loading || otpCountdown > 0}
-                style={{ whiteSpace: 'nowrap', minWidth: '110px', fontSize: '0.85rem', padding: '0 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="shrink-0 text-xs font-semibold px-4 h-10 border-slate-200"
               >
-                {otpCountdown > 0 ? `${otpCountdown}s` : 'Gửi mã OTP'}
-              </button>
+                {otpCountdown > 0 ? (
+                  <span className="flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> {otpCountdown}s</span>
+                ) : (
+                  <span className="flex items-center gap-1.5"><Send className="w-3.5 h-3.5" /> Gửi OTP</span>
+                )}
+              </Button>
             </div>
           </div>
 
           {otpSent && (
-            <div className="form-group" style={{ animation: 'fadeIn 0.3s ease' }}>
-              <label htmlFor="reg-otp">Mã Xác Thực OTP (6 số) *</label>
-              <input
+            <div className="form-group flex flex-col gap-1.5 animate-fade-in">
+              <label htmlFor="reg-otp" className="text-xs font-bold text-slate-400 font-heading">MÃ XÁC THỰC OTP (6 SỐ) *</label>
+              <Input
                 id="reg-otp"
                 type="text"
-                className="form-input"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.trim())}
                 placeholder="Nhập 6 chữ số OTP nhận được"
@@ -391,12 +420,11 @@ export default function Login({ onLoginSuccess }) {
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="reg-password">Mật Khẩu *</label>
-            <input
+          <div className="form-group flex flex-col gap-1.5">
+            <label htmlFor="reg-password" className="text-xs font-bold text-slate-400 font-heading">MẬT KHẨU *</label>
+            <Input
               id="reg-password"
               type="password"
-              className="form-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Nhập mật khẩu (Tối thiểu 6 ký tự)"
@@ -405,15 +433,16 @@ export default function Login({ onLoginSuccess }) {
             />
           </div>
 
-          <div style={{ borderTop: '1px solid var(--border-color)', margin: '1.5rem 0', paddingTop: '1rem' }}>
-            <h4 style={{ marginBottom: '1rem', color: 'var(--primary)', fontFamily: 'var(--font-heading)' }}>Thông Tin Xe Ô Tô Khởi Tạo</h4>
+          <div className="border-t border-slate-200 mt-6 pt-5">
+            <h4 className="text-xs font-extrabold text-sky-600 font-heading tracking-wider uppercase mb-4 flex items-center gap-2">
+              <Car className="w-4 h-4" /> THÔNG TIN XE Ô TÔ KHỞI TẠO
+            </h4>
             
-            <div className="form-group">
-              <label htmlFor="reg-plate">Biển Số Xe *</label>
-              <input
+            <div className="form-group flex flex-col gap-1.5 mb-4">
+              <label htmlFor="reg-plate" className="text-xs font-bold text-slate-400 font-heading">BIỂN SỐ XE *</label>
+              <Input
                 id="reg-plate"
                 type="text"
-                className="form-input"
                 value={licensePlate}
                 onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
                 placeholder="Ví dụ: 30A-12345"
@@ -421,24 +450,22 @@ export default function Login({ onLoginSuccess }) {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div className="form-group">
-                <label htmlFor="reg-brand">Hãng Xe</label>
-                <input
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="form-group flex flex-col gap-1.5">
+                <label htmlFor="reg-brand" className="text-xs font-bold text-slate-400 font-heading">HÃNG XE</label>
+                <Input
                   id="reg-brand"
                   type="text"
-                  className="form-input"
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
                   placeholder="Toyota, Mazda..."
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="reg-model">Dòng Xe</label>
-                <input
+              <div className="form-group flex flex-col gap-1.5">
+                <label htmlFor="reg-model" className="text-xs font-bold text-slate-400 font-heading">DÒNG XE</label>
+                <Input
                   id="reg-model"
                   type="text"
-                  className="form-input"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
                   placeholder="Camry, CX-5..."
@@ -446,12 +473,11 @@ export default function Login({ onLoginSuccess }) {
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="reg-color">Màu Xe</label>
-              <input
+            <div className="form-group flex flex-col gap-1.5">
+              <label htmlFor="reg-color" className="text-xs font-bold text-slate-400 font-heading">MÀU XE</label>
+              <Input
                 id="reg-color"
                 type="text"
-                className="form-input"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 placeholder="Đen, Trắng, Đỏ..."
@@ -459,14 +485,14 @@ export default function Login({ onLoginSuccess }) {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.8rem' }} disabled={loading}>
+          <Button type="submit" className="w-full font-bold shadow-lg shadow-sky-600/10 mt-6 h-11" disabled={loading}>
             {loading ? 'Đang Xử Lý...' : 'Đăng Ký & Đăng Nhập'}
-          </button>
+          </Button>
 
-          <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          <p className="text-center text-sm text-slate-400 mt-6">
             Đã có tài khoản?{' '}
             <span 
-              style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }}
+              className="text-sky-600 hover:underline cursor-pointer font-bold font-heading"
               onClick={() => { setIsRegister(false); resetFormState(); }}
             >
               Đăng nhập ngay
@@ -475,61 +501,69 @@ export default function Login({ onLoginSuccess }) {
         </form>
       ) : (
         // FORM ĐĂNG NHẬP
-        <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label htmlFor="login-phone">Số Điện Thoại hoặc Email *</label>
-            <input
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div className="form-group flex flex-col gap-2">
+            <label htmlFor="login-phone" className="text-xs font-bold text-slate-400 font-heading">SỐ ĐIỆN THOẠI HOẶC EMAIL *</label>
+            <Input
               id="login-phone"
               type="text"
-              className="form-input"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="Nhập số điện thoại hoặc email đã đăng ký"
+              placeholder="Nhập số điện thoại hoặc email"
               required
             />
           </div>
 
-          <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label htmlFor="login-password" style={{ flex: 1, marginBottom: 0 }}>Mật Khẩu *</label>
+          <div className="form-group flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <label htmlFor="login-password" className="text-xs font-bold text-slate-400 font-heading">MẬT KHẨU *</label>
               <span 
-                style={{ fontSize: '0.8rem', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }}
+                className="text-xs text-sky-600 hover:underline cursor-pointer font-bold font-heading"
                 onClick={() => { setIsForgotPassword(true); resetFormState(); }}
               >
                 Quên mật khẩu?
               </span>
             </div>
-            <input
+            <Input
               id="login-password"
               type="password"
-              className="form-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mật khẩu của bạn"
               required
-              style={{ marginTop: '0.5rem' }}
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.8rem', marginTop: '1.5rem' }} disabled={loading}>
+          <Button type="submit" className="w-full font-bold shadow-lg shadow-sky-600/15 h-11" disabled={loading}>
             {loading ? 'Đang Xác Thực...' : 'Đăng Nhập'}
-          </button>
+          </Button>
 
-          <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          <p className="text-center text-sm text-slate-400 mt-6">
             Chưa có tài khoản?{' '}
             <span 
-              style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }}
+              className="text-sky-600 hover:underline cursor-pointer font-bold font-heading"
               onClick={() => { setIsRegister(true); resetFormState(); }}
             >
               Đăng ký thành viên mới
             </span>
           </p>
 
-          <div style={{ marginTop: '2rem', padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
-            <p style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: '0.5rem' }}>💡 Tài khoản thử nghiệm:</p>
-            <p style={{ marginBottom: '0.25rem' }}>• <strong>Khách hàng:</strong> SĐT/Email: <code>0123456789</code> hoặc <code>customer@gmail.com</code> | Mật khẩu: <code>123456</code> (đã đồng bộ)</p>
-            <p style={{ marginBottom: '0.25rem' }}>• <strong>Nhân viên (Staff):</strong> SĐT: <code>0888888888</code> | Mật khẩu: <code>staff123</code></p>
-            <p style={{ marginBottom: 0 }}>• <strong>Quản trị viên (Admin):</strong> SĐT: <code>0999999999</code> | Mật khẩu: <code>admin123</code></p>
+          <div className="mt-8 p-4 bg-slate-50 border border-slate-200/50 rounded-xl text-xs text-slate-500 font-body leading-relaxed space-y-2">
+            <p className="font-bold text-sky-600 flex items-center gap-1.5">
+              <HelpCircle className="w-3.5 h-3.5" /> Tài khoản thử nghiệm:
+            </p>
+            <p className="flex items-start gap-1">
+              <span className="text-sky-500 font-bold">•</span>
+              <span><strong>Khách hàng:</strong> SĐT: <code>0123456789</code> hoặc Email: <code>customer@gmail.com</code> | Mật khẩu: <code>123456</code></span>
+            </p>
+            <p className="flex items-start gap-1">
+              <span className="text-sky-500 font-bold">•</span>
+              <span><strong>Nhân viên:</strong> SĐT: <code>0888888888</code> | Mật khẩu: <code>staff123</code></span>
+            </p>
+            <p className="flex items-start gap-1">
+              <span className="text-sky-500 font-bold">•</span>
+              <span><strong>Quản trị viên:</strong> SĐT: <code>0999999999</code> | Mật khẩu: <code>admin123</code></span>
+            </p>
           </div>
         </form>
       )}

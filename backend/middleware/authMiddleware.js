@@ -5,7 +5,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret-key-autowash';
 // Validate JWT Token Middleware
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+  let token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+
+  // Support token as query parameter for media/file downloads
+  if (!token && req.query.token) {
+    token = req.query.token;
+  }
 
   if (!token) {
     return res.status(401).json({ error: "Yêu cầu đăng nhập để truy cập tài nguyên này." });

@@ -23,9 +23,11 @@ export default function AdminDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setLoading(true);
+      }
       
       const [bookingsRes, customersRes, rulesRes, promoRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/bookings`),
@@ -50,7 +52,9 @@ export default function AdminDashboard({ user, onLogout }) {
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (!isSilent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -61,7 +65,7 @@ export default function AdminDashboard({ user, onLogout }) {
   useEffect(() => {
     const socket = io(API_BASE_URL);
     socket.on('booking_updated', () => {
-      fetchData();
+      fetchData(true);
     });
     return () => {
       socket.disconnect();
@@ -74,7 +78,7 @@ export default function AdminDashboard({ user, onLogout }) {
         method: 'POST'
       });
       if (!response.ok) throw new Error("Thao tác thất bại.");
-      fetchData();
+      fetchData(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -87,7 +91,7 @@ export default function AdminDashboard({ user, onLogout }) {
         method: 'POST'
       });
       if (!response.ok) throw new Error("Thao tác thất bại.");
-      fetchData();
+      fetchData(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -106,7 +110,7 @@ export default function AdminDashboard({ user, onLogout }) {
 
       setRules(data.loyaltyRules);
       toast.success("Cập nhật cấu hình tích điểm và phân hạng thành công!");
-      fetchData();
+      fetchData(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -123,7 +127,7 @@ export default function AdminDashboard({ user, onLogout }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Không thể tạo khuyến mãi.");
       
-      fetchData();
+      fetchData(true);
       return `Khuyến mãi '${data.title}' được kích hoạt thành công.`;
     } catch (err) {
       toast.error(err.message);
@@ -137,7 +141,7 @@ export default function AdminDashboard({ user, onLogout }) {
         method: 'POST'
       });
       if (!response.ok) throw new Error("Thao tác thất bại.");
-      fetchData();
+      fetchData(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -149,7 +153,7 @@ export default function AdminDashboard({ user, onLogout }) {
       const response = await fetch(`${API_BASE_URL}/api/admin/run-review`, { method: 'POST' });
       const data = await response.json();
       toast.success(data.message);
-      fetchData();
+      fetchData(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -180,7 +184,7 @@ export default function AdminDashboard({ user, onLogout }) {
       
       toast.success(data.message);
       setSelectedCustomerForPoints(null);
-      fetchData(); // Refresh customers list
+      fetchData(true); // Refresh customers list
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -276,7 +280,7 @@ export default function AdminDashboard({ user, onLogout }) {
       {activeTab === 'customers' && (
         <AdminCustomers 
           customers={customers} 
-          onPointsAdjusted={fetchData} 
+          onPointsAdjusted={() => fetchData(true)} 
           API_BASE_URL={API_BASE_URL} 
         />
       )}

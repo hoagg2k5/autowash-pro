@@ -659,7 +659,7 @@ export default function StaffDashboard({ user, onLogout }) {
       toast.success(`Thanh toán thành công! Xe ${checkoutBooking.licensePlate} đã hoàn tất dịch vụ.`);
       setCheckoutBooking(null);
       setCheckoutCode('');
-      fetchBookings();
+      fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -668,9 +668,11 @@ export default function StaffDashboard({ user, onLogout }) {
   };
 
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setLoading(true);
+      }
       const res = await fetch(`${API_BASE_URL}/api/bookings`);
       if (!res.ok) throw new Error('Không thể tải danh sách đặt lịch.');
       const data = await res.json();
@@ -685,18 +687,20 @@ export default function StaffDashboard({ user, onLogout }) {
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (!isSilent) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchBookings();
+    fetchBookings(false);
   }, []);
 
   useEffect(() => {
     const socket = io(API_BASE_URL);
     socket.on('booking_updated', (data) => {
-      fetchBookings();
+      fetchBookings(true);
       if (data && data.id) {
         setRecentlyUpdatedBookingId(data.id);
         setTimeout(() => {
@@ -732,7 +736,7 @@ export default function StaffDashboard({ user, onLogout }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Xác nhận lịch đặt thất bại.');
       toast.success(data.message);
-      fetchBookings();
+      fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -744,7 +748,7 @@ export default function StaffDashboard({ user, onLogout }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Bắt đầu rửa xe thất bại.');
       toast.success(data.message);
-      fetchBookings();
+      fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -756,7 +760,7 @@ export default function StaffDashboard({ user, onLogout }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Hoàn tất rửa xe thất bại.');
       toast.success(data.message);
-      fetchBookings();
+      fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -768,7 +772,7 @@ export default function StaffDashboard({ user, onLogout }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Hủy lịch đặt thất bại.');
       toast.success(data.message);
-      fetchBookings();
+      fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
     }
@@ -838,7 +842,7 @@ export default function StaffDashboard({ user, onLogout }) {
 
       toast.success(`Đã tạo lịch đặt xe ${qbPlate.toUpperCase()} thành công tại ${quickBookBay} vào giờ ${quickBookSlot}.`);
       setShowQuickBook(false);
-      fetchBookings();
+      fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -1068,7 +1072,7 @@ export default function StaffDashboard({ user, onLogout }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Không thể lưu ghi chú.');
       toast.success('Đã cập nhật ghi chú nhân viên.');
-      fetchBookings();
+      fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
     }
