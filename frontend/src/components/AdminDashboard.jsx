@@ -13,6 +13,7 @@ import AdminVouchers from './admin/AdminVouchers.jsx';
 import AdminBookings from './admin/AdminBookings.jsx';
 import AdminCustomers from './admin/AdminCustomers.jsx';
 import AdminStaffs from './admin/AdminStaffs.jsx';
+import AdminFeedbacks from './admin/AdminFeedbacks.jsx';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('bookings');
@@ -264,6 +265,9 @@ export default function AdminDashboard({ user, onLogout }) {
         <span className={`tab ${activeTab === 'research' ? 'active' : ''}`} onClick={() => setActiveTab('research')}>
           📊 Nghiên Cứu & Mô Phỏng
         </span>
+        <span className={`tab ${activeTab === 'feedbacks' ? 'active' : ''}`} onClick={() => setActiveTab('feedbacks')}>
+          💬 Đánh Giá & Phản Hồi ({bookings.filter(b => b.status === 'Completed' && b.rating).length})
+        </span>
       </div>
 
       {/* 1. BOOKINGS LIST */}
@@ -320,6 +324,11 @@ export default function AdminDashboard({ user, onLogout }) {
           user={user} 
           API_BASE_URL={API_BASE_URL} 
         />
+      )}
+
+      {/* 9. FEEDBACKS SECTION */}
+      {activeTab === 'feedbacks' && (
+        <AdminFeedbacks bookings={bookings} />
       )}
     </div>
   );

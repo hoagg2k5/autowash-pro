@@ -1,8 +1,22 @@
-import React from 'react';
-import { ShowerHead, User, Wrench, Crown, LogOut, Home } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShowerHead, User, Wrench, Crown, LogOut, Home, Sun, Moon } from 'lucide-react';
 import { Button } from '../ui/Button.jsx';
 
 export default function Header({ currentUser, onLogout, onGoToHome }) {
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('theme') === 'dark' || document.body.classList.contains('dark');
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.body.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
+
   return (
     <header className="header flex justify-between items-center px-8 py-5 border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
       <div className="logo flex items-center gap-2 text-2xl font-black font-heading bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer" onClick={onGoToHome}>
@@ -11,6 +25,15 @@ export default function Header({ currentUser, onLogout, onGoToHome }) {
       </div>
 
       <div className="nav-buttons flex items-center gap-3">
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="h-8 w-8 p-0 rounded-full border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-50 transition-colors"
+          onClick={() => setIsDark(!isDark)}
+          title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+        >
+          {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-500" />}
+        </Button>
         {currentUser ? (
           <>
             {currentUser.role === 'customer' ? (

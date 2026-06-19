@@ -442,7 +442,7 @@ export default function HistoryList({ bookings, pointsHistory, onCancelBooking, 
       >
         <div 
           onClick={(e) => e.stopPropagation()}
-          className="glass-panel" 
+          className="glass-panel print-area" 
           style={{
             background: '#ffffff',
             padding: '2rem',
@@ -457,6 +457,7 @@ export default function HistoryList({ bookings, pointsHistory, onCancelBooking, 
           {/* Close Button X at Top Right */}
           <button
             type="button"
+            className="no-print"
             onClick={() => setSelectedBookingForQr(null)}
             style={{
               position: 'absolute',
@@ -520,14 +521,25 @@ export default function HistoryList({ bookings, pointsHistory, onCancelBooking, 
             * Đưa mã QR này hoặc cung cấp mã đơn <strong>{selectedBookingForQr.id}</strong> cho nhân viên tại quầy để thanh toán khi hoàn tất dịch vụ.
           </p>
 
-          <button 
-            type="button" 
-            className="btn btn-secondary" 
-            style={{ width: '100%', padding: '0.6rem' }} 
-            onClick={() => setSelectedBookingForQr(null)}
-          >
-            Đóng Vé
-          </button>
+          {/* Print & Close Actions */}
+          <div className="flex gap-2.5 mt-4 no-print">
+            <button 
+              type="button" 
+              className="btn btn-secondary flex-1" 
+              style={{ padding: '0.6rem' }} 
+              onClick={() => setSelectedBookingForQr(null)}
+            >
+              Đóng Vé
+            </button>
+            <button 
+              type="button" 
+              className="btn btn-primary flex-1 bg-gradient-to-r from-sky-600 to-indigo-600 border-none text-white font-bold" 
+              style={{ padding: '0.6rem' }} 
+              onClick={() => window.print()}
+            >
+              🖨️ In Hóa Đơn
+            </button>
+          </div>
         </div>
       </div>
     )}
