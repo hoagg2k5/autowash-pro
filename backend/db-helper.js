@@ -347,13 +347,77 @@ export async function completeBooking(bookingId) {
   return booking;
 }
 
-export async function cancelBooking(bookingId) {
+export function getSlotTimes(bookingDate, timeSlot) {
+  const parts = bookingDate.split("-");
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+
+  const slotParts = timeSlot.split("-");
+  const startStr = slotParts[0].trim();
+  const endStr = (slotParts[1] || slotParts[0]).trim();
+
+  const [startH, startM] = startStr.split(":").map(Number);
+  const [endH, endM] = endStr.split(":").map(Number);
+
+  const startTime = new Date(year, month, day, startH, startM, 0, 0);
+  const endTime = new Date(year, month, day, endH, endM, 0, 0);
+
+  return { startTime, endTime };
+}
+
+export async function cancelBooking(bookingId, reason, wasNoShow) {
   const booking = await Booking.findOne({ id: bookingId });
   if (!booking) throw new Error("Không tìm thấy lịch đặt");
   
   const oldStatus = booking.status;
+  if (oldStatus === 'Cancelled') return booking;
+
   booking.status = 'Cancelled';
+  booking.cancelReason = reason || '';
   await booking.save();
+
+  // Áp dụng phạt trừ điểm cho khách hàng đối với Pending hoặc Confirmed
+  if (oldStatus === 'Pending' || oldStatus === 'Confirmed') {
+    const user = await User.findOne({ id: booking.userId });
+    if (user) {
+      let penaltyPoints = 0;
+      let penaltyReason = '';
+
+      if (wasNoShow) {
+        penaltyPoints = 15;
+        penaltyReason = `Phạt quá giờ hẹn không tới - No-show (-15 điểm)`;
+      } else {
+        const { startTime } = getSlotTimes(booking.bookingDate, booking.timeSlot);
+        const timeDifference = startTime.getTime() - Date.now();
+        const twoHoursMs = 2 * 60 * 60 * 1000;
+
+        if (timeDifference < twoHoursMs) {
+          penaltyPoints = 10;
+          penaltyReason = `Phạt hủy lịch sát giờ hẹn dưới 2 tiếng (-10 điểm)`;
+        }
+      }
+
+      if (penaltyPoints > 0) {
+        const originalPoints = user.pointsBalance;
+        user.pointsBalance = Math.max(0, user.pointsBalance - penaltyPoints);
+        const pointsDeducted = originalPoints - user.pointsBalance;
+
+        if (pointsDeducted > 0) {
+          const historyPenalty = new PointHistory({
+            id: 'ph-' + Math.random().toString(36).substr(2, 9),
+            userId: user.id,
+            bookingId: booking.id,
+            type: 'Redeemed',
+            points: pointsDeducted,
+            reason: penaltyReason.replace('-15', `-${pointsDeducted}`).replace('-10', `-${pointsDeducted}`)
+          });
+          await historyPenalty.save();
+        }
+        await user.save();
+      }
+    }
+  }
 
   // Nếu đơn hàng đã hoàn tất (Completed) mà bị hủy, cần hoàn trả và thu hồi điểm tương ứng
   if (oldStatus === 'Completed') {

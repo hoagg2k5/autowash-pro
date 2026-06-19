@@ -118,6 +118,11 @@ export default function BookingList({
                           b.status === 'In Progress' ? 'Đang rửa' :
                             b.status === 'Completed' ? 'Hoàn tất' : 'Đã hủy'}
                     </span>
+                    {b.status === 'Cancelled' && b.cancelReason && (
+                      <span className="text-xs" style={{ color: 'var(--status-cancelled)', fontWeight: 500, fontStyle: 'italic' }}>
+                        Lý do hủy: {b.cancelReason}
+                      </span>
+                    )}
                     <span className="badge-info" style={{ fontSize: '0.75rem' }}>{b.branch}</span>
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Mã đặt: <code>{b.id}</code></span>
                   </div>

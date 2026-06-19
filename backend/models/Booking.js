@@ -23,6 +23,7 @@ const bookingSchema = new mongoose.Schema({
   rating: { type: Number }, // Điểm đánh giá (1-5)
   comment: { type: String }, // Lời bình luận của khách
   feedbackCreatedAt: { type: Date },
+  cancelReason: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now }
 }, { id: false });
 

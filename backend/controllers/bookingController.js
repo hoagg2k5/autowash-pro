@@ -4,7 +4,8 @@ import {
   startWashBooking, 
   updateBookingNotes, 
   completeBooking, 
-  cancelBooking 
+  cancelBooking,
+  getSlotTimes
 } from '../db-helper.js';
 import Booking from '../models/Booking.js';
 import User from '../models/User.js';
@@ -45,6 +46,40 @@ async function autoConfirmOldBookings(io) {
   }
 }
 
+// Tự động hủy các đơn đặt lịch quá 30 phút tính từ khi kết thúc khung giờ hẹn mà khách không tới (No-show)
+async function autoCancelNoShowBookings(io) {
+  try {
+    const now = Date.now();
+    const activeBookings = await Booking.find({ status: { $in: ['Pending', 'Confirmed'] } });
+    let updated = false;
+    const updatedBookings = [];
+
+    for (const b of activeBookings) {
+      const { endTime } = getSlotTimes(b.bookingDate, b.timeSlot);
+      // Quá giờ hẹn kết thúc + 30 phút
+      if (now > endTime.getTime() + 30 * 60 * 1000) {
+        // Tự động hủy do quá giờ hẹn không tới (No-show), truyền lý do và cờ wasNoShow = true
+        const cancelled = await cancelBooking(b.id, 'Hệ thống tự động hủy do quá giờ hẹn không tới (No-show).', true);
+        updated = true;
+        updatedBookings.push(cancelled);
+      }
+    }
+
+    if (updated && io) {
+      for (const booking of updatedBookings) {
+        const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
+        const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
+        io.emit('booking_updated', {
+          ...booking.toObject(),
+          licensePlate
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Error in auto-cancel no-show simulator:", err);
+  }
+}
+
 // Kiểm tra quyền truy cập chi nhánh
 const checkBranchAccess = async (req, bookingId) => {
   const { role, branch } = req.user;
@@ -64,6 +99,7 @@ export const listBookings = async (req, res) => {
   try {
     const io = req.app.get('io');
     await autoConfirmOldBookings(io);
+    await autoCancelNoShowBookings(io);
 
     const { role, branch, id: userId } = req.user;
 
@@ -245,6 +281,7 @@ export const complete = async (req, res) => {
 export const cancel = async (req, res) => {
   try {
     const bookingId = req.params.id;
+    const { reason } = req.body;
     const booking = await Booking.findOne({ id: bookingId });
     if (!booking) {
       return res.status(404).json({ error: "Không tìm thấy lịch đặt xe này." });
@@ -256,7 +293,8 @@ export const cancel = async (req, res) => {
     }
 
     await checkBranchAccess(req, bookingId);
-    const cancelled = await cancelBooking(bookingId);
+    const defaultReason = req.user.role === 'customer' ? 'Khách hàng chủ động hủy lịch.' : 'Nhân viên hủy lịch.';
+    const cancelled = await cancelBooking(bookingId, reason || defaultReason, false);
 
     const vehicle = await Vehicle.findOne({ id: cancelled.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
