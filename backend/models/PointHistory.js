@@ -8,7 +8,9 @@ const pointHistorySchema = new mongoose.Schema({
   points: { type: Number, required: true },
   reason: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }
-});
+}, { id: false });
+
+pointHistorySchema.index({ userId: 1 });
 
 const PointHistory = mongoose.model('PointHistory', pointHistorySchema);
 export default PointHistory;

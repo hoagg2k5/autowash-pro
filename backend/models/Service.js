@@ -6,7 +6,7 @@ const serviceSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   description: { type: String, default: '' },
   details: [{ type: String }]
-});
+}, { id: false });
 
 const Service = mongoose.model('Service', serviceSchema);
 export default Service;

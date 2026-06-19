@@ -39,6 +39,14 @@ app.set('io', io);
 
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
+  
+  socket.on('join_user_room', (userId) => {
+    if (userId) {
+      socket.join(`user-${userId}`);
+      console.log(`Socket ${socket.id} joined user room: user-${userId}`);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
   });

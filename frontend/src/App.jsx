@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from './components/shared/Header.jsx';
 import Homepage from './components/home/Homepage.jsx';
@@ -6,6 +6,9 @@ import Login from './components/Login.jsx';
 import CustomerDashboard from './components/CustomerDashboard.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
 import StaffDashboard from './components/staff/StaffDashboard.jsx';
+import { io } from 'socket.io-client';
+import { API_BASE_URL } from './config.js';
+import { toast } from './components/shared/toast.js';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -62,6 +65,36 @@ export default function App() {
     }
     navigate('/', { replace: true });
   };
+
+  useEffect(() => {
+    const handleForcedLogoutEvent = (e) => {
+      handleLogout();
+      toast.error(e.detail || 'Tài khoản đã đăng nhập ở thiết bị khác.');
+    };
+    window.addEventListener('autowash_logout_forced', handleForcedLogoutEvent);
+    return () => {
+      window.removeEventListener('autowash_logout_forced', handleForcedLogoutEvent);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const socket = io(API_BASE_URL);
+    
+    socket.on('connect', () => {
+      socket.emit('join_user_room', currentUser.id);
+    });
+    
+    socket.on('force_logout', (data) => {
+      handleLogout();
+      toast.error(data.message || 'Tài khoản đã đăng nhập ở thiết bị khác.');
+    });
+    
+    return () => {
+      socket.disconnect();
+    };
+  }, [currentUser]);
 
   const handleStartBooking = () => {
     navigate('/login');
