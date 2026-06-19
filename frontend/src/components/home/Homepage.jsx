@@ -68,31 +68,24 @@ export default function Homepage({ onStartBooking, onStartAdmin }) {
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-black font-heading tracking-tight text-slate-900 leading-tight md:leading-none mb-6">
+          <h1 className="text-5xl md:text-6xl font-extrabold font-heading tracking-tighter text-slate-900 leading-[1.15] mb-6">
             Giải Pháp Rửa Xe Ô Tô<br />
-            <span className="bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">Thông Minh Thế Hệ Mới</span>
+            <span className="bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Thông Minh Thế Hệ Mới
+            </span>
           </h1>
           
           <p className="text-lg md:text-xl text-slate-500 max-w-3xl mx-auto mb-10 leading-relaxed font-body">
             AutoWash Pro tích hợp công nghệ nhận diện biển số tự động (LPR), lên lịch hẹn ưu tiên thông minh theo thứ hạng thành viên và tích lũy điểm đổi quà tự động. Mang lại trải nghiệm chăm sóc xe hoàn mỹ cho bạn.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex justify-center items-center">
             <Button 
               size="lg"
-              className="w-full sm:w-auto shadow-lg shadow-sky-600/20 font-bold"
+              className="w-full sm:w-auto shadow-xl shadow-sky-600/20 font-bold text-base px-10 py-4 h-13 rounded-xl bg-gradient-to-r from-sky-600 via-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 hover:shadow-sky-600/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
               onClick={onStartBooking}
             >
-              <Car className="w-5 h-5 mr-2 animate-bounce-slow" /> Đặt Lịch Rửa Xe Ngay
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="w-full sm:w-auto font-semibold border-slate-200 shadow-sm"
-              onClick={onStartAdmin}
-            >
-              <Lock className="w-4 h-4 mr-2 text-slate-400" /> Bảng Quản Trị Admin
+              <Car className="w-5 h-5 mr-2.5 animate-bounce-slow" /> Đặt Lịch Rửa Xe Ngay
             </Button>
           </div>
         </div>
