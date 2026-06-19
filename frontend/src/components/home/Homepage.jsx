@@ -1,286 +1,38 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Sparkles, 
   Car, 
-  ShieldCheck, 
-  Clock, 
   Star, 
   Zap, 
   Gem, 
   MapPin, 
-  Phone, 
-  ShowerHead, 
-  Lock, 
   Calendar,
-  ChevronDown, 
   Check,
-  Award,
-  Activity,
   Shield,
-  HelpCircle,
   ArrowRight
 } from 'lucide-react';
+import { Card } from '../ui/Card.jsx';
 import { Button } from '../ui/Button.jsx';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/Card.jsx';
 import { Badge } from '../ui/Badge.jsx';
 
+// Imported modular components
+import HeroSection from './HeroSection.jsx';
+import StatsSection from './StatsSection.jsx';
+import ServicesSection from './ServicesSection.jsx';
+import FaqSection from './FaqSection.jsx';
+
 export default function Homepage({ onStartBooking, onStartAdmin }) {
-  const [activeFaq, setActiveFaq] = useState(null);
-
-  const toggleFaq = (index) => {
-    setActiveFaq(activeFaq === index ? null : index);
-  };
-
-  const faqData = [
-    {
-      q: "Làm thế nào để được nâng hạng Hội viên (Silver/Gold/Platinum)?",
-      a: "Hệ thống tự động nâng hạng dựa trên tổng số tiền bạn đã thanh toán tại AutoWash Pro: Silver từ 200.000đ, Gold từ 500.000đ và Platinum từ 1.000.000đ. Hệ thống tự động kiểm tra và nâng hạng tức thì ngay khi hóa đơn rửa xe của bạn được hoàn tất."
-    },
-    {
-      q: "Điểm thưởng tích lũy (Wash Points) được tính và quy đổi như thế nào?",
-      a: "Với mỗi 25.000đ chi tiêu, bạn tích lũy 1 điểm gốc. Điểm này được nhân thêm theo hệ số hạng của bạn (Member x1.0, Silver x1.2, Gold x1.5, Platinum x2.0). Khi tích lũy đủ điểm, bạn có thể đổi 20 điểm để được giảm giá 25.000đ trực tiếp khi đặt lịch hẹn rửa lần kế tiếp."
-    },
-    {
-      q: "Đặc quyền đặt lịch trước ưu tiên hoạt động ra sao?",
-      a: "Khách hàng hạng cao hơn sẽ có khung ngày đặt trước rộng hơn (Member: 7 ngày, Silver: 10 ngày, Gold: 12 ngày, Platinum: 14 ngày). Điều này giúp bạn dễ dàng giữ chỗ vào các khung giờ vàng cuối tuần hoặc ngày lễ mà các thành viên mới chưa có quyền đặt chỗ."
-    },
-    {
-      q: "Tôi có thể liên kết nhiều xe ô tô trên cùng một tài khoản không?",
-      a: "Hoàn toàn được! Bạn có thể thêm không giới hạn xe ô tô của mình hoặc người thân (gồm Biển số xe, Hãng xe, Dòng xe và Màu sắc) trong trang cá nhân và dễ dàng tùy chọn chiếc xe muốn rửa khi tiến hành đặt lịch hẹn."
-    }
-  ];
-
   return (
     <div className="w-full bg-slate-50 min-h-screen font-body overflow-x-hidden">
       
-      {/* 1. HERO SECTION WITH PREMIUM DESIGN */}
-      <section className="relative overflow-hidden py-24 px-6 lg:py-36 bg-white border-b border-slate-100">
-        {/* Modern clean gradient background mesh */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-sky-50/20 to-slate-50 -z-10" />
-        
-        {/* Animated Background blur ornaments */}
-        <div className="absolute -top-12 -left-12 w-96 h-96 bg-sky-200/30 rounded-full blur-3xl -z-10 animate-pulse" />
-        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-indigo-100/30 rounded-full blur-3xl -z-10 animate-pulse delay-700" />
-        <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-blue-100/20 rounded-full blur-3xl -z-10 animate-pulse delay-1000" />
-        
-        <div className="max-w-4xl mx-auto text-center z-10 relative">
-          
-          <div className="inline-flex items-center gap-2 bg-sky-50/80 border border-sky-100/80 px-4 py-1.5 rounded-full mb-8 shadow-sm backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 text-sky-500 animate-spin-slow" />
-            <span className="text-xs font-bold text-sky-700 tracking-wider uppercase font-heading">
-              CÔNG NGHỆ RỬA XE KHÔNG CHẠM &amp; CHĂM SÓC CHUYÊN SÂU
-            </span>
-          </div>
+      {/* 1. HERO SECTION */}
+      <HeroSection onStartBooking={onStartBooking} />
 
-          <h1 className="text-5xl md:text-6xl font-extrabold font-heading tracking-tighter text-slate-900 leading-[1.15] mb-6">
-            Smart Automated<br />
-            <span className="bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Car Wash
-            </span>
-          </h1>
-          
-          <p className="text-base md:text-lg text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed font-body">
-            AutoWash Pro tích hợp công nghệ nhận diện biển số tự động (LPR), lên lịch hẹn ưu tiên thông minh theo thứ hạng thành viên và tích lũy điểm đổi quà tự động. Mang lại trải nghiệm chăm sóc xe hoàn mỹ cho bạn.
-          </p>
+      {/* 2. STATS BAR */}
+      <StatsSection />
 
-          <div className="flex justify-center items-center">
-            <Button 
-              size="lg"
-              className="w-full sm:w-auto shadow-xl shadow-sky-600/20 font-bold text-base px-10 py-4 h-13 rounded-xl bg-gradient-to-r from-sky-600 via-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 hover:shadow-sky-600/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
-              onClick={onStartBooking}
-            >
-              <Car className="w-5 h-5 mr-2.5 animate-bounce-slow" /> Đặt Lịch Rửa Xe Ngay
-            </Button>
-          </div>
-        </div>
-
-        {/* Floating background details representing bubbles */}
-        <div className="absolute top-1/4 left-1/12 text-3xl opacity-10 select-none animate-bounce-slow">💧</div>
-        <div className="absolute bottom-1/4 right-1/12 text-4xl opacity-15 select-none animate-pulse">🫧</div>
-        <div className="absolute top-1/2 right-1/15 text-2xl opacity-15 select-none">✨</div>
-      </section>
-
-      {/* 2. STATS BAR (SHADCN CARD) */}
-      <section className="max-w-6xl mx-auto px-6 -mt-10 relative z-20">
-        <Card className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-8 text-center bg-white shadow-xl shadow-slate-100 border-slate-100 rounded-2xl">
-          <div className="flex flex-col items-center p-4">
-            <div className="p-3 bg-sky-50 rounded-xl mb-3 text-sky-600">
-              <Award className="w-6 h-6" />
-            </div>
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-heading">25.000+</span>
-            <span className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider font-heading">Xe được chăm sóc</span>
-          </div>
-
-          <div className="flex flex-col items-center p-4 border-t sm:border-t-0 sm:border-l border-slate-100">
-            <div className="p-3 bg-amber-50 rounded-xl mb-3 text-amber-600">
-              <Star className="w-6 h-6 fill-amber-500/20" />
-            </div>
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-heading">4.9 / 5.0</span>
-            <span className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider font-heading">Đánh giá hài lòng</span>
-          </div>
-
-          <div className="flex flex-col items-center p-4 border-t lg:border-t-0 lg:border-l border-slate-100">
-            <div className="p-3 bg-indigo-50 rounded-xl mb-3 text-indigo-600">
-              <Clock className="w-6 h-6" />
-            </div>
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-heading">15 Phút</span>
-            <span className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider font-heading">Thời gian rửa vỏ nhanh</span>
-          </div>
-
-          <div className="flex flex-col items-center p-4 border-t sm:border-t-0 sm:border-l border-slate-100">
-            <div className="p-3 bg-emerald-50 rounded-xl mb-3 text-emerald-600">
-              <Shield className="w-6 h-6" />
-            </div>
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight font-heading">100%</span>
-            <span className="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider font-heading">An toàn cho nước sơn</span>
-          </div>
-        </Card>
-      </section>
-
-      {/* 3. SHOWCASE DETAILED SERVICES */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-extrabold font-heading tracking-tight text-slate-900 mb-4">
-            Quy Trình Chăm Sóc Xe Chuyên Sâu
-          </h2>
-          <p className="text-slate-500 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-            Chúng tôi sử dụng 100% dung dịch tẩy rửa sinh học an toàn cho bề mặt sơn, kết hợp vòi phun áp lực cao góc rộng và quy trình làm sạch nội thất khép kín.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Card 1: Express */}
-          <Card className="flex flex-col h-full bg-white border border-slate-100 shadow-sm relative overflow-hidden group">
-            <CardHeader className="relative">
-              <div className="flex justify-between items-start">
-                <Badge variant="secondary" className="bg-sky-50 text-sky-700 font-heading">TIÊU CHUẨN</Badge>
-                <div className="p-2.5 bg-sky-50 text-sky-600 rounded-lg">
-                  <ShowerHead className="w-5 h-5" />
-                </div>
-              </div>
-              <CardTitle className="mt-4 text-xl">Rửa Xe Express</CardTitle>
-              <CardDescription className="min-h-[40px] mt-1.5">
-                Làm sạch bụi bẩn vỏ ngoài xe nhanh chóng, phù hợp cho khách hàng bận rộn.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <ul className="space-y-3 text-sm text-slate-600">
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Phun nước áp lực cao rã bùn đất</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Rửa bọt tuyết chuyên dụng</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Xịt rửa gầm xe cơ bản</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Lau khô bằng khăn Microfiber</span>
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter className="border-t border-slate-50 bg-slate-50/50 p-6 flex justify-between items-center mt-auto">
-              <span className="text-xs font-semibold text-slate-400 uppercase font-heading">GIÁ VÉ GỐC</span>
-              <span className="text-2xl font-black text-sky-600 font-heading">100.000 đ</span>
-            </CardFooter>
-          </Card>
-
-          {/* Card 2: Deluxe */}
-          <Card className="flex flex-col h-full bg-white border-2 border-sky-500 shadow-xl shadow-sky-600/5 relative overflow-hidden scale-105 z-10">
-            <div className="absolute top-0 right-0 left-0 bg-sky-500 text-white text-center py-1 text-[10px] font-bold uppercase tracking-wider font-heading">
-              ĐƯỢC LỰA CHỌN NHIỀU NHẤT
-            </div>
-            <CardHeader className="pt-8">
-              <div className="flex justify-between items-start">
-                <Badge variant="primary" className="bg-sky-500 text-white font-heading">PHỔ BIẾN</Badge>
-                <div className="p-2.5 bg-sky-50 text-sky-600 rounded-lg">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-              </div>
-              <CardTitle className="mt-4 text-xl text-sky-600">Rửa Xe Deluxe</CardTitle>
-              <CardDescription className="min-h-[40px] mt-1.5">
-                Chăm sóc toàn diện từ ngoài vào trong, duy trì độ sáng bóng cho xế cưng.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <ul className="space-y-3 text-sm text-slate-700 font-medium">
-                <li className="flex items-start gap-2.5 text-slate-500">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Bao gồm tất cả dịch vụ gói Express</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Hút bụi thảm và vệ sinh nội thất</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Vệ sinh khe cửa, kính lái chuyên sâu</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Dưỡng bóng lốp bảo vệ cao su</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-indigo-600">
-                  <Sparkles className="w-4.5 h-4.5 text-indigo-500 shrink-0 mt-0.5" />
-                  <span>Khử mùi ozone khoang cabin VIP</span>
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter className="border-t border-sky-50 bg-sky-50/30 p-6 flex justify-between items-center mt-auto">
-              <span className="text-xs font-semibold text-sky-700 uppercase font-heading">GIÁ VÉ GỐC</span>
-              <span className="text-2xl font-black text-sky-600 font-heading">200.000 đ</span>
-            </CardFooter>
-          </Card>
-
-          {/* Card 3: Premium */}
-          <Card className="flex flex-col h-full bg-white border border-slate-100 shadow-sm relative overflow-hidden">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 font-heading">VIP SPECIAL</Badge>
-                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <Gem className="w-5 h-5" />
-                </div>
-              </div>
-              <CardTitle className="mt-4 text-xl">Premium Ultimate</CardTitle>
-              <CardDescription className="min-h-[40px] mt-1.5">
-                Gói dịch vụ cao cấp nhất, kết hợp bảo vệ nước sơn và làm sạch khoang máy.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <ul className="space-y-3 text-sm text-slate-600">
-                <li className="flex items-start gap-2.5 text-slate-400">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Bao gồm tất cả dịch vụ gói Deluxe</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Tẩy ố lazang và làm sạch sâu phanh đĩa</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Xịt gầm áp lực cao loại bỏ muối mặn</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-indigo-600">
-                  <Gem className="w-4.5 h-4.5 text-indigo-500 shrink-0 mt-0.5" />
-                  <span>Phủ nano bảo vệ bề mặt sơn xe</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Check className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Dưỡng nhựa cao cấp khoang động cơ</span>
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter className="border-t border-slate-50 bg-slate-50/50 p-6 flex justify-between items-center mt-auto">
-              <span className="text-xs font-semibold text-slate-400 uppercase font-heading">GIÁ VÉ GỐC</span>
-              <span className="text-2xl font-black text-sky-600 font-heading">400.000 đ</span>
-            </CardFooter>
-          </Card>
-        </div>
-      </section>
+      {/* 3. Quy Trình Chăm Sóc Xe Chuyên Sâu */}
+      <ServicesSection />
 
       {/* 4. THE 5-STEP CUSTOMER JOURNEY */}
       <section className="bg-slate-100/50 py-24 px-6 border-y border-slate-200/50">
@@ -507,49 +259,11 @@ export default function Homepage({ onStartBooking, onStartAdmin }) {
       </section>
 
       {/* 6. INTERACTIVE FAQ SECTION */}
-      <section className="max-w-4xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <div className="inline-flex p-3 bg-sky-50 rounded-xl mb-4 text-sky-600">
-            <HelpCircle className="w-6 h-6" />
-          </div>
-          <h2 className="text-3xl font-extrabold font-heading tracking-tight text-slate-900 mb-4">
-            Giải Đáp Thắc Mắc Thường Gặp
-          </h2>
-          <p className="text-slate-500 text-sm md:text-base max-w-lg mx-auto">
-            Thông tin chi tiết hỗ trợ bạn hiểu rõ hơn về quy trình vận hành và ưu đãi thành viên.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {faqData.map((item, index) => {
-            const isOpen = activeFaq === index;
-            return (
-              <Card 
-                key={index} 
-                className={`cursor-pointer transition-all duration-200 border border-slate-200 bg-white rounded-xl overflow-hidden ${isOpen ? 'ring-2 ring-sky-500/20 border-sky-500 shadow-sm' : 'hover:border-slate-300'}`}
-                onClick={() => toggleFaq(index)}
-              >
-                <div className="flex justify-between items-center p-5 select-none">
-                  <span className={`font-bold text-sm md:text-base font-heading ${isOpen ? 'text-sky-600' : 'text-slate-800'}`}>
-                    {item.q}
-                  </span>
-                  <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-sky-500' : ''}`} />
-                </div>
-                {isOpen && (
-                  <div className="px-5 pb-5 pt-3 border-t border-slate-100 text-slate-500 text-xs md:text-sm leading-relaxed font-body">
-                    {item.a}
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      </section>
+      <FaqSection />
 
       {/* 7. CUSTOM CALL TO ACTION */}
       <section className="max-w-6xl mx-auto px-6 pb-24 text-center">
         <Card className="p-12 md:p-20 bg-gradient-to-r from-sky-50 to-indigo-50/50 border-slate-200/50 rounded-3xl relative overflow-hidden shadow-lg">
-          {/* Bubble decorations */}
           <div className="absolute -bottom-10 -right-10 text-9xl opacity-5 select-none rotate-12">🚗</div>
           <div className="absolute top-10 left-10 text-4xl opacity-5 select-none">🫧</div>
           
