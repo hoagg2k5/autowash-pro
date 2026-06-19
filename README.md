@@ -4,7 +4,7 @@ AutoWash Pro là ứng dụng quản lý dịch vụ chăm sóc xe ô tô thông
 
 ---
 
-## 🌟 Tính Năng Nổi Bật (Ăn Điểm Giáo Viên)
+## 🌟 Tính Năng Nổi Bật
 
 1. **Hệ Thống Phân Hạng Hội Viên (Loyalty Tiers) Tự Động**:
    - Hệ thống tự động phân loại khách hàng dựa trên tổng chi tiêu thành các hạng: **Member**, **Silver**, **Gold**, và **Platinum**.
@@ -33,6 +33,7 @@ AutoWash Pro là ứng dụng quản lý dịch vụ chăm sóc xe ô tô thông
 ## 🛠️ Công Nghệ Sử Dụng
 
 ### Backend
+
 - **Node.js** & **Express.js**: Xây dựng Restful API và quản lý logic nghiệp vụ.
 - **MongoDB Atlas** (Mongoose ODM): Cơ sở dữ liệu đám mây lưu trữ thông tin có cấu trúc.
 - **Socket.io**: Xử lý luồng dữ liệu thời gian thực.
@@ -40,6 +41,7 @@ AutoWash Pro là ứng dụng quản lý dịch vụ chăm sóc xe ô tô thông
 - **Bcryptjs & JWT**: Bảo mật xác thực tài khoản và phân quyền người dùng (Admin, Staff, Customer).
 
 ### Frontend
+
 - **React 19** (Vite build tool): Thư viện xây dựng giao diện người dùng SPA nhanh chóng.
 - **Tailwind CSS**: Thiết kế giao diện responsive và tùy biến giao diện premium.
 - **Lucide React**: Bộ icon vector chất lượng cao đồng bộ.
@@ -81,6 +83,7 @@ AutoWash Pro là ứng dụng quản lý dịch vụ chăm sóc xe ô tô thông
 ### 1. Chuẩn Bị File Cấu Hình Môi Trường (.env)
 
 Tạo tệp `.env` tại thư mục `/backend` với các nội dung sau:
+
 ```env
 PORT=5000
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxx.mongodb.net/autowash
@@ -94,28 +97,33 @@ EMAIL_PASS=your-gmail-app-password
 ### 2. Cài Đặt & Chạy Backend
 
 Di chuyển vào thư mục backend và chạy các lệnh:
+
 ```bash
 cd backend
 npm install
 npm start
 ```
-*Server mặc định chạy tại: `http://localhost:5000`*
+
+_Server mặc định chạy tại: `http://localhost:5000`_
 
 ### 3. Cài Đặt & Chạy Frontend
 
 Mở một terminal mới, di chuyển vào thư mục frontend và chạy các lệnh:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-*Ứng dụng React chạy tại: `http://localhost:5173`*
+
+_Ứng dụng React chạy tại: `http://localhost:5173`_
 
 ---
 
 ## 📈 Cơ Sở Dữ Liệu & Thực Thể (Database Schema)
 
 Dự án thiết kế mô hình dữ liệu quan hệ trên MongoDB gồm các bảng:
+
 - **User**: Lưu trữ thông tin tài khoản người dùng, phân quyền (role), tổng chi tiêu (totalSpent), số dư điểm thưởng (pointsBalance), và hạng hội viên (loyaltyTier).
 - **Vehicle**: Xe ô tô liên kết của người dùng (Biển số xe làm khóa chính định danh, thương hiệu, dòng xe, màu sắc).
 - **Booking**: Lưu thông tin lịch đặt rửa xe, giá vé gốc, số tiền thực trả, số điểm tích lũy, số điểm đã tiêu, trạng thái rửa xe (Pending, Confirmed, In Progress, Completed, Cancelled).
