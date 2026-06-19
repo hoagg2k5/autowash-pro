@@ -16,9 +16,13 @@ export default function AdminSimulation() {
     setSimLoading(true);
     setSimResults(null);
     try {
+      const token = sessionStorage.getItem('autowash_token');
       const response = await fetch(`${API_BASE_URL}/api/admin/simulate-data`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ count: simCount })
       });
       
@@ -66,7 +70,7 @@ export default function AdminSimulation() {
             <span>✅ {simResults.message} Đã sẵn sàng xuất bản ra file.</span>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <a 
-                href={`${API_BASE_URL}/api/admin/export-data?format=csv`} 
+                href={`${API_BASE_URL}/api/admin/export-data?format=csv&token=${sessionStorage.getItem('autowash_token')}`} 
                 target="_blank" 
                 rel="noreferrer"
                 className="btn btn-primary" 
@@ -75,7 +79,7 @@ export default function AdminSimulation() {
                 📥 Tải Xuống CSV
               </a>
               <a 
-                href={`${API_BASE_URL}/api/admin/export-data?format=json`} 
+                href={`${API_BASE_URL}/api/admin/export-data?format=json&token=${sessionStorage.getItem('autowash_token')}`} 
                 target="_blank" 
                 rel="noreferrer"
                 className="btn btn-secondary" 
