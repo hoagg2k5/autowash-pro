@@ -51,17 +51,21 @@ export default function Homepage({ onStartBooking, onStartAdmin }) {
   ];
 
   return (
-    <div className="w-full bg-slate-50 min-height-screen font-body overflow-x-hidden">
+    <div className="w-full bg-slate-50 min-h-screen font-body overflow-x-hidden">
       
       {/* 1. HERO SECTION WITH PREMIUM DESIGN */}
-      <section className="relative overflow-hidden py-20 px-6 lg:py-32 bg-gradient-to-b from-sky-50/60 via-white to-transparent">
-        {/* Animated Background blur ornaments */}
-        <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-sky-200/20 rounded-full blur-3xl -z-10 animate-pulse" />
-        <div className="absolute top-1/2 right-1/10 w-80 h-80 bg-indigo-200/20 rounded-full blur-3xl -z-10 animate-pulse delay-700" />
+      <section className="relative overflow-hidden py-24 px-6 lg:py-36 bg-white border-b border-slate-100">
+        {/* Modern clean gradient background mesh */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-sky-50/20 to-slate-50 -z-10" />
         
-        <div className="max-w-5xl mx-auto text-center z-10 relative">
+        {/* Animated Background blur ornaments */}
+        <div className="absolute -top-12 -left-12 w-96 h-96 bg-sky-200/30 rounded-full blur-3xl -z-10 animate-pulse" />
+        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-indigo-100/30 rounded-full blur-3xl -z-10 animate-pulse delay-700" />
+        <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-blue-100/20 rounded-full blur-3xl -z-10 animate-pulse delay-1000" />
+        
+        <div className="max-w-4xl mx-auto text-center z-10 relative">
           
-          <div className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 px-4 py-1.5 rounded-full mb-8 shadow-sm">
+          <div className="inline-flex items-center gap-2 bg-sky-50/80 border border-sky-100/80 px-4 py-1.5 rounded-full mb-8 shadow-sm backdrop-blur-sm">
             <Sparkles className="w-4 h-4 text-sky-500 animate-spin-slow" />
             <span className="text-xs font-bold text-sky-700 tracking-wider uppercase font-heading">
               CÔNG NGHỆ RỬA XE KHÔNG CHẠM &amp; CHĂM SÓC CHUYÊN SÂU
@@ -69,13 +73,13 @@ export default function Homepage({ onStartBooking, onStartAdmin }) {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-extrabold font-heading tracking-tighter text-slate-900 leading-[1.15] mb-6">
-            Giải Pháp Rửa Xe Ô Tô<br />
+            Smart Automated<br />
             <span className="bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Thông Minh Thế Hệ Mới
+              Car Wash
             </span>
           </h1>
           
-          <p className="text-lg md:text-xl text-slate-500 max-w-3xl mx-auto mb-10 leading-relaxed font-body">
+          <p className="text-base md:text-lg text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed font-body">
             AutoWash Pro tích hợp công nghệ nhận diện biển số tự động (LPR), lên lịch hẹn ưu tiên thông minh theo thứ hạng thành viên và tích lũy điểm đổi quà tự động. Mang lại trải nghiệm chăm sóc xe hoàn mỹ cho bạn.
           </p>
 
