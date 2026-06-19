@@ -246,7 +246,7 @@ export default function AdminDashboard({ user, onLogout }) {
           👥 Khách Hàng Thân Thiết ({customers.length})
         </span>
         <span className={`tab ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')}>
-          🧼 Gói Rửa Xe CRUD
+          🧼 Gói Rửa Xe
         </span>
         {!user?.branch && (
           <span className={`tab ${activeTab === 'staffs' ? 'active' : ''}`} onClick={() => setActiveTab('staffs')}>
