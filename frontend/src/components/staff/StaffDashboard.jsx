@@ -605,7 +605,7 @@ export default function StaffDashboard({ user, onLogout }) {
 
   // Timeline & Quick Book states
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'timeline'
-  const [timelineDate, setTimelineDate] = useState(new Date().toISOString().split('T')[0]);
+  const [timelineDate, setTimelineDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [showQuickBook, setShowQuickBook] = useState(false);
   const [quickBookSlot, setQuickBookSlot] = useState('');
   const [quickBookBay, setQuickBookBay] = useState('');

@@ -92,8 +92,8 @@ export const createPromotion = async (req, res) => {
       description: description || '',
       discountPercentage: Number(discountPercentage),
       targetTiers,
-      startDate: startDate || new Date().toISOString().split('T')[0],
-      endDate: endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      startDate: startDate || new Date().toLocaleDateString('sv-SE'),
+      endDate: endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE'),
       isActive: true
     });
 

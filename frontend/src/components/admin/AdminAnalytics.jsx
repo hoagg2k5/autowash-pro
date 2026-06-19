@@ -30,7 +30,7 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      list.push(d.toISOString().split('T')[0]);
+      list.push(d.toLocaleDateString('sv-SE'));
     }
     return list;
   };
