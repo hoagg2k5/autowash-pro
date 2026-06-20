@@ -40,7 +40,7 @@
   --status-cancelled: #dc2626;
 
   /* Typography */
-  --font-heading: 'Outfit', sans-serif;
+  --font-heading: 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-main: var(--font-body);
 }
