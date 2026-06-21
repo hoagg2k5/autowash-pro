@@ -287,7 +287,7 @@ export const sendOtpEndpoint = async (req, res) => {
     // Lưu vào DB
     await Otp.findOneAndUpdate(
       { email, type: resolvedType },
-      { otp, createdAt: new Date() },
+      { $set: { otp, createdAt: new Date() } },
       { upsert: true, returnDocument: 'after' }
     );
 
