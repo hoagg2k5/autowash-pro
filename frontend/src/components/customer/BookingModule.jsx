@@ -347,6 +347,36 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         setError("Vui lòng chọn khung giờ hẹn.");
         return;
       }
+
+      // Check if selected time slot has passed
+      let isSlotPassed = false;
+      try {
+        const startHourStr = selectedSlot.split("-")[0].trim();
+        const [slotHour, slotMinute] = startHourStr.split(":").map(Number);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
+        if (bookingDate < todayStr) {
+          isSlotPassed = true;
+        } else if (bookingDate === todayStr) {
+          const currentHour = today.getHours();
+          const currentMin = today.getMinutes();
+          if (slotHour < currentHour || (slotHour === currentHour && slotMinute <= currentMin)) {
+            isSlotPassed = true;
+          }
+        }
+      } catch (err) {
+        console.error("Error validating slot in nextStep:", err);
+      }
+
+      if (isSlotPassed) {
+        setError("Khung giờ hẹn đã chọn đã trôi qua. Vui lòng chọn khung giờ khác.");
+        return;
+      }
+
       if (bays.length > 0 && bays.every(b => b.occupied)) {
         setError("Tất cả các khoang rửa ở khung giờ này đã được đặt hết. Vui lòng chọn giờ khác.");
         return;

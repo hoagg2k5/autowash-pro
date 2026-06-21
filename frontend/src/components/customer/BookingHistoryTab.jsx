@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 
-export default function BookingHistoryTab({ bookings, onCancelBooking, recentlyUpdatedBookingId, onRefresh }) {
+export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBooking, recentlyUpdatedBookingId, onRefresh }) {
   const [feedbackBooking, setFeedbackBooking] = useState(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
@@ -229,9 +229,32 @@ export default function BookingHistoryTab({ bookings, onCancelBooking, recentlyU
                     <td>{b.servicePackage}</td>
                     <td style={{ fontWeight: 700 }}>{formatVnd(b.totalPaid)}</td>
                     <td>
-                      {b.pointsEarned > 0 && <span style={{ color: 'var(--status-completed)', fontWeight: 600 }}>+{b.pointsEarned}đ </span>}
-                      {b.pointsRedeemed > 0 && <span style={{ color: 'var(--status-cancelled)', fontWeight: 600 }}>-{b.pointsRedeemed}đ</span>}
-                      {b.pointsEarned === 0 && b.pointsRedeemed === 0 && <span style={{ color: 'var(--text-muted)' }}>0đ</span>}
+                      {b.status === 'Cancelled' ? (
+                        (() => {
+                          const penalty = pointsHistory?.find(
+                            ph => ph.bookingId === b.id && 
+                            ph.type === 'Redeemed' && 
+                            ph.reason.toLowerCase().includes('phạt')
+                          );
+                          if (penalty) {
+                            return (
+                              <span 
+                                style={{ color: 'var(--status-cancelled)', fontWeight: 600 }}
+                                title={penalty.reason}
+                              >
+                                -{penalty.points}đ
+                              </span>
+                            );
+                          }
+                          return <span style={{ color: 'var(--text-muted)' }}>0đ</span>;
+                        })()
+                      ) : (
+                        <>
+                          {b.pointsEarned > 0 && <span style={{ color: 'var(--status-completed)', fontWeight: 600 }}>+{b.pointsEarned}đ </span>}
+                          {b.pointsRedeemed > 0 && <span style={{ color: 'var(--status-cancelled)', fontWeight: 600 }}>-{b.pointsRedeemed}đ</span>}
+                          {b.pointsEarned === 0 && b.pointsRedeemed === 0 && <span style={{ color: 'var(--text-muted)' }}>0đ</span>}
+                        </>
+                      )}
                     </td>
                     <td>
                       <span className={`status-badge ${getStatusClass(b.status)}`}>

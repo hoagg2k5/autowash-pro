@@ -143,6 +143,30 @@ export async function createBooking(userId, bookingData) {
     throw new Error(`Hạng ${userTier} chỉ được đặt lịch trước tối đa ${maxDays} ngày.`);
   }
 
+  // Kiểm tra khung giờ đặt lịch đã qua chưa (nếu đặt cho ngày hôm nay)
+  const now = new Date();
+  const nowYear = now.getFullYear();
+  const nowMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const nowDay = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${nowYear}-${nowMonth}-${nowDay}`;
+
+  if (bookingData.bookingDate === todayStr) {
+    try {
+      const startHourStr = bookingData.timeSlot.split("-")[0].trim();
+      const [slotHour, slotMinute] = startHourStr.split(":").map(Number);
+      const currentHour = now.getHours();
+      const currentMin = now.getMinutes();
+      if (slotHour < currentHour || (slotHour === currentHour && slotMinute <= currentMin)) {
+        throw new Error("Khung giờ đặt lịch này đã trôi qua. Vui lòng chọn khung giờ khác.");
+      }
+    } catch (err) {
+      if (err.message.includes("đã trôi qua")) {
+        throw err;
+      }
+      console.error("Lỗi khi kiểm tra khung giờ đã qua ở backend:", err);
+    }
+  }
+
   // Kiểm tra khoang rửa trùng giờ tại chi nhánh
   const targetBranch = bookingData.branch || "AutoWash Pro - Quận 1";
   const activeBookings = await Booking.find({

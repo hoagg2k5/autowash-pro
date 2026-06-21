@@ -545,7 +545,11 @@ export const getBookingDetail = async (req, res) => {
 
 export const listActiveVouchers = async (req, res) => {
   try {
-    const { loyaltyTier } = req.user;
+    const user = await User.findOne({ id: req.user.id });
+    if (!user) {
+      return res.status(404).json({ error: "Không tìm thấy người dùng." });
+    }
+    const loyaltyTier = user.loyaltyTier || 'Member';
     const today = new Date().toLocaleDateString('sv-SE');
     
     const vouchers = await Voucher.find({
