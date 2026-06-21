@@ -1,5 +1,32 @@
 import React from 'react';
 
+const isTimeSlotPassed = (slot, dateStr) => {
+  if (!dateStr) return false;
+  try {
+    const startHourStr = slot.split("-")[0].trim();
+    const [slotHour, slotMinute] = startHourStr.split(":").map(Number);
+    
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    
+    if (dateStr < todayStr) {
+      return true;
+    } else if (dateStr === todayStr) {
+      const currentHour = today.getHours();
+      const currentMin = today.getMinutes();
+      if (slotHour < currentHour || (slotHour === currentHour && slotMinute <= currentMin)) {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.error("Error checking passed slot:", err);
+  }
+  return false;
+};
+
 export default function BookingStep2({
   dbUser,
   selectedBranch,
@@ -19,6 +46,13 @@ export default function BookingStep2({
   prevStep,
   nextStep
 }) {
+  const handleDateSelect = (dateStr) => {
+    setBookingDate(dateStr);
+    if (selectedSlot && isTimeSlotPassed(selectedSlot, dateStr)) {
+      setSelectedSlot('');
+    }
+  };
+
   return (
     <div>
       {/* Branch Selection */}
@@ -39,7 +73,7 @@ export default function BookingStep2({
       {/* Visual Calendar Selector */}
       <div className="form-group" style={{ marginTop: '1.5rem' }}>
         <label>Chọn Ngày Rửa Xe (Khung lịch đặt hạng {dbUser?.loyaltyTier}) *</label>
-        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.75rem', marginTop: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
           {calendarDays.map((d, index) => {
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -52,7 +86,7 @@ export default function BookingStep2({
               <button
                 key={index}
                 type="button"
-                onClick={() => setBookingDate(dateStr)}
+                onClick={() => handleDateSelect(dateStr)}
                 style={{
                   flex: '0 0 75px',
                   height: '80px',
@@ -95,11 +129,16 @@ export default function BookingStep2({
         <div className="time-slots-container" style={{ marginTop: '0.5rem' }}>
           {TIME_SLOTS.map(slot => {
             const isSelected = selectedSlot === slot;
+            const isPassed = isTimeSlotPassed(slot, bookingDate);
             return (
               <div
                 key={slot}
-                className={`time-slot-option ${isSelected ? 'selected' : ''}`}
-                onClick={() => setSelectedSlot(slot)}
+                className={`time-slot-option ${isSelected ? 'selected' : ''} ${isPassed ? 'disabled' : ''}`}
+                onClick={() => {
+                  if (!isPassed) {
+                    setSelectedSlot(slot);
+                  }
+                }}
               >
                 {slot}
               </div>

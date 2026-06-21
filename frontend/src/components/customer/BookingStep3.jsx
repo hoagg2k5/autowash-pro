@@ -98,7 +98,7 @@ export default function BookingStep3({
         ) : availableVouchers.length === 0 ? (
           <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0 }}>Không có voucher nào khả dụng cho bạn lúc này.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '180px', overflowY: 'auto', marginBottom: '1rem', paddingRight: '0.25rem' }}>
             {availableVouchers.map(v => {
               const isApplied = promoCode === v.code;
               
@@ -111,17 +111,23 @@ export default function BookingStep3({
               return (
                 <div 
                   key={v.code}
-                  type="button"
                   onClick={() => {
                     if (!meetsMinSpent) {
                       return;
                     }
-                    applyVoucherCode(v.code);
+                    if (isApplied) {
+                      setPromoCode('');
+                      applyVoucherCode('');
+                    } else {
+                      setPromoCode(v.code);
+                      applyVoucherCode(v.code);
+                    }
                   }}
                   style={{
-                    padding: '0.75rem',
-                    borderRadius: '8px',
-                    border: `1.5px solid ${isApplied ? '#10b981' : 'var(--border-color)'}`,
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    border: `1.5px dashed ${isApplied ? '#10b981' : 'var(--border-color)'}`,
+                    borderLeft: `5px solid ${isApplied ? '#10b981' : meetsMinSpent ? 'var(--primary)' : '#ef4444'}`,
                     background: isApplied ? 'rgba(16, 185, 129, 0.05)' : meetsMinSpent ? '#ffffff' : 'var(--bg-secondary)',
                     cursor: meetsMinSpent ? 'pointer' : 'not-allowed',
                     opacity: meetsMinSpent ? 1 : 0.65,
@@ -129,6 +135,7 @@ export default function BookingStep3({
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     transition: 'all 0.2s ease',
+                    boxShadow: isApplied ? '0 0 10px rgba(16, 185, 129, 0.15)' : 'none'
                   }}
                 >
                   <div>
@@ -145,11 +152,41 @@ export default function BookingStep3({
                   
                   <div>
                     {isApplied ? (
-                      <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.8rem' }}>✓ Đã chọn</span>
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: '#10b981', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        ✓ Đang Áp Dụng
+                      </span>
                     ) : meetsMinSpent ? (
-                      <span className="text-xs" style={{ color: 'var(--primary)', fontWeight: 600 }}>Áp dụng ngay</span>
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: 'var(--primary)', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        Dùng Mã
+                      </span>
                     ) : (
-                      <span className="text-xs" style={{ color: '#ef4444', fontWeight: 500 }}>Chưa đạt HĐ tối thiểu</span>
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: '#ef4444', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        Chưa Đủ HĐ
+                      </span>
                     )}
                   </div>
                 </div>

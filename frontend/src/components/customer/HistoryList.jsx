@@ -29,6 +29,7 @@ export default function HistoryList({ bookings, pointsHistory, onCancelBooking, 
       {activeSubTab === 'bookings' && (
         <BookingHistoryTab
           bookings={bookings}
+          pointsHistory={pointsHistory}
           onCancelBooking={onCancelBooking}
           recentlyUpdatedBookingId={recentlyUpdatedBookingId}
           onRefresh={onRefresh}
