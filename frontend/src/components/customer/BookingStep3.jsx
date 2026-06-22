@@ -48,7 +48,7 @@ export default function BookingStep3({
           </div>
           <div>
             <span style={{ color: 'var(--text-muted)' }}>Khoang rửa:</span><br />
-            <strong style={{ color: 'var(--primary)' }}>{selectedBay}</strong>
+            <strong style={{ color: 'var(--primary)' }}>{selectedBay || 'Chờ xếp khoang (Nhân viên điều phối)'}</strong>
           </div>
           <div style={{ gridColumn: 'span 2' }}>
             <span style={{ color: 'var(--text-muted)' }}>Gói dịch vụ:</span><br />
@@ -57,41 +57,9 @@ export default function BookingStep3({
         </div>
       </div>
 
-      {/* Reward Redemptions */}
-      {dbUser?.pointsBalance >= 20 && (
-        <div style={{ padding: '1.25rem', background: 'rgba(2, 132, 199, 0.03)', borderRadius: '10px', border: '1px solid rgba(2, 132, 199, 0.15)', marginBottom: '1.5rem' }}>
-          <div className="flex-between">
-            <div>
-              <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem' }}>🎁 Đổi Điểm Thưởng Nhận Khấu Trừ</h4>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Tỷ lệ: 20 điểm = {formatVnd(25000)} giảm giá trực tiếp</p>
-            </div>
-            <span className="text-xs" style={{ fontWeight: 600 }}>Khả dụng: <strong style={{ color: 'var(--primary)' }}>{dbUser.pointsBalance}</strong> điểm</span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem' }}>
-            <input
-              type="number"
-              className="form-input"
-              min="0"
-              max={dbUser.pointsBalance}
-              step="20"
-              value={redeemPoints}
-              onChange={(e) => setRedeemPoints(Math.max(0, Math.min(dbUser.pointsBalance, parseInt(e.target.value) || 0)))}
-              placeholder="Nhập số điểm muốn đổi (bội số của 20)"
-              style={{ flex: 1 }}
-            />
-            <div style={{ whiteSpace: 'nowrap' }}>
-              <span className="text-sm" style={{ fontWeight: 700, color: 'var(--status-completed)' }}>
-                -{formatVnd(redeemPoints * 1250)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Available Vouchers Selector */}
       <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
-        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🎟️ Voucher Ưu Đãi Hạng {dbUser?.loyaltyTier}</h4>
+        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🎟️ Voucher Ưu Đãi Của Bạn</h4>
         
         {loadingVouchers ? (
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Đang tải danh sách voucher...</p>
@@ -100,7 +68,7 @@ export default function BookingStep3({
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '180px', overflowY: 'auto', marginBottom: '1rem', paddingRight: '0.25rem' }}>
             {availableVouchers.map(v => {
-              const isApplied = promoCode === v.code;
+              const isApplied = promoCode === v.voucherCode;
               
               let valText = "";
               if (v.discountVnd) valText = `Giảm ${formatVnd(v.discountVnd)}`;
@@ -110,7 +78,7 @@ export default function BookingStep3({
               
               return (
                 <div 
-                  key={v.code}
+                  key={v.voucherCode}
                   onClick={() => {
                     if (!meetsMinSpent) {
                       return;
@@ -119,8 +87,8 @@ export default function BookingStep3({
                       setPromoCode('');
                       applyVoucherCode('');
                     } else {
-                      setPromoCode(v.code);
-                      applyVoucherCode(v.code);
+                      setPromoCode(v.voucherCode);
+                      applyVoucherCode(v.voucherCode);
                     }
                   }}
                   style={{
@@ -140,7 +108,7 @@ export default function BookingStep3({
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <code style={{ fontSize: '0.9rem', color: isApplied ? '#10b981' : 'var(--primary)', fontWeight: 'bold' }}>{v.code}</code>
+                      <code style={{ fontSize: '0.9rem', color: isApplied ? '#10b981' : 'var(--primary)', fontWeight: 'bold' }}>{v.voucherCode}</code>
                       <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: isApplied ? '#10b981' : 'var(--border-color)', color: isApplied ? '#fff' : 'var(--primary)', fontWeight: 600 }}>
                         {valText}
                       </span>

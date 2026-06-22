@@ -7,6 +7,7 @@ import Promotion from './models/Promotion.js';
 import PointHistory from './models/PointHistory.js';
 import Service from './models/Service.js';
 import Voucher from './models/Voucher.js';
+import UserVoucher from './models/UserVoucher.js';
 
 // Dành cho khả năng tương thích ngược của controller
 export async function getDb() {
@@ -167,7 +168,7 @@ export async function createBooking(userId, bookingData) {
     }
   }
 
-  // Kiểm tra khoang rửa trùng giờ tại chi nhánh
+  // Kiểm tra sức chứa (Tối đa 3 đơn cho 3 khoang) tại chi nhánh trùng giờ
   const targetBranch = bookingData.branch || "AutoWash Pro - Quận 1";
   const activeBookings = await Booking.find({
     branch: targetBranch,
@@ -182,16 +183,15 @@ export async function createBooking(userId, bookingData) {
   if (bookingData.bay && BAYS.includes(bookingData.bay)) {
     const isOccupied = activeBookings.some(b => b.bay === bookingData.bay);
     if (isOccupied) {
-      throw new Error(`Khoang rửa này (${bookingData.bay}) đã có người đặt trước. Vui lòng chọn khoang khác hoặc giờ khác.`);
+      throw new Error(`Khoang rửa này (${bookingData.bay}) đã có xe khác sử dụng trong khung giờ này.`);
     }
     assignedBay = bookingData.bay;
   } else {
-    const occupiedBays = activeBookings.map(b => b.bay);
-    const availableBay = BAYS.find(bay => !occupiedBays.includes(bay));
-    if (!availableBay) {
-      throw new Error("Khung giờ này tại chi nhánh đã đầy hết tất cả các khoang rửa. Vui lòng chọn khung giờ khác.");
+    // Đơn đặt từ khách hàng (không chọn khoang), kiểm tra xem có vượt quá số khoang (3) không
+    if (activeBookings.length >= 3) {
+      throw new Error("Khung giờ này tại chi nhánh đã đầy lịch. Vui lòng chọn khung giờ khác.");
     }
-    assignedBay = availableBay;
+    assignedBay = ""; // Chờ nhân viên phân khoang điều phối
   }
 
   // Lấy giá gói dịch vụ từ database
@@ -229,36 +229,47 @@ export async function createBooking(userId, bookingData) {
   const actualDiscount = Math.max(discountApplied, bestPromoDiscount);
   let totalPaid = price - actualDiscount;
 
-  // Đổi điểm tích lũy
+  // Loại bỏ đổi điểm trực tiếp trên form đặt lịch (bắt buộc phải đổi lấy Voucher trước ở shop)
   let pointsRedeemed = 0;
   let redemptionDiscount = 0;
-  if (bookingData.redeemPoints && bookingData.redeemPoints > 0) {
-    const pointsToRedeem = Math.min(bookingData.redeemPoints, user.pointsBalance);
-    redemptionDiscount = pointsToRedeem * rules.vndPerPointRedeemed;
-    pointsRedeemed = pointsToRedeem;
-    totalPaid = Math.max(0, totalPaid - redemptionDiscount);
-  }
 
-  // Áp dụng mã Voucher thủ công
+  // Áp dụng mã Voucher đã sở hữu
   let voucherDiscount = 0;
   if (bookingData.promoCode) {
-    const voucher = await Voucher.findOne({
-      code: bookingData.promoCode.toUpperCase()
+    const codeUpper = bookingData.promoCode.toUpperCase().trim();
+    
+    // Kiểm tra xem khách hàng có sở hữu và chưa sử dụng voucher này không
+    const userVoucher = await UserVoucher.findOne({
+      userId,
+      voucherCode: codeUpper,
+      isUsed: false
     });
-    if (
-      voucher &&
-      voucher.isActive &&
-      new Date(voucher.expiryDate) >= new Date() &&
-      voucher.targetTiers.includes(userTier) &&
-      (price - actualDiscount) >= voucher.minSpent
-    ) {
-      if (voucher.discountVnd) {
-        voucherDiscount = voucher.discountVnd;
-      } else if (voucher.discountPercent) {
-        voucherDiscount = Math.floor((price - actualDiscount) * (voucher.discountPercent / 100));
-      }
-      totalPaid = Math.max(0, totalPaid - voucherDiscount);
+    if (!userVoucher) {
+      throw new Error("Bạn không sở hữu mã giảm giá này hoặc mã này đã được sử dụng.");
     }
+
+    const voucher = await Voucher.findOne({
+      code: codeUpper
+    });
+    if (!voucher || !voucher.isActive) {
+      throw new Error("Mã giảm giá này hiện không còn hoạt động.");
+    }
+
+    const todayStr = new Date().toLocaleDateString('sv-SE');
+    if (voucher.expiryDate < todayStr) {
+      throw new Error("Mã giảm giá đã hết hạn sử dụng.");
+    }
+
+    if ((price - actualDiscount) < voucher.minSpent) {
+      throw new Error(`Đơn hàng chưa đạt giá trị tối thiểu (${voucher.minSpent.toLocaleString()}đ) để sử dụng mã này.`);
+    }
+
+    if (voucher.discountVnd) {
+      voucherDiscount = voucher.discountVnd;
+    } else if (voucher.discountPercent) {
+      voucherDiscount = Math.floor((price - actualDiscount) * (voucher.discountPercent / 100));
+    }
+    totalPaid = Math.max(0, totalPaid - voucherDiscount);
   }
 
   // Tính số điểm tích lũy được từ hóa đơn thực tế
@@ -289,6 +300,16 @@ export async function createBooking(userId, bookingData) {
   });
 
   await newBooking.save();
+
+  // Đánh dấu Voucher của người dùng là đã sử dụng
+  if (bookingData.promoCode) {
+    const codeUpper = bookingData.promoCode.toUpperCase().trim();
+    await UserVoucher.updateOne(
+      { userId, voucherCode: codeUpper, isUsed: false },
+      { $set: { isUsed: true, usedAt: new Date() } }
+    );
+  }
+
   return newBooking;
 }
 
@@ -400,6 +421,15 @@ export async function cancelBooking(bookingId, reason, wasNoShow) {
   booking.status = 'Cancelled';
   booking.cancelReason = reason || '';
   await booking.save();
+
+  // Hoàn trả Voucher đã sử dụng (nếu có) để khách hàng có thể dùng lại
+  if (booking.promoCode) {
+    const codeUpper = booking.promoCode.toUpperCase().trim();
+    await UserVoucher.updateOne(
+      { userId: booking.userId, voucherCode: codeUpper },
+      { $set: { isUsed: false, usedAt: null } }
+    );
+  }
 
   // Áp dụng phạt trừ điểm cho khách hàng đối với Pending hoặc Confirmed
   if (oldStatus === 'Pending' || oldStatus === 'Confirmed') {
@@ -539,4 +569,29 @@ export async function runMonthlyReview() {
   }
 
   return updatedCount;
+}
+
+// Sắp xếp khoang rửa xe (Staff/Admin gán khoang)
+export async function assignBayToBooking(bookingId, bay) {
+  const booking = await Booking.findOne({ id: bookingId });
+  if (!booking) throw new Error("Không tìm thấy lịch đặt");
+
+  if (bay) {
+    // Kiểm tra xem khoang rửa này đã có xe khác sử dụng cùng chi nhánh, ngày, giờ chưa
+    const occupied = await Booking.findOne({
+      id: { $ne: bookingId },
+      branch: booking.branch,
+      bookingDate: booking.bookingDate,
+      timeSlot: booking.timeSlot,
+      bay: bay,
+      status: { $ne: 'Cancelled' }
+    });
+    if (occupied) {
+      throw new Error(`Khoang ${bay} đã có xe khác sử dụng trong khung giờ này.`);
+    }
+  }
+
+  booking.bay = bay || "";
+  await booking.save();
+  return booking;
 }
