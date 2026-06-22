@@ -93,6 +93,23 @@ export default function StaffDashboard({ user, onLogout }) {
     }
   };
 
+  const handleAssignBay = async (id, bay) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/assign-bay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bay })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Phân khoang rửa xe thất bại.');
+      toast.success(data.message);
+      fetchBookings(true);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+
   const handleStartWash = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/start`, { method: 'POST' });
@@ -331,6 +348,7 @@ export default function StaffDashboard({ user, onLogout }) {
             handleCompleteWash={handleCompleteWash}
             handleCancelWash={handleCancelWash}
             handleQuickBook={handleQuickBook}
+            handleAssignBay={handleAssignBay}
           />
         ) : (
           <BookingList

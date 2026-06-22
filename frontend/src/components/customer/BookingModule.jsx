@@ -190,7 +190,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
       const fetchVouchers = async () => {
         setLoadingVouchers(true);
         try {
-          const response = await fetch(`${API_BASE_URL}/api/bookings/vouchers/active`, {
+          const response = await fetch(`${API_BASE_URL}/api/bookings/vouchers/my`, {
             headers: {
               'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
             }
@@ -309,9 +309,9 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
     const baseDiscount = Math.max(perkDiscount, bestPromoDiscount);
     let tempTotal = price - baseDiscount;
 
-    // Redemption Discount
-    const ptsRedeemed = Math.min(Number(redeemPoints) || 0, dbUser.pointsBalance);
-    const redemptionDiscount = ptsRedeemed * 1250;
+    // Redemption Discount (Removed direct point redemption)
+    const ptsRedeemed = 0;
+    const redemptionDiscount = 0;
     
     // Voucher Discount
     const total = Math.max(0, tempTotal - redemptionDiscount - voucherDiscount);
@@ -381,10 +381,6 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         setError("Tất cả các khoang rửa ở khung giờ này đã được đặt hết. Vui lòng chọn giờ khác.");
         return;
       }
-      if (!selectedBay) {
-        setError("Vui lòng chọn một khoang rửa còn trống.");
-        return;
-      }
       setCurrentStep(3);
     }
   };
@@ -414,8 +410,8 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
           timeSlot: selectedSlot,
           servicePackage: selectedPackage,
           branch: selectedBranch,
-          bay: selectedBay,
-          redeemPoints: Number(redeemPoints) || 0,
+          bay: "", // Gán rỗng để phân phối sau bởi nhân viên
+          redeemPoints: 0,
           promoCode: promoCode.trim(),
           paymentMethod: paymentMethod
         })
@@ -428,7 +424,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         setCreatedBookingForPayment(data);
         toast.info("Đã khởi tạo đơn hàng. Vui lòng quét mã QR để thanh toán!");
       } else {
-        setSuccess(`Đặt lịch rửa xe thành công! Mã: ${data.id}. Hẹn gặp bạn tại ${selectedBay} lúc ${selectedSlot} ngày ${bookingDate}.`);
+        setSuccess(`Đặt lịch rửa xe thành công! Mã: ${data.id}. Hẹn gặp bạn lúc ${selectedSlot} ngày ${bookingDate}.`);
         toast.success(`Đặt lịch rửa xe thành công! Mã đơn: ${data.id}`);
         setRedeemPoints(0);
         setPromoCode('');
