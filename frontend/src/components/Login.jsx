@@ -225,12 +225,12 @@ export default function Login({ onLoginSuccess }) {
 
   return (
     <div className="glass-panel auth-card max-w-[480px] w-full mx-auto my-12 p-8 md:p-10 bg-white border border-slate-200/80 shadow-xl rounded-3xl animate-fade-in">
-      <h2 className="text-2xl font-black font-heading text-center text-slate-900 tracking-tight uppercase mb-8">
+      <h2 className="text-2xl font-bold font-heading text-center text-slate-900 tracking-tight mb-8">
         {isForgotPassword 
-          ? 'KHÔI PHỤC MẬT KHẨU' 
+          ? 'Khôi Phục Mật Khẩu' 
           : isRegister 
-            ? 'ĐĂNG KÝ THÀNH VIÊN' 
-            : 'ĐĂNG NHẬP AUTOWASH PRO'
+            ? 'Đăng Ký Thành Viên' 
+            : 'Đăng Nhập'
         }
       </h2>
 
