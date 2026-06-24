@@ -1,6 +1,7 @@
 import { 
   createBooking, 
   confirmBooking, 
+  checkInBooking,
   startWashBooking, 
   updateBookingNotes, 
   completeBooking, 
@@ -12,6 +13,8 @@ import User from '../models/User.js';
 import Vehicle from '../models/Vehicle.js';
 import LoyaltyRules from '../models/LoyaltyRules.js';
 import Voucher from '../models/Voucher.js';
+import Service from '../models/Service.js';
+import bcrypt from 'bcryptjs';
 import { sendEmail, getBookingConfirmationTemplate, getBookingStatusUpdateTemplate } from '../utils/email.js';
 
 // Tự động xác nhận các đơn đặt lịch chờ duyệt quá 30 phút
@@ -50,7 +53,10 @@ async function autoConfirmOldBookings(io) {
 async function autoCancelNoShowBookings(io) {
   try {
     const now = Date.now();
-    const activeBookings = await Booking.find({ status: { $in: ['Pending', 'Confirmed'] } });
+    const activeBookings = await Booking.find({ 
+      status: { $in: ['Pending', 'Confirmed'] },
+      bookingType: { $ne: 'Walk-in' } // Không tự động hủy đơn vãng lai
+    });
     let updated = false;
     const updatedBookings = [];
 
@@ -211,6 +217,29 @@ export const confirm = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+export const checkin = async (req, res) => {
+  try {
+    await checkBranchAccess(req, req.params.id);
+    const booking = await checkInBooking(req.params.id);
+
+    const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
+    const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
+
+    res.json({ message: "Check-in xe thành công. Đơn hàng đã được đưa vào hàng đợi.", booking });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 
 export const start = async (req, res) => {
   try {
@@ -444,6 +473,11 @@ export const validateVoucherEndpoint = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "Không tìm thấy thông tin người dùng." });
     }
+    if (voucher.pointsRequired > 0) {
+      if (!user.ownedVouchers || !user.ownedVouchers.some(id => id.toString() === voucher._id.toString())) {
+        return res.status(400).json({ error: "Bạn chưa sở hữu mã giảm giá này. Vui lòng đổi bằng điểm tích lũy trước." });
+      }
+    }
     if (!voucher.targetTiers.includes(user.loyaltyTier)) {
       return res.status(400).json({ error: `Mã này chỉ áp dụng cho các hạng thành viên: ${voucher.targetTiers.join(', ')}.` });
     }
@@ -551,11 +585,17 @@ export const listActiveVouchers = async (req, res) => {
     }
     const loyaltyTier = user.loyaltyTier || 'Member';
     const today = new Date().toLocaleDateString('sv-SE');
+    const ownedIds = user.ownedVouchers || [];
     
     const vouchers = await Voucher.find({
       isActive: true,
       expiryDate: { $gte: today },
-      targetTiers: loyaltyTier
+      targetTiers: loyaltyTier,
+      $or: [
+        { pointsRequired: { $exists: false } },
+        { pointsRequired: 0 },
+        { _id: { $in: ownedIds } }
+      ]
     });
     
     res.json(vouchers);
@@ -604,4 +644,229 @@ export const payBooking = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const assignBay = async (req, res) => {
+  try {
+    const { bookingId, bayId } = req.body;
+    if (!bookingId) {
+      return res.status(400).json({ error: "Thiếu thông tin bookingId." });
+    }
+    
+    await checkBranchAccess(req, bookingId);
+    
+    const booking = await Booking.findOne({ id: bookingId });
+    if (!booking) {
+      return res.status(404).json({ error: "Không tìm thấy lịch đặt xe này." });
+    }
+    
+    booking.bay = bayId || '';
+    booking.assignedBay = bayId || null;
+    await booking.save();
+    
+    const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
+    const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
+    
+    res.json({ message: "Gán khoang rửa xe thành công.", booking });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const createWalkInBooking = async (req, res) => {
+  try {
+    const { licensePlate, customerName, customerPhone, servicePackage, branch, timeSlot: bodyTimeSlot } = req.body;
+
+    if (!licensePlate || !servicePackage) {
+      return res.status(400).json({ error: "Biển số xe và gói dịch vụ là bắt buộc." });
+    }
+
+    const plateUpper = licensePlate.toUpperCase().trim();
+    const branchName = branch || req.user.branch || "AutoWash Pro - Quận 1";
+
+    // 1. Tìm hoặc tạo User dựa trên Số điện thoại
+    let user = null;
+    let userId = "customer-id";
+
+    if (customerPhone && customerPhone.trim() !== "") {
+      const phone = customerPhone.trim();
+      user = await User.findOne({ phone });
+      if (!user) {
+        // Tạo mật khẩu ngẫu nhiên đã được mã hóa để thỏa mãn điều kiện required trong User schema
+        const randomPassword = Math.random().toString(36).substr(2, 9);
+        const hashedPassword = bcrypt.hashSync('walkin_' + randomPassword, 10);
+
+        user = new User({
+          id: 'u-' + Math.random().toString(36).substr(2, 9),
+          fullName: customerName || "Khách vãng lai",
+          phone: phone,
+          password: hashedPassword,
+          role: 'customer',
+          loyaltyTier: 'Member',
+          pointsBalance: 0,
+          totalSpent: 0,
+          createdAt: new Date()
+        });
+        await user.save();
+      }
+      userId = user.id;
+    } else {
+      user = await User.findOne({ id: "customer-id" });
+      userId = "customer-id";
+    }
+
+    // 2. Tìm hoặc tạo xe dựa trên biển số xe cho user này
+    let vehicle = await Vehicle.findOne({ licensePlate: plateUpper });
+    if (!vehicle) {
+      vehicle = new Vehicle({
+        id: 'v-' + Math.random().toString(36).substr(2, 9),
+        userId: userId,
+        licensePlate: plateUpper,
+        brand: "Khách vãng lai",
+        model: "Vãng lai",
+        color: "Khác"
+      });
+      await vehicle.save();
+    } else {
+      if (vehicle.userId === "customer-id" && userId !== "customer-id") {
+        vehicle.userId = userId;
+        await vehicle.save();
+      }
+    }
+
+    // 3. Tạo Booking với status 'Waiting' và bay = "" (đưa thẳng vào hàng đợi)
+    const BAYS = ["Khoang 1", "Khoang 2", "Khoang 3"];
+    
+    // Lấy timeslot từ request hoặc tự động tính theo giờ hiện tại
+    const getCurrentTimeSlot = () => {
+      const hr = new Date().getHours();
+      if (hr < 9) return "08:00 - 09:00";
+      if (hr < 10) return "09:00 - 10:00";
+      if (hr < 11) return "10:00 - 11:00";
+      if (hr < 12) return "11:00 - 12:00";
+      if (hr < 14) return "13:00 - 14:00";
+      if (hr < 15) return "14:00 - 15:00";
+      if (hr < 16) return "15:00 - 16:00";
+      if (hr < 17) return "16:00 - 17:00";
+      return "17:00 - 18:00";
+    };
+    const timeSlot = bodyTimeSlot || getCurrentTimeSlot();
+    const todayStr = new Date().toLocaleDateString('sv-SE');
+
+    const activeBookings = await Booking.find({
+      branch: branchName,
+      bookingDate: todayStr,
+      timeSlot: timeSlot,
+      status: { $ne: 'Cancelled' }
+    });
+
+    if (activeBookings.length >= BAYS.length) {
+      return res.status(400).json({ error: "Khung giờ đã chọn tại chi nhánh đã đầy hết tất cả các khoang rửa." });
+    }
+
+    // Kiểm tra xe đã có lịch đặt trùng ngày và khung giờ chưa
+    const existingVehicleBooking = await Booking.findOne({
+      vehicleId: vehicle.id,
+      bookingDate: todayStr,
+      timeSlot: timeSlot,
+      status: { $ne: 'Cancelled' }
+    });
+    if (existingVehicleBooking) {
+      return res.status(400).json({ error: "Xe này đã được xếp lịch trong khung giờ đã chọn." });
+    }
+
+    // Tìm gói dịch vụ để lấy giá
+    const service = await Service.findOne({
+      $or: [{ name: servicePackage }, { id: servicePackage }]
+    });
+    if (!service) {
+      return res.status(400).json({ error: "Không tìm thấy gói rửa xe được yêu cầu." });
+    }
+
+    const price = service.price;
+    const rules = await LoyaltyRules.findOne({});
+    const tierSetting = rules ? rules.tierSettings[user ? user.loyaltyTier : 'Member'] : { pointMultiplier: 1.0 };
+    const pointsPerVndRate = rules ? rules.pointsPerVndRate : 25000;
+    const basePointsEarned = Math.floor(price / pointsPerVndRate);
+    const pointsEarned = Math.floor(basePointsEarned * (tierSetting?.pointMultiplier || 1.0));
+
+    const newBooking = new Booking({
+      id: 'b-' + Math.random().toString(36).substr(2, 9),
+      userId: userId,
+      vehicleId: vehicle.id,
+      bookingDate: todayStr,
+      timeSlot: timeSlot,
+      servicePackage: service.name,
+      branch: branchName,
+      bay: "", // Đưa thẳng vào hàng đợi
+      bookingType: 'Walk-in',
+      status: 'Waiting',
+      checkInTime: new Date(),
+      price: price,
+      discountApplied: 0,
+      pointsEarned: pointsEarned,
+      pointsRedeemed: 0,
+      totalPaid: price,
+      paymentMethod: 'Cash',
+      paymentStatus: 'Unpaid',
+      notes: 'Khách vãng lai trực tiếp tại quầy.',
+      createdAt: new Date()
+    });
+
+    await newBooking.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...newBooking.toObject(),
+        licensePlate: plateUpper
+      });
+    }
+
+    res.status(201).json({ message: "Tạo lịch vãng lai thành công. Đơn hàng đã được đưa vào hàng đợi.", booking: newBooking });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const undoCheckin = async (req, res) => {
+  try {
+    await checkBranchAccess(req, req.params.id);
+    const booking = await Booking.findOne({ id: req.params.id });
+    if (!booking) {
+      return res.status(404).json({ error: "Không tìm thấy lịch đặt xe này." });
+    }
+    if (booking.status !== 'Waiting') {
+      return res.status(400).json({ error: "Chỉ có thể hoàn tác check-in cho đơn hàng đang chờ rửa." });
+    }
+    
+    booking.status = 'Confirmed';
+    booking.checkInTime = null; // Xóa giờ check-in
+    booking.bay = ""; // Xóa khoang
+    await booking.save();
+
+    const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
+    const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
+
+    res.json({ message: "Hoàn tác check-in thành công. Đơn hàng đã quay lại trạng thái 'Đã xác nhận'.", booking });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 

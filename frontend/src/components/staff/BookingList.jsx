@@ -14,9 +14,12 @@ export default function BookingList({
   handleNotesChange,
   handleSaveNotes,
   handleConfirm,
+  handleCheckin,
   handleCancelWash,
   handleStartWash,
-  handleCompleteWash
+  handleCompleteWash,
+  handleAssignBay,
+  handleUndoCheckin
 }) {
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -26,6 +29,7 @@ export default function BookingList({
     switch (status) {
       case 'Pending': return 'status-Pending';
       case 'Confirmed': return 'status-Confirmed';
+      case 'Waiting': return 'status-Waiting';
       case 'In Progress': return 'status-In-Progress';
       case 'Completed': return 'status-Completed';
       case 'Cancelled': return 'status-Cancelled';
@@ -79,6 +83,7 @@ export default function BookingList({
             <option value="All">Tất cả trạng thái</option>
             <option value="Pending">Chờ xác nhận (Pending)</option>
             <option value="Confirmed">Đã xác nhận (Confirmed)</option>
+            <option value="Waiting">Chờ rửa (Waiting)</option>
             <option value="In Progress">Đang rửa (In Progress)</option>
             <option value="Completed">Hoàn tất (Completed)</option>
             <option value="Cancelled">Đã hủy (Cancelled)</option>
@@ -101,8 +106,9 @@ export default function BookingList({
                 padding: '1.25rem',
                 borderLeft: `5px solid ${b.status === 'Pending' ? '#f59e0b' :
                   b.status === 'Confirmed' ? 'var(--primary)' :
-                    b.status === 'In Progress' ? '#3b82f6' :
-                      b.status === 'Completed' ? '#10b981' : '#ef4444'
+                    b.status === 'Waiting' ? '#6366f1' :
+                      b.status === 'In Progress' ? '#3b82f6' :
+                        b.status === 'Completed' ? '#10b981' : '#ef4444'
                   }`,
                 background: '#ffffff',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
@@ -115,8 +121,9 @@ export default function BookingList({
                     <span className={`status-badge ${getStatusClass(b.status)}`} style={{ fontSize: '0.75rem' }}>
                       {b.status === 'Pending' ? 'Chờ xác nhận' :
                         b.status === 'Confirmed' ? 'Đã xác nhận' :
-                          b.status === 'In Progress' ? 'Đang rửa' :
-                            b.status === 'Completed' ? 'Hoàn tất' : 'Đã hủy'}
+                          b.status === 'Waiting' ? 'Chờ rửa' :
+                            b.status === 'In Progress' ? 'Đang rửa' :
+                              b.status === 'Completed' ? 'Hoàn tất' : 'Đã hủy'}
                     </span>
                     {b.status === 'Cancelled' && b.cancelReason && (
                       <span className="text-xs" style={{ color: 'var(--status-cancelled)', fontWeight: 500, fontStyle: 'italic' }}>
@@ -133,7 +140,7 @@ export default function BookingList({
 
                   <p style={{ margin: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
                     Xe: <code style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.95rem' }}>{b.licensePlate}</code>
-                    {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress')) && (
+                    {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
                       <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`}>
                         💎 Ưu Tiên {b.customerTier}
                       </span>
@@ -215,11 +222,57 @@ export default function BookingList({
                     <>
                       <button
                         className="btn btn-primary"
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', background: '#3b82f6' }}
-                        onClick={() => handleStartWash(b.id)}
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', background: '#6366f1' }}
+                        onClick={() => handleCheckin(b.id)}
                       >
-                        ⚡ Bắt Đầu Rửa
+                        ➔ Check-in
                       </button>
+                      <button
+                        className="btn btn-danger"
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                        onClick={() => handleCancelWash(b.id)}
+                      >
+                        ✕ Hủy Đặt
+                      </button>
+                    </>
+                  )}
+                  {b.status === 'Waiting' && (
+                    <>
+                      {b.bay ? (
+                        <button
+                          className="btn btn-primary"
+                          style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', background: '#3b82f6' }}
+                          onClick={() => handleStartWash(b.id)}
+                        >
+                          ⚡ Bắt Đầu Rửa
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', cursor: 'not-allowed', opacity: 0.6 }}
+                            disabled
+                            title="Vui lòng gán khoang rửa trước khi bắt đầu"
+                          >
+                            ⏳ Chờ Xếp Khoang
+                          </button>
+                          {handleUndoCheckin && (
+                            <button
+                              className="btn btn-secondary"
+                              style={{
+                                padding: '0.4rem 0.8rem',
+                                fontSize: '0.85rem',
+                                color: '#dc2626',
+                                background: 'rgba(239, 68, 68, 0.05)',
+                                border: '1px solid rgba(239, 68, 68, 0.2)'
+                              }}
+                              onClick={() => handleUndoCheckin(b.id)}
+                            >
+                              ↩ Hoàn Tác Check-in
+                            </button>
+                          )}
+                        </>
+                      )}
                       <button
                         className="btn btn-danger"
                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}

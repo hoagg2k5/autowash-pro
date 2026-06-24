@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   totalSpent: { type: Number, default: 0 },
   pointsBalance: { type: Number, default: 0 },
   pointsExpiredSoon: { type: Number, default: 0 },
+  ownedVouchers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' }],
   tierExpiryDate: { type: Date },
   branch: { type: String }, // Tên chi nhánh cho tài khoản Staff/Branch Admin
   email: { type: String, unique: true, sparse: true }, // Email liên kết (bắt buộc khi đăng ký mới)

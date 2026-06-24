@@ -44,7 +44,9 @@ export const register = async (req, res) => {
 
     // Kiểm tra số điện thoại trùng lặp
     const existingUser = await User.findOne({ phone });
-    if (existingUser) {
+    const isWalkInUpgrade = existingUser && !existingUser.email;
+
+    if (existingUser && !isWalkInUpgrade) {
       return res.status(400).json({ error: "Số điện thoại này đã được đăng ký." });
     }
 
@@ -58,7 +60,9 @@ export const register = async (req, res) => {
     const cleanedPlate = licensePlate.toUpperCase().trim();
     const existingPlate = await Vehicle.findOne({ licensePlate: cleanedPlate });
     if (existingPlate) {
-      return res.status(400).json({ error: "Biển số xe này đã tồn tại trên hệ thống." });
+      if (!isWalkInUpgrade || existingPlate.userId !== existingUser.id) {
+        return res.status(400).json({ error: "Biển số xe này đã tồn tại trên hệ thống." });
+      }
     }
 
     // Xác minh mã OTP
@@ -74,45 +78,77 @@ export const register = async (req, res) => {
     }
 
     const sessionSalt = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    // Khởi tạo tài khoản Người dùng (Mặc định vai trò 'customer')
-    const newUser = new User({
-      id: 'u-' + Math.random().toString(36).substr(2, 9),
-      phone,
-      fullName,
-      email,
-      role: 'customer',
-      password: bcrypt.hashSync(password, 10),
-      createdAt: new Date(),
-      loyaltyTier: 'Member',
-      totalSpent: 0,
-      pointsBalance: 0,
-      pointsExpiredSoon: 0,
-      tierExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      sessionSalt
-    });
-    await newUser.save();
+    let targetUser = null;
+    let targetVehicle = null;
 
-    // Khởi tạo xe liên kết
-    const newVehicle = new Vehicle({
-      id: 'v-' + Math.random().toString(36).substr(2, 9),
-      userId: newUser.id,
-      licensePlate: cleanedPlate,
-      brand: brand || 'Khác',
-      model: model || 'Khác',
-      color: color || 'Khác'
-    });
-    await newVehicle.save();
+    if (isWalkInUpgrade) {
+      // Nâng cấp tài khoản khách vãng lai thành tài khoản chính thức
+      existingUser.fullName = fullName;
+      existingUser.email = email;
+      existingUser.password = bcrypt.hashSync(password, 10);
+      existingUser.sessionSalt = sessionSalt;
+      existingUser.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      await existingUser.save();
+      targetUser = existingUser;
+
+      // Cập nhật hoặc tạo xe tương ứng
+      if (existingPlate) {
+        existingPlate.brand = brand || 'Khác';
+        existingPlate.model = model || 'Khác';
+        existingPlate.color = color || 'Khác';
+        await existingPlate.save();
+        targetVehicle = existingPlate;
+      } else {
+        targetVehicle = new Vehicle({
+          id: 'v-' + Math.random().toString(36).substr(2, 9),
+          userId: existingUser.id,
+          licensePlate: cleanedPlate,
+          brand: brand || 'Khác',
+          model: model || 'Khác',
+          color: color || 'Khác'
+        });
+        await targetVehicle.save();
+      }
+    } else {
+      // Tạo tài khoản khách hàng mới hoàn toàn
+      targetUser = new User({
+        id: 'u-' + Math.random().toString(36).substr(2, 9),
+        phone,
+        fullName,
+        email,
+        role: 'customer',
+        password: bcrypt.hashSync(password, 10),
+        createdAt: new Date(),
+        loyaltyTier: 'Member',
+        totalSpent: 0,
+        pointsBalance: 0,
+        pointsExpiredSoon: 0,
+        tierExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        sessionSalt
+      });
+      await targetUser.save();
+
+      targetVehicle = new Vehicle({
+        id: 'v-' + Math.random().toString(36).substr(2, 9),
+        userId: targetUser.id,
+        licensePlate: cleanedPlate,
+        brand: brand || 'Khác',
+        model: model || 'Khác',
+        color: color || 'Khác'
+      });
+      await targetVehicle.save();
+    }
 
     // Xóa OTP sau khi đăng ký thành công
     await Otp.deleteOne({ _id: otpRecord._id });
 
     // Sinh mã JWT Token
-    const token = jwt.sign({ id: newUser.id, role: newUser.role, branch: newUser.branch, sessionSalt }, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: targetUser.id, role: targetUser.role, branch: targetUser.branch, sessionSalt }, JWT_SECRET, { expiresIn: '24h' });
 
     res.status(201).json({ 
       message: "Đăng ký thành công", 
-      user: newUser,
-      vehicle: newVehicle,
+      user: targetUser,
+      vehicle: targetVehicle,
       token
     });
   } catch (error) {
