@@ -81,6 +81,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
       setCreatedBookingForPayment(null);
       setRedeemPoints(0);
       setPromoCode('');
+      setAppliedVoucherId(null);
       setVoucherDiscount(0);
       setVoucherError('');
       setVoucherSuccess('');
@@ -106,6 +107,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
   const [validatingVoucher, setValidatingVoucher] = useState(false);
   const [availableVouchers, setAvailableVouchers] = useState([]);
   const [loadingVouchers, setLoadingVouchers] = useState(false);
+  const [appliedVoucherId, setAppliedVoucherId] = useState(null);
 
   const [selectedBay, setSelectedBay] = useState('');
   const [bays, setBays] = useState([]);
@@ -267,6 +269,68 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
     await applyVoucherCode(promoCode);
   };
 
+  const handleVoucherSelect = (voucher) => {
+    if (!voucher) {
+      setAppliedVoucherId(null);
+      setVoucherDiscount(0);
+      setPromoCode('');
+      setVoucherSuccess('');
+      setVoucherError('');
+      return;
+    }
+
+    const pack = packages.find(p => p.name === selectedPackage);
+    const price = pack ? pack.price : 0;
+    const tier = dbUser.loyaltyTier || 'Member';
+
+    // Auto Perks
+    let perkDiscount = 0;
+    if (tier === 'Silver' && selectedPackage === 'Deluxe') {
+      perkDiscount = price * 0.10;
+    } else if (tier === 'Gold' && (selectedPackage === 'Deluxe' || selectedPackage === 'Premium Ultimate')) {
+      perkDiscount = price * 0.15;
+    } else if (tier === 'Platinum') {
+      perkDiscount = price * 0.20;
+    }
+
+    let bestPromoDiscount = 0;
+    const promos = [
+      { Tiers: ["Silver", "Gold", "Platinum"], pct: 15 },
+      { Tiers: ["Platinum"], pct: 25 }
+    ];
+    promos.forEach(p => {
+      if (p.Tiers.includes(tier)) {
+        const disc = price * (p.pct / 100);
+        if (disc > bestPromoDiscount) bestPromoDiscount = disc;
+      }
+    });
+
+    const baseDiscount = Math.max(perkDiscount, bestPromoDiscount);
+    const tempTotal = price - baseDiscount;
+
+    if (tempTotal < voucher.minSpent) {
+      setVoucherError(`Đơn hàng tối thiểu phải đạt ${formatVnd(voucher.minSpent)} để sử dụng voucher này.`);
+      setAppliedVoucherId(null);
+      setVoucherDiscount(0);
+      setPromoCode('');
+      setVoucherSuccess('');
+      return;
+    }
+
+    let discount = 0;
+    if (voucher.discountVnd) {
+      discount = voucher.discountVnd;
+    } else if (voucher.discountPercent) {
+      discount = Math.floor(tempTotal * (voucher.discountPercent / 100));
+    }
+
+    setAppliedVoucherId(voucher._id);
+    setVoucherDiscount(discount);
+    setPromoCode(voucher.code);
+    setVoucherSuccess(`Đã áp dụng Voucher ${voucher.code}: -${formatVnd(discount)}`);
+    setVoucherError('');
+  };
+
   // Sync selected vehicle
   useEffect(() => {
     if (vehicles.length > 0 && !selectedVehicle) {
@@ -377,14 +441,6 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         return;
       }
 
-      if (bays.length > 0 && bays.every(b => b.occupied)) {
-        setError("Tất cả các khoang rửa ở khung giờ này đã được đặt hết. Vui lòng chọn giờ khác.");
-        return;
-      }
-      if (!selectedBay) {
-        setError("Vui lòng chọn một khoang rửa còn trống.");
-        return;
-      }
       setCurrentStep(3);
     }
   };
@@ -414,10 +470,11 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
           timeSlot: selectedSlot,
           servicePackage: selectedPackage,
           branch: selectedBranch,
-          bay: selectedBay,
+          bay: '',
           redeemPoints: Number(redeemPoints) || 0,
           promoCode: promoCode.trim(),
-          paymentMethod: paymentMethod
+          paymentMethod: paymentMethod,
+          appliedVoucherId: appliedVoucherId
         })
       });
 
@@ -428,10 +485,11 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         setCreatedBookingForPayment(data);
         toast.info("Đã khởi tạo đơn hàng. Vui lòng quét mã QR để thanh toán!");
       } else {
-        setSuccess(`Đặt lịch rửa xe thành công! Mã: ${data.id}. Hẹn gặp bạn tại ${selectedBay} lúc ${selectedSlot} ngày ${bookingDate}.`);
+        setSuccess(`Đặt lịch rửa xe thành công! Mã: ${data.id}. Hẹn gặp bạn lúc ${selectedSlot} ngày ${bookingDate}.`);
         toast.success(`Đặt lịch rửa xe thành công! Mã đơn: ${data.id}`);
         setRedeemPoints(0);
         setPromoCode('');
+        setAppliedVoucherId(null);
         setVoucherDiscount(0);
         setVoucherError('');
         setVoucherSuccess('');
@@ -614,6 +672,8 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
           prevStep={prevStep}
           loading={loading}
           formatVnd={formatVnd}
+          appliedVoucherId={appliedVoucherId}
+          handleVoucherSelect={handleVoucherSelect}
         />
       )}
 

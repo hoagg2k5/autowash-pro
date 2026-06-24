@@ -125,6 +125,17 @@ export async function createBooking(userId, bookingData) {
     throw new Error("Xe được chọn không thuộc quyền sở hữu của bạn.");
   }
 
+  // Kiểm tra xe này đã được đặt lịch trùng ngày và khung giờ chưa
+  const existingVehicleBooking = await Booking.findOne({
+    vehicleId: bookingData.vehicleId,
+    bookingDate: bookingData.bookingDate,
+    timeSlot: bookingData.timeSlot,
+    status: { $ne: 'Cancelled' }
+  });
+  if (existingVehicleBooking) {
+    throw new Error("Xe này đã được đặt lịch vào ngày và khung giờ đã chọn.");
+  }
+
   const rules = await LoyaltyRules.findOne({});
   if (!rules) throw new Error("Không tìm thấy cấu hình quy tắc phân hạng");
 
@@ -186,12 +197,11 @@ export async function createBooking(userId, bookingData) {
     }
     assignedBay = bookingData.bay;
   } else {
-    const occupiedBays = activeBookings.map(b => b.bay);
-    const availableBay = BAYS.find(bay => !occupiedBays.includes(bay));
-    if (!availableBay) {
+    // Không tự động xếp vào khoang rửa trống, chỉ kiểm tra giới hạn số lượng đơn tối đa trong khung giờ (3 đơn/khung giờ)
+    if (activeBookings.length >= BAYS.length) {
       throw new Error("Khung giờ này tại chi nhánh đã đầy hết tất cả các khoang rửa. Vui lòng chọn khung giờ khác.");
     }
-    assignedBay = availableBay;
+    assignedBay = "";
   }
 
   // Lấy giá gói dịch vụ từ database
@@ -252,6 +262,19 @@ export async function createBooking(userId, bookingData) {
       voucher.targetTiers.includes(userTier) &&
       (price - actualDiscount) >= voucher.minSpent
     ) {
+      if (voucher.pointsRequired > 0) {
+        if (!user.ownedVouchers || !user.ownedVouchers.some(id => id.toString() === voucher._id.toString())) {
+          throw new Error("Bạn chưa sở hữu mã giảm giá này. Vui lòng đổi bằng điểm tích lũy trước.");
+        }
+        // Tiêu thụ voucher bằng cách xóa một thực thể khỏi danh sách sở hữu của người dùng
+        const index = user.ownedVouchers.findIndex(id => id.toString() === voucher._id.toString());
+        if (index !== -1) {
+          user.ownedVouchers.splice(index, 1);
+          user.markModified('ownedVouchers');
+          await user.save();
+        }
+      }
+
       if (voucher.discountVnd) {
         voucherDiscount = voucher.discountVnd;
       } else if (voucher.discountPercent) {
@@ -301,9 +324,24 @@ export async function confirmBooking(bookingId) {
   return booking;
 }
 
+export async function checkInBooking(bookingId) {
+  const booking = await Booking.findOne({ id: bookingId });
+  if (!booking) throw new Error("Không tìm thấy lịch đặt");
+  booking.status = 'Waiting';
+  booking.checkInTime = new Date();
+
+  await booking.save();
+  return booking;
+}
+
 export async function startWashBooking(bookingId) {
   const booking = await Booking.findOne({ id: bookingId });
   if (!booking) throw new Error("Không tìm thấy lịch đặt");
+  
+  if (!booking.bay) {
+    throw new Error("Xe chưa được xếp vào khoang rửa. Vui lòng xếp xe vào khoang rửa trước khi bắt đầu.");
+  }
+  
   booking.status = 'In Progress';
   await booking.save();
   return booking;

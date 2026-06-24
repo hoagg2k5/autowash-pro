@@ -7,6 +7,7 @@ const voucherSchema = new mongoose.Schema({
   minSpent: { type: Number, default: 0 },
   targetTiers: [{ type: String }],
   isActive: { type: Boolean, default: true },
+  pointsRequired: { type: Number, default: 0 },
   expiryDate: { type: String, required: true } // Định dạng YYYY-MM-DD
 });
 

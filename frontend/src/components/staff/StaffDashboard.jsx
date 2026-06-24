@@ -10,6 +10,8 @@ import StaffTimelineView from './StaffTimelineView.jsx';
 import QuickBookModal from './QuickBookModal.jsx';
 import KpiDetailModal from './KpiDetailModal.jsx';
 import BookingList from './BookingList.jsx';
+import QueueView from './QueueView.jsx';
+import CreateWalkInModal from './CreateWalkInModal.jsx';
 
 export default function StaffDashboard({ user, onLogout }) {
   const [bookings, setBookings] = useState([]);
@@ -29,6 +31,7 @@ export default function StaffDashboard({ user, onLogout }) {
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'timeline'
   const [timelineDate, setTimelineDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [showQuickBook, setShowQuickBook] = useState(false);
+  const [showWalkInModal, setShowWalkInModal] = useState(false);
   const [quickBookSlot, setQuickBookSlot] = useState('');
   const [quickBookBay, setQuickBookBay] = useState('');
 
@@ -93,6 +96,33 @@ export default function StaffDashboard({ user, onLogout }) {
     }
   };
 
+  const handleCheckin = async (id) => {
+    const isConfirmed = window.confirm("Bạn có chắc chắn muốn check-in cho khách hàng này không?");
+    if (!isConfirmed) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/checkin`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Check-in xe thất bại.');
+      toast.success(data.message);
+      fetchBookings(true);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleUndoCheckin = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/undo-checkin`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Hoàn tác check-in thất bại.');
+      toast.success(data.message);
+      fetchBookings(true);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+
   const handleStartWash = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/start`, { method: 'POST' });
@@ -133,6 +163,22 @@ export default function StaffDashboard({ user, onLogout }) {
     setQuickBookSlot(slot);
     setQuickBookBay(bay);
     setShowQuickBook(true);
+  };
+
+  const handleAssignBay = async (bookingId, bayId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/staff/assign-bay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, bayId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gán khoang rửa xe thất bại.');
+      toast.success(data.message);
+      fetchBookings(true);
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
   const handleSaveNotes = async (id) => {
@@ -191,6 +237,7 @@ export default function StaffDashboard({ user, onLogout }) {
     switch (status) {
       case 'Pending': return 0;
       case 'Confirmed': return 1;
+      case 'Waiting': return 1;
       case 'In Progress': return 1;
       case 'Cancelled': return 2;
       case 'Completed': return 3;
@@ -206,18 +253,23 @@ export default function StaffDashboard({ user, onLogout }) {
     const timeA = new Date(a.bookingDate + "T" + (a.timeSlot ? a.timeSlot.split(" ")[0] : "00:00")).getTime();
     const timeB = new Date(b.bookingDate + "T" + (b.timeSlot ? b.timeSlot.split(" ")[0] : "00:00")).getTime();
 
-    if (a.status === 'Completed' || a.status === 'Cancelled') {
-      return timeA - timeB;
-    }
     return timeB - timeA;
   });
 
   // KPI calculations
   const todayBookings = bookings.filter(b => b.bookingDate === todayStr);
   const pendingCount = todayBookings.filter(b => b.status === 'Pending').length;
+  const confirmedCount = todayBookings.filter(b => b.status === 'Confirmed').length;
+  const waitingCount = todayBookings.filter(b => b.status === 'Waiting').length;
   const inProgressCount = todayBookings.filter(b => b.status === 'In Progress').length;
   const completedCount = todayBookings.filter(b => b.status === 'Completed').length;
   const cancelledCount = todayBookings.filter(b => b.status === 'Cancelled').length;
+
+  const queueCount = bookings.filter(b => 
+    b.status === 'Waiting' && 
+    (!b.bay || b.bay.trim() === '') && 
+    b.branch === (user.branch || "AutoWash Pro - Quận 1")
+  ).length;
 
   if (loading && bookings.length === 0) return <div style={{ textAlign: 'center', padding: '4rem' }}>Đang tải danh sách công việc...</div>;
 
@@ -250,6 +302,22 @@ export default function StaffDashboard({ user, onLogout }) {
           >
             <span className="text-xs" style={{ color: 'amber' }}>Chờ xác nhận (Bấm xem chi tiết)</span>
             <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706', marginTop: '0.25rem' }}>{pendingCount}</h3>
+          </div>
+          <div
+            className="clickable-kpi-card"
+            style={{ background: 'rgba(2, 132, 199, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(2, 132, 199, 0.2)' }}
+            onClick={() => setActiveKpiDetail('Confirmed')}
+          >
+            <span className="text-xs" style={{ color: 'var(--primary)' }}>Đã xác nhận (Bấm xem chi tiết)</span>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>{confirmedCount}</h3>
+          </div>
+          <div
+            className="clickable-kpi-card"
+            style={{ background: 'rgba(99, 102, 241, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(99, 102, 241, 0.2)' }}
+            onClick={() => setActiveKpiDetail('Waiting')}
+          >
+            <span className="text-xs" style={{ color: '#6366f1' }}>Chờ rửa (Bấm xem chi tiết)</span>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#6366f1', marginTop: '0.25rem' }}>{waitingCount}</h3>
           </div>
           <div
             className="clickable-kpi-card"
@@ -296,24 +364,74 @@ export default function StaffDashboard({ user, onLogout }) {
         <div className="flex-between" style={{ marginBottom: '1.25rem', marginTop: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h3 style={{ margin: 0 }}>📋 ĐIỀU HÀNH LỊCH ĐẶT RỬA XE</h3>
           
-          {/* View Mode Toggle */}
-          <div style={{ display: 'flex', background: 'var(--bg-secondary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               type="button"
-              className={`btn btn-sm ${viewMode === 'list' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem', fontSize: '0.8rem' }}
-              onClick={() => setViewMode('list')}
+              className="btn btn-sm"
+              style={{
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 'bold',
+                padding: '0.4rem 1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
+                transition: 'all 0.2s ease',
+                fontSize: '0.8rem'
+              }}
+              onClick={() => setShowWalkInModal(true)}
             >
-              📋 Danh Sách
+              ➕ Đặt Lịch
             </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${viewMode === 'timeline' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem', fontSize: '0.8rem' }}
-              onClick={() => setViewMode('timeline')}
-            >
-              📅 Sơ Đồ Khoang (Timeline)
-            </button>
+
+            {/* View Mode Toggle */}
+            <div style={{ display: 'flex', background: 'var(--bg-secondary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${viewMode === 'list' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem', fontSize: '0.8rem' }}
+                onClick={() => setViewMode('list')}
+              >
+                📋 Danh Sách
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${viewMode === 'timeline' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem', fontSize: '0.8rem' }}
+                onClick={() => setViewMode('timeline')}
+              >
+                📅 Sơ Đồ Khoang (Timeline)
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${viewMode === 'queue' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem', fontSize: '0.8rem', position: 'relative', display: 'flex', alignItems: 'center', gap: '4px' }}
+                onClick={() => setViewMode('queue')}
+              >
+                ⏳ Hàng Đợi
+                {queueCount > 0 && (
+                  <span style={{
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    fontSize: '0.65rem',
+                    borderRadius: '50%',
+                    width: '16px',
+                    height: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    boxShadow: '0 2px 4px rgba(239, 68, 68, 0.4)'
+                  }}>
+                    {queueCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -327,10 +445,18 @@ export default function StaffDashboard({ user, onLogout }) {
             user={user}
             recentlyUpdatedBookingId={recentlyUpdatedBookingId}
             handleConfirm={handleConfirm}
+            handleCheckin={handleCheckin}
             handleStartWash={handleStartWash}
             handleCompleteWash={handleCompleteWash}
             handleCancelWash={handleCancelWash}
             handleQuickBook={handleQuickBook}
+          />
+        ) : viewMode === 'queue' ? (
+          <QueueView
+            bookings={bookings}
+            currentBranch={user.branch || "AutoWash Pro - Quận 1"}
+            handleAssignBay={handleAssignBay}
+            handleUndoCheckin={handleUndoCheckin}
           />
         ) : (
           <BookingList
@@ -347,9 +473,12 @@ export default function StaffDashboard({ user, onLogout }) {
             handleNotesChange={handleNotesChange}
             handleSaveNotes={handleSaveNotes}
             handleConfirm={handleConfirm}
+            handleCheckin={handleCheckin}
             handleCancelWash={handleCancelWash}
             handleStartWash={handleStartWash}
             handleCompleteWash={handleCompleteWash}
+            handleAssignBay={handleAssignBay}
+            handleUndoCheckin={handleUndoCheckin}
           />
         )}
       </div>
@@ -360,13 +489,17 @@ export default function StaffDashboard({ user, onLogout }) {
         onClose={() => setActiveKpiDetail(null)}
         todayBookings={todayBookings}
         pendingCount={pendingCount}
+        confirmedCount={confirmedCount}
+        waitingCount={waitingCount}
         inProgressCount={inProgressCount}
         completedCount={completedCount}
         cancelledCount={cancelledCount}
         handleConfirm={handleConfirm}
+        handleCheckin={handleCheckin}
         handleStartWash={handleStartWash}
         handleCompleteWash={handleCompleteWash}
         handleCancelWash={handleCancelWash}
+        handleUndoCheckin={handleUndoCheckin}
       />
 
       {/* Modal Đặt Lịch Nhanh (Timeline Quick Book) */}
@@ -377,6 +510,14 @@ export default function StaffDashboard({ user, onLogout }) {
         quickBookSlot={quickBookSlot}
         quickBookBay={quickBookBay}
         timelineDate={timelineDate}
+        user={user}
+      />
+
+      {/* Modal Đặt Lịch Vãng Lai */}
+      <CreateWalkInModal
+        isOpen={showWalkInModal}
+        onClose={() => setShowWalkInModal(false)}
+        onSuccess={() => fetchBookings(true)}
         user={user}
       />
     </div>

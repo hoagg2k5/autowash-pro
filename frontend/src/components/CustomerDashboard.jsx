@@ -17,62 +17,7 @@ export default function CustomerDashboard({ user, onLogout }) {
   // Show / hide add vehicle triggers across components
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
 
-  // Change Password states
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
-  const [changingPassword, setChangingPassword] = useState(false);
-
-  const handleChangePasswordSubmit = async (e) => {
-    e.preventDefault();
-    setPasswordError('');
-    setPasswordSuccess('');
-
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      setPasswordError('Vui lòng điền đầy đủ tất cả các trường.');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setPasswordError('Mật khẩu mới phải từ 6 ký tự trở lên.');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Xác nhận mật khẩu mới không khớp.');
-      return;
-    }
-
-    setChangingPassword(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/customers/${user.id}/change-password`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
-        },
-        body: JSON.stringify({ oldPassword, newPassword })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Đổi mật khẩu thất bại.');
-
-      setPasswordSuccess('Đổi mật khẩu thành công!');
-      setOldPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setTimeout(() => {
-        setShowChangePassword(false);
-        setPasswordSuccess('');
-      }, 1500);
-    } catch (err) {
-      setPasswordError(err.message);
-    } finally {
-      setChangingPassword(false);
-    }
-  };
+  // Change Password states and logic are now handled in the header dropdown menu.
 
   const fetchDashboardData = async () => {
     try {
@@ -100,7 +45,7 @@ export default function CustomerDashboard({ user, onLogout }) {
 
         let statusText = '';
         if (data.status === 'Confirmed') statusText = 'đã được xác nhận';
-        else if (data.status === 'In Progress') statusText = 'đang được rửa (vào khoang)';
+        else if (data.status === 'In Progress' || data.status === 'In_Progress') statusText = 'đang được rửa (vào khoang)';
         else if (data.status === 'Completed') statusText = 'đã hoàn thành rửa xe. Quý khách nhận được điểm tích lũy!';
         else if (data.status === 'Cancelled') statusText = 'đã được hủy thành công';
 
@@ -157,34 +102,65 @@ export default function CustomerDashboard({ user, onLogout }) {
 
   return (
     <div className="container">
-      {/* Welcome banner */}
-      <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1.5rem' }}>
-        <div>
-          <h2 style={{ fontFamily: 'var(--font-heading)' }}>Chào mừng quay trở lại, {dbUser.fullName}!</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-            SĐT liên kết: {dbUser.phone} {dbUser.email && ` | Email: ${dbUser.email}`}
-          </p>
-          <button 
-            className="btn btn-secondary" 
-            style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-            onClick={() => setShowChangePassword(true)}
-          >
-            🔑 Đổi mật khẩu
-          </button>
+      {/* Account Management Panel */}
+      <div 
+        className="glass-panel" 
+        style={{ 
+          padding: '1.75rem 2.5rem', 
+          marginBottom: '2rem', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          background: '#ffffff', 
+          borderRadius: '20px', 
+          border: '1px solid var(--border-color)', 
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)',
+          flexWrap: 'wrap',
+          gap: '2rem'
+        }}
+      >
+        {/* Left column: Account Info */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: '280px' }}>
+          <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)', fontWeight: 500 }}>
+            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>Kính chào quý khách</span>{' '}
+            <span style={{ color: 'var(--text-main)', fontWeight: 800 }}>{dbUser.fullName}</span>!
+          </h2>
         </div>
-        
-        <div style={{ display: 'flex', gap: '2rem' }}>
-          <div style={{ textAlign: 'right' }}>
-            <span className="text-sm">Hạng Hội Viên</span>
-            <div style={{ marginTop: '0.25rem' }}>
-              <span className={`tier-indicator tier-${dbUser.loyaltyTier}`}>{dbUser.loyaltyTier}</span>
+
+        {/* Right column: Membership status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
+          {/* Membership Tier */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Hạng Hội Viên</span>
+            <div>
+              <span 
+                className={`tier-indicator tier-${dbUser.loyaltyTier}`} 
+                style={{ 
+                  padding: '0.35rem 1rem', 
+                  borderRadius: '20px', 
+                  fontWeight: 800, 
+                  fontSize: '0.8rem', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.5px',
+                  display: 'inline-block'
+                }}
+              >
+                {dbUser.loyaltyTier.toUpperCase()}
+              </span>
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <span className="text-sm">Điểm Tích Lũy</span>
-            <h3 style={{ color: 'var(--primary)', fontSize: '1.75rem', fontWeight: 800 }}>
-              {dbUser.pointsBalance} <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>điểm</span>
-            </h3>
+
+          {/* Loyalty Points */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Điểm Tích Lũy</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+              <span style={{ color: 'var(--primary)', fontSize: '2.2rem', fontWeight: 900, lineHeight: 1 }}>
+                {dbUser.pointsBalance}
+              </span>
+              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                điểm
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -208,6 +184,7 @@ export default function CustomerDashboard({ user, onLogout }) {
             onCancelBooking={handleCancelBooking}
             recentlyUpdatedBookingId={recentlyUpdatedBookingId}
             onRefresh={fetchDashboardData}
+            dbUser={dbUser}
           />
         </div>
 
@@ -233,99 +210,7 @@ export default function CustomerDashboard({ user, onLogout }) {
 
 
 
-      {/* Modal Đổi Mật Khẩu */}
-      {showChangePassword && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 10000
-        }}>
-          <div className="glass-panel" style={{
-            background: '#ffffff',
-            padding: '2rem',
-            width: '400px',
-            maxWidth: '95%',
-            borderRadius: '16px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)'
-          }}>
-            <h3 style={{ marginBottom: '1rem', fontFamily: 'var(--font-heading)' }}>🔑 ĐỔI MẬT KHẨU KHÁCH HÀNG</h3>
-            
-            {passwordError && <div className="alert alert-danger" style={{ padding: '0.5rem', fontSize: '0.8rem', marginBottom: '0.75rem' }}>{passwordError}</div>}
-            {passwordSuccess && <div className="alert alert-success" style={{ padding: '0.5rem', fontSize: '0.8rem', marginBottom: '0.75rem' }}>{passwordSuccess}</div>}
 
-            <form onSubmit={handleChangePasswordSubmit}>
-              <div className="form-group">
-                <label htmlFor="old-password">Mật khẩu cũ *</label>
-                <input
-                  type="password"
-                  id="old-password"
-                  className="form-input"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu cũ của bạn"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="new-password">Mật khẩu mới *</label>
-                <input
-                  type="password"
-                  id="new-password"
-                  className="form-input"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Từ 6 ký tự trở lên"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="confirm-password">Xác nhận mật khẩu mới *</label>
-                <input
-                  type="password"
-                  id="confirm-password"
-                  className="form-input"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Nhập lại mật khẩu mới"
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={() => {
-                    setShowChangePassword(false);
-                    setPasswordError('');
-                    setPasswordSuccess('');
-                  }}
-                  disabled={changingPassword}
-                >
-                  Hủy
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary" 
-                  style={{ background: 'var(--primary)', color: '#fff', fontWeight: 'bold' }}
-                  disabled={changingPassword}
-                >
-                  {changingPassword ? 'Đang cập nhật...' : 'Cập Nhật'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -392,6 +392,12 @@ tr:hover td {
   border: 1px solid rgba(2, 132, 199, 0.2);
 }
 
+.status-Waiting {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
 .status-In-Progress {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;

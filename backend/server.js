@@ -4,12 +4,30 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import dns from 'dns';
+
+// Fix lỗi kết nối MongoDB Atlas (querySrv ECONNREFUSED) trên một số đường truyền mạng bằng cách ưu tiên IPv4 và thiết lập DNS Google
+dns.setDefaultResultOrder('ipv4first');
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (e) {
+  console.warn("Không thể thiết lập máy chủ DNS tuỳ chỉnh:", e.message);
+}
+
+process.on('uncaughtException', (err) => {
+  console.error('LỖI KHÔNG ĐƯỢC XỬ LÝ (Uncaught Exception):', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('LỖI PROMISE KHÔNG ĐƯỢC XỬ LÝ (Unhandled Rejection) tại:', promise, 'Lý do:', reason);
+});
 
 import authRouter from './routes/authRoutes.js';
 import serviceRouter from './routes/serviceRoutes.js';
 import bookingRouter from './routes/bookingRoutes.js';
 import customerRouter from './routes/customerRoutes.js';
 import adminRouter from './routes/adminRoutes.js';
+import { assignBay } from './controllers/bookingController.js';
+import { authenticateToken } from './middleware/authMiddleware.js';
 
 dotenv.config();
 
@@ -61,7 +79,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/services', serviceRouter);
 app.use('/api/bookings', bookingRouter);
 app.use('/api/customers', customerRouter);
+app.use('/api/customer', customerRouter);
 app.use('/api/admin', adminRouter);
+app.post('/api/staff/assign-bay', authenticateToken, assignBay);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

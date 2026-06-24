@@ -16,6 +16,7 @@ export default function AdminVouchers() {
   const [targetTiers, setTargetTiers] = useState(['Member', 'Silver', 'Gold', 'Platinum']);
   const [isActive, setIsActive] = useState(true);
   const [expiryDate, setExpiryDate] = useState('');
+  const [pointsRequired, setPointsRequired] = useState('0');
   const [submitting, setSubmitting] = useState(false);
 
   const fetchVouchers = async () => {
@@ -41,6 +42,26 @@ export default function AdminVouchers() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
+  const convertToDbDate = (vnDateStr) => {
+    if (!vnDateStr) return '';
+    const parts = vnDateStr.trim().split('-');
+    if (parts.length === 3) {
+      const [day, month, year] = parts;
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return vnDateStr;
+  };
+
+  const convertToVnDate = (dbDateStr) => {
+    if (!dbDateStr) return '';
+    const parts = dbDateStr.trim().split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${day.padStart(2, '0')}-${month.padStart(2, '0')}-${year}`;
+    }
+    return dbDateStr;
+  };
+
   const handleEdit = (v) => {
     setEditingId(v._id);
     setCode(v.code);
@@ -54,7 +75,8 @@ export default function AdminVouchers() {
     setMinSpent(v.minSpent || 0);
     setTargetTiers(v.targetTiers || ['Member', 'Silver', 'Gold', 'Platinum']);
     setIsActive(v.isActive);
-    setExpiryDate(v.expiryDate || '');
+    setExpiryDate(convertToVnDate(v.expiryDate || ''));
+    setPointsRequired(v.pointsRequired || 0);
 
     // Scroll to form
     const formElement = document.getElementById('voucher-form');
@@ -71,6 +93,7 @@ export default function AdminVouchers() {
     setTargetTiers(['Member', 'Silver', 'Gold', 'Platinum']);
     setIsActive(true);
     setExpiryDate('');
+    setPointsRequired('0');
   };
 
   const handleTierToggle = (tier) => {
@@ -79,6 +102,37 @@ export default function AdminVouchers() {
     } else {
       setTargetTiers([...targetTiers, tier]);
     }
+  };
+
+  const handleExpiryChange = (e) => {
+    const value = e.target.value;
+    
+    // Check if the user is deleting (backspace/delete)
+    const isDeleting = value.length < expiryDate.length;
+    
+    // Remove all non-digits
+    const cleanValue = value.replace(/\D/g, '');
+    
+    let formatted = '';
+    if (cleanValue.length > 0) {
+      formatted += cleanValue.substring(0, 2);
+      if (cleanValue.length > 2) {
+        formatted += '-' + cleanValue.substring(2, 4);
+        if (cleanValue.length > 4) {
+          formatted += '-' + cleanValue.substring(4, 8);
+        }
+      } else if (cleanValue.length === 2 && !isDeleting) {
+        // Only append dash if we are typing forward (not deleting)
+        formatted += '-';
+      }
+      
+      if (cleanValue.length === 4 && !isDeleting) {
+        // Only append dash if we are typing forward (not deleting)
+        formatted += '-';
+      }
+    }
+    
+    setExpiryDate(formatted.slice(0, 10));
   };
 
   const handleSubmit = async (e) => {
@@ -101,7 +155,8 @@ export default function AdminVouchers() {
       minSpent: Number(minSpent) || 0,
       targetTiers,
       isActive,
-      expiryDate
+      expiryDate: convertToDbDate(expiryDate),
+      pointsRequired: Number(pointsRequired) || 0
     };
 
     try {
@@ -165,6 +220,7 @@ export default function AdminVouchers() {
                 <tr>
                   <th>Mã</th>
                   <th>Giá Trị Giảm</th>
+                  <th>Điểm Đổi</th>
                   <th>Hóa Đơn Tối Thiểu</th>
                   <th>Hạng Áp Dụng</th>
                   <th>Ngày Hết Hạn</th>
@@ -183,6 +239,13 @@ export default function AdminVouchers() {
                         <span style={{ color: '#3b82f6' }}>-{v.discountPercent}%</span>
                       )}
                     </td>
+                    <td>
+                      {v.pointsRequired > 0 ? (
+                        <strong style={{ color: 'var(--primary)' }}>{v.pointsRequired} điểm</strong>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>Miễn phí</span>
+                      )}
+                    </td>
                     <td>{formatVnd(v.minSpent)}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', maxWidth: '140px' }}>
@@ -191,7 +254,7 @@ export default function AdminVouchers() {
                         ))}
                       </div>
                     </td>
-                    <td style={{ fontSize: '0.85rem' }}>{v.expiryDate}</td>
+                    <td style={{ fontSize: '0.85rem' }}>{convertToVnDate(v.expiryDate)}</td>
                     <td>
                       <span className={`status-badge status-${v.isActive ? 'Completed' : 'Cancelled'}`}>
                         {v.isActive ? 'Đang chạy' : 'Tắt'}
@@ -300,13 +363,30 @@ export default function AdminVouchers() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="v-expiry">Ngày Hết Hạn * (Hết hạn lúc 23:59 ngày này)</label>
+            <label htmlFor="v-points-required">Số điểm cần để đổi (pointsRequired)</label>
+            <input 
+              id="v-points-required"
+              type="number" 
+              className="form-input" 
+              value={pointsRequired} 
+              onChange={(e) => setPointsRequired(e.target.value)} 
+              placeholder="Ví dụ: 100 (0 nếu phát miễn phí theo hạng)" 
+              min="0"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="v-expiry">Ngày Hết Hạn * (Định dạng: DD-MM-YYYY, ví dụ: 31-12-2026)</label>
             <input 
               id="v-expiry"
-              type="date" 
+              type="text" 
               className="form-input" 
               value={expiryDate} 
-              onChange={(e) => setExpiryDate(e.target.value)} 
+              onChange={handleExpiryChange} 
+              placeholder="DD-MM-YYYY"
+              maxLength={10}
+              pattern="\d{2}-\d{2}-\d{4}"
+              title="Định dạng ngày phải là DD-MM-YYYY (Ví dụ: 31-12-2026)"
               required
             />
           </div>

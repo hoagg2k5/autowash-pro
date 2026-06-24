@@ -201,7 +201,9 @@ export default function AdminDashboard({ user, onLogout }) {
     switch (status) {
       case 'Pending': return 'status-Pending';
       case 'Confirmed': return 'status-Confirmed';
-      case 'In Progress': return 'status-In-Progress';
+      case 'Waiting': return 'status-Waiting';
+      case 'In Progress':
+      case 'In_Progress': return 'status-In-Progress';
       case 'Completed': return 'status-Completed';
       case 'Cancelled': return 'status-Cancelled';
       default: return 'status-Pending';
@@ -212,7 +214,9 @@ export default function AdminDashboard({ user, onLogout }) {
     switch (status) {
       case 'Pending': return 'Chờ xác nhận';
       case 'Confirmed': return 'Đã xác nhận';
-      case 'In Progress': return 'Đang rửa';
+      case 'Waiting': return 'Chờ rửa';
+      case 'In Progress':
+      case 'In_Progress': return 'Đang rửa';
       case 'Completed': return 'Hoàn tất';
       case 'Cancelled': return 'Đã hủy';
       default: return status;
