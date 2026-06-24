@@ -13,6 +13,7 @@ export default function StaffTimelineView({
   user,
   recentlyUpdatedBookingId,
   handleConfirm,
+  handleCheckin,
   handleStartWash,
   handleCompleteWash,
   handleCancelWash,
@@ -22,8 +23,8 @@ export default function StaffTimelineView({
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
-  const branchBookings = bookings.filter(b => 
-    b.bookingDate === timelineDate && 
+  const branchBookings = bookings.filter(b =>
+    b.bookingDate === timelineDate &&
     b.branch === (user.branch || "AutoWash Pro - Quận 1")
   );
 
@@ -36,11 +37,11 @@ export default function StaffTimelineView({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Xem ngày:</span>
-          <input 
-            type="date" 
-            className="form-input" 
-            style={{ width: '160px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }} 
-            value={timelineDate} 
+          <input
+            type="date"
+            className="form-input"
+            style={{ width: '160px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}
+            value={timelineDate}
             onChange={(e) => setTimelineDate(e.target.value)}
           />
         </div>
@@ -60,129 +61,165 @@ export default function StaffTimelineView({
         <tbody>
           {TIME_SLOTS.map(slot => (
             <tr key={slot} style={{ borderBottom: '1px solid var(--border-color)' }}>
-              <td style={{ 
-                padding: '1rem 0.5rem', 
-                textAlign: 'center', 
-                fontWeight: 'bold', 
-                color: 'var(--text-main)', 
-                background: 'var(--bg-secondary)', 
+              <td style={{
+                padding: '1rem 0.5rem',
+                textAlign: 'center',
+                fontWeight: 'bold',
+                color: 'var(--text-main)',
+                background: 'var(--bg-secondary)',
                 fontSize: '0.85rem',
                 borderRight: '1px solid var(--border-color)'
               }}>
                 🕒 {slot}
               </td>
-              
-              {BAYS.map(bay => {
-                const b = branchBookings.find(booking => booking.timeSlot === slot && booking.bay === bay && booking.status !== 'Cancelled');
-                
-                if (b) {
-                  let cellBg = 'linear-gradient(135deg, #fef3c7, #fde68a)';
-                  let borderCol = '#f59e0b';
-                  let textCol = '#78350f';
-                  let badgeClass = 'status-Pending';
-                  
-                  if (b.status === 'Confirmed') {
-                    cellBg = 'linear-gradient(135deg, #e0f2fe, #bae6fd)';
-                    borderCol = '#0284c7';
-                    textCol = '#0369a1';
-                    badgeClass = 'status-Confirmed';
-                  } else if (b.status === 'In Progress') {
-                    cellBg = 'linear-gradient(135deg, #ecfeff, #cffafe)';
-                    borderCol = '#0891b2';
-                    textCol = '#0e7490';
-                    badgeClass = 'status-In-Progress';
-                  } else if (b.status === 'Completed') {
-                    cellBg = 'linear-gradient(135deg, #dcfce7, #bbf7d0)';
-                    borderCol = '#16a34a';
-                    textCol = '#14532d';
-                    badgeClass = 'status-Completed';
-                  }
 
-                  const isRecentlyUpdated = recentlyUpdatedBookingId === b.id;
+              {BAYS.map(bay => {
+                const slotBookings = branchBookings.filter(booking => booking.timeSlot === slot && booking.bay === bay && booking.status !== 'Cancelled');
+                const hasActiveBooking = slotBookings.some(booking => booking.status !== 'Completed');
+
+                if (slotBookings.length > 0) {
                   return (
                     <td key={bay} style={{ padding: '0.5rem', verticalAlign: 'middle', width: '30%' }}>
-                      <div 
-                        className={isRecentlyUpdated ? 'booking-updated-highlight' : ''}
-                        style={{
-                          background: cellBg,
-                          border: `1px solid ${borderCol}`,
-                          borderRadius: '8px',
-                          padding: '0.75rem',
-                          color: textCol,
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                          position: 'relative'
-                        }}
-                      >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {slotBookings.map(b => {
+                          let cellBg = 'linear-gradient(135deg, #fef3c7, #fde68a)';
+                          let borderCol = '#f59e0b';
+                          let textCol = '#78350f';
+                          let badgeClass = 'status-Pending';
 
-                        {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && b.status !== 'Completed') && (
-                          <span style={{
-                            position: 'absolute',
-                            top: '-8px',
-                            right: '8px',
-                            background: b.customerTier === 'Platinum' ? '#7c3aed' : '#ca8a04',
-                            color: '#fff',
-                            fontSize: '0.6rem',
-                            padding: '1px 5px',
-                            borderRadius: '4px',
-                            fontWeight: 'bold',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                          }}>
-                            💎 VIP {b.customerTier.toUpperCase()}
-                          </span>
-                        )}
+                          if (b.status === 'Confirmed') {
+                            cellBg = 'linear-gradient(135deg, #e0f2fe, #bae6fd)';
+                            borderCol = '#0284c7';
+                            textCol = '#0369a1';
+                            badgeClass = 'status-Confirmed';
+                          } else if (b.status === 'Waiting') {
+                            cellBg = 'linear-gradient(135deg, #e0e7ff, #c7d2fe)';
+                            borderCol = '#4f46e5';
+                            textCol = '#3730a3';
+                            badgeClass = 'status-Waiting';
+                          } else if (b.status === 'In Progress') {
+                            cellBg = 'linear-gradient(135deg, #ecfeff, #cffafe)';
+                            borderCol = '#0891b2';
+                            textCol = '#0e7490';
+                            badgeClass = 'status-In-Progress';
+                          } else if (b.status === 'Completed') {
+                            cellBg = 'linear-gradient(135deg, #dcfce7, #bbf7d0)';
+                            borderCol = '#16a34a';
+                            textCol = '#14532d';
+                            badgeClass = 'status-Completed';
+                          }
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                          <strong style={{ fontSize: '0.9rem' }}>🚗 {b.licensePlate}</strong>
-                          <span className={`status-badge ${badgeClass}`} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', textTransform: 'capitalize' }}>
-                            {b.status === 'Pending' ? 'Chờ duyệt' : b.status === 'Confirmed' ? 'Đã xác nhận' : b.status === 'In Progress' ? 'Đang rửa' : 'Hoàn tất'}
-                          </span>
-                        </div>
-
-                        <div style={{ fontSize: '0.75rem', marginBottom: '0.4rem', opacity: 0.9 }}>
-                          <strong>👤 {b.customerName}</strong> ({b.customerPhone})
-                        </div>
-                        
-                        <div style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between', opacity: 0.8, marginBottom: '0.5rem' }}>
-                          <span>🧼 {b.servicePackage}</span>
-                          <strong>{formatVnd(b.totalPaid)}</strong>
-                        </div>
-
-                        {b.status !== 'Completed' && (
-                          <div style={{ display: 'flex', gap: '0.25rem', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '0.4rem', marginTop: '0.4rem' }}>
-                            {b.status === 'Pending' && (
-                              <button 
-                                className="btn btn-primary btn-sm" 
-                                style={{ padding: '0.2rem 0.4rem', fontSize: '0.7rem', background: '#0284c7', color: '#fff', flex: 2 }} 
-                                onClick={() => handleConfirm(b.id)}
-                              >
-                                Duyệt
-                              </button>
-                            )}
-                            {b.status === 'Confirmed' && (
-                              <button 
-                                className="btn btn-primary btn-sm" 
-                                style={{ padding: '0.2rem 0.4rem', fontSize: '0.7rem', background: '#3b82f6', color: '#fff', flex: 2 }} 
-                                onClick={() => handleStartWash(b.id)}
-                              >
-                                ▶ Rửa
-                              </button>
-                            )}
-                            {b.status === 'In Progress' && (
-                              <button 
-                                className="btn btn-primary btn-sm" 
-                                style={{ padding: '0.2rem 0.4rem', fontSize: '0.7rem', background: '#10b981', color: '#fff', flex: 2 }} 
-                                onClick={() => handleCompleteWash(b.id)}
-                              >
-                                ✓ Xong
-                              </button>
-                            )}
-                            <button 
-                              className="btn btn-danger btn-sm" 
-                              style={{ padding: '0.2rem 0.3rem', fontSize: '0.7rem', flex: 1 }} 
-                              onClick={() => handleCancelWash(b.id)}
+                          const isRecentlyUpdated = recentlyUpdatedBookingId === b.id;
+                          return (
+                            <div
+                              key={b.id}
+                              className={isRecentlyUpdated ? 'booking-updated-highlight' : ''}
+                              style={{
+                                background: cellBg,
+                                border: `1px solid ${borderCol}`,
+                                borderRadius: '8px',
+                                padding: '0.75rem',
+                                color: textCol,
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                                position: 'relative'
+                              }}
                             >
-                              Hủy
-                            </button>
+                              {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && b.status !== 'Completed') && (
+                                <span style={{
+                                  position: 'absolute',
+                                  top: '-8px',
+                                  right: '8px',
+                                  background: b.customerTier === 'Platinum' ? '#7c3aed' : '#ca8a04',
+                                  color: '#fff',
+                                  fontSize: '0.6rem',
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                }}>
+                                  💎 VIP {b.customerTier.toUpperCase()}
+                                </span>
+                              )}
+
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                <strong style={{ fontSize: '0.9rem' }}>🚗 {b.licensePlate}</strong>
+                                <span className={`status-badge ${badgeClass}`} style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', textTransform: 'capitalize' }}>
+                                  {b.status === 'Pending' ? 'Chờ duyệt' : b.status === 'Confirmed' ? 'Đã xác nhận' : b.status === 'Waiting' ? 'Chờ rửa' : b.status === 'In Progress' ? 'Đang rửa' : 'Hoàn tất'}
+                                </span>
+                              </div>
+
+                              <div style={{ fontSize: '0.75rem', marginBottom: '0.4rem', opacity: 0.9 }}>
+                                <strong>👤 {b.customerName}</strong> ({b.customerPhone})
+                              </div>
+
+                              <div style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between', opacity: 0.8, marginBottom: '0.5rem' }}>
+                                <span>🧼 {b.servicePackage}</span>
+                                <strong>{formatVnd(b.totalPaid)}</strong>
+                              </div>
+
+                              {b.status !== 'Completed' && (
+                                <div style={{ display: 'flex', gap: '0.25rem', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '0.4rem', marginTop: '0.4rem' }}>
+                                  {b.status === 'Pending' && (
+                                    <button
+                                      className="btn btn-primary btn-sm"
+                                      style={{ padding: '0.2rem 0.4rem', fontSize: '0.7rem', background: '#0284c7', color: '#fff', flex: 2 }}
+                                      onClick={() => handleConfirm(b.id)}
+                                    >
+                                      Duyệt
+                                    </button>
+                                  )}
+                                  {b.status === 'Confirmed' && (
+                                    <button
+                                      className="btn btn-primary btn-sm"
+                                      style={{ padding: '0.2rem 0.4rem', fontSize: '0.7rem', background: '#6366f1', color: '#fff', flex: 2 }}
+                                      onClick={() => handleCheckin(b.id)}
+                                    >
+                                      Check-in
+                                    </button>
+                                  )}
+                                  {b.status === 'Waiting' && (
+                                    <button
+                                      className="btn btn-primary btn-sm"
+                                      style={{ padding: '0.2rem 0.4rem', fontSize: '0.7rem', background: '#3b82f6', color: '#fff', flex: 2 }}
+                                      onClick={() => handleStartWash(b.id)}
+                                    >
+                                      ▶ Rửa
+                                    </button>
+                                  )}
+                                  {b.status === 'In Progress' && (
+                                    <button
+                                      className="btn btn-primary btn-sm"
+                                      style={{ padding: '0.2rem 0.4rem', fontSize: '0.7rem', background: '#10b981', color: '#fff', flex: 2 }}
+                                      onClick={() => handleCompleteWash(b.id)}
+                                    >
+                                      ✓ Xong
+                                    </button>
+                                  )}
+                                  <button
+                                    className="btn btn-danger btn-sm"
+                                    style={{ padding: '0.2rem 0.3rem', fontSize: '0.7rem', flex: 1 }}
+                                    onClick={() => handleCancelWash(b.id)}
+                                  >
+                                    Hủy
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {!hasActiveBooking && (
+                          <div style={{
+                            border: '1px dashed var(--border-color)',
+                            background: 'var(--bg-secondary)',
+                            borderRadius: '8px',
+                            padding: '0.4rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            fontSize: '0.75rem'
+                          }}>
+                            <span style={{ color: 'var(--text-muted)' }}>🟢 Trống</span>
                           </div>
                         )}
                       </div>
@@ -201,18 +238,10 @@ export default function StaffTimelineView({
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        minHeight: '82px',
+                        minHeight: '60px',
                         textAlign: 'center'
                       }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>🟢 Trống</span>
-                        <button 
-                          type="button" 
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', border: '1px solid var(--border-color)', background: '#ffffff' }}
-                          onClick={() => handleQuickBook(slot, bay)}
-                        >
-                          ➕ Xếp Xe
-                        </button>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🟢 Trống</span>
                       </div>
                     </td>
                   );

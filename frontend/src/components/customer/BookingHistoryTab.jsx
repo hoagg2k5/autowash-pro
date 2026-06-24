@@ -173,7 +173,9 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
     switch (status) {
       case 'Pending': return 'Chờ xác nhận';
       case 'Confirmed': return 'Đã xác nhận';
-      case 'In Progress': return 'Đang rửa';
+      case 'Waiting': return 'Chờ rửa';
+      case 'In Progress':
+      case 'In_Progress': return 'Đang rửa';
       case 'Completed': return 'Hoàn tất';
       case 'Cancelled': return 'Đã hủy';
       default: return status;
@@ -184,7 +186,9 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
     switch (status) {
       case 'Pending': return 'status-Pending';
       case 'Confirmed': return 'status-Confirmed';
-      case 'In Progress': return 'status-In-Progress';
+      case 'Waiting': return 'status-Waiting';
+      case 'In Progress':
+      case 'In_Progress': return 'status-In-Progress';
       case 'Completed': return 'status-Completed';
       case 'Cancelled': return 'status-Cancelled';
       default: return 'status-Pending';
@@ -205,6 +209,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                 <th>Ngày Hẹn</th>
                 <th>Giờ Hẹn</th>
                 <th>Chi Nhánh</th>
+                <th>Xe Của Bạn</th>
                 <th>Khoang</th>
                 <th>Gói Rửa</th>
                 <th>Đã Thanh Toán</th>
@@ -225,6 +230,16 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                     <td style={{ fontWeight: 600 }}>{b.bookingDate}</td>
                     <td style={{ color: 'var(--primary)', fontWeight: 600 }}>{b.timeSlot}</td>
                     <td className="text-xs" style={{ fontWeight: 500 }}>{b.branch || "AutoWash Pro - Quận 1"}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <code style={{ fontSize: '0.95rem', color: 'var(--primary)', fontWeight: 'bold' }}>{b.licensePlate || 'N/A'}</code>
+                        {b.carDetails && b.carDetails !== 'N/A' && (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '0.1rem' }}>
+                            {b.carDetails}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</td>
                     <td>{b.servicePackage}</td>
                     <td style={{ fontWeight: 700 }}>{formatVnd(b.totalPaid)}</td>
@@ -277,7 +292,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                             Không thể hủy (&lt;30m)
                           </span>
                         )}
-                        {(b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress') && (
+                        {(b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress' || b.status === 'In_Progress') && (
                           <button
                             type="button"
                             className="btn btn-primary animate-pulse"

@@ -301,7 +301,7 @@ export const listVouchers = async (req, res) => {
 
 export const createVoucher = async (req, res) => {
   try {
-    const { code, discountVnd, discountPercent, minSpent, targetTiers, isActive, expiryDate } = req.body;
+    const { code, discountVnd, discountPercent, minSpent, targetTiers, isActive, expiryDate, pointsRequired } = req.body;
 
     if (!code || !expiryDate) {
       return res.status(400).json({ error: "Mã voucher và Ngày hết hạn là bắt buộc." });
@@ -321,6 +321,7 @@ export const createVoucher = async (req, res) => {
       minSpent: Number(minSpent) || 0,
       targetTiers: targetTiers || ['Member', 'Silver', 'Gold', 'Platinum'],
       isActive: isActive !== undefined ? isActive : true,
+      pointsRequired: Number(pointsRequired) || 0,
       expiryDate
     });
 
@@ -334,7 +335,7 @@ export const createVoucher = async (req, res) => {
 export const editVoucher = async (req, res) => {
   try {
     const voucherId = req.params.id;
-    const { code, discountVnd, discountPercent, minSpent, targetTiers, isActive, expiryDate } = req.body;
+    const { code, discountVnd, discountPercent, minSpent, targetTiers, isActive, expiryDate, pointsRequired } = req.body;
 
     const voucher = await Voucher.findById(voucherId);
     if (!voucher) {
@@ -356,6 +357,7 @@ export const editVoucher = async (req, res) => {
     if (targetTiers !== undefined) voucher.targetTiers = targetTiers;
     if (isActive !== undefined) voucher.isActive = isActive;
     if (expiryDate !== undefined) voucher.expiryDate = expiryDate;
+    if (pointsRequired !== undefined) voucher.pointsRequired = Number(pointsRequired);
 
     await voucher.save();
     res.json(voucher);

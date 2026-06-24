@@ -95,7 +95,9 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
     try {
       const url = action === 'start' 
         ? `${API_BASE_URL}/api/bookings/${bookingId}/start`
-        : `${API_BASE_URL}/api/bookings/complete/${bookingId}`;
+        : action === 'checkin'
+          ? `${API_BASE_URL}/api/bookings/${bookingId}/checkin`
+          : `${API_BASE_URL}/api/bookings/complete/${bookingId}`;
       const response = await fetch(url, { method: 'POST' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Thao tác thất bại.');
@@ -453,7 +455,18 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                       Gói dịch vụ: <strong>{scanResult.booking.servicePackage}</strong> | Khoang: <strong style={{ color: '#38bdf8' }}>{scanResult.booking.bay || 'Chưa xếp'}</strong>
                     </p>
                     <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>
-                      Khung giờ: <strong>{scanResult.booking.timeSlot}</strong> | Trạng thái: <strong style={{ color: '#eab308' }}>{scanResult.booking.status}</strong>
+                      Khung giờ: <strong>{scanResult.booking.timeSlot}</strong> | Trạng thái: <strong style={{ 
+                        color: scanResult.booking.status === 'Waiting' ? '#6366f1' : 
+                               scanResult.booking.status === 'In Progress' ? '#3b82f6' : 
+                               scanResult.booking.status === 'Completed' ? '#10b981' : 
+                               scanResult.booking.status === 'Pending' ? '#eab308' : '#38bdf8' 
+                      }}>
+                        {scanResult.booking.status === 'Pending' ? 'Chờ xác nhận' :
+                         scanResult.booking.status === 'Confirmed' ? 'Đã xác nhận' :
+                         scanResult.booking.status === 'Waiting' ? 'Chờ rửa (Đã Check-in)' :
+                         scanResult.booking.status === 'In Progress' ? 'Đang rửa' :
+                         scanResult.booking.status === 'Completed' ? 'Hoàn tất' : scanResult.booking.status}
+                      </strong>
                     </p>
 
                     {scanResult.user && scanResult.user.perks && scanResult.user.perks.length > 0 && (
@@ -478,6 +491,16 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignSelf: 'center' }}>
                     {scanResult.booking.status === 'Confirmed' && (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ background: '#6366f1', color: '#fff', padding: '0.5rem 1.2rem', fontWeight: 'bold' }}
+                        onClick={() => handleAction(scanResult.booking.id, 'checkin')}
+                      >
+                        ➔ Check-in (Xe đã đến)
+                      </button>
+                    )}
+                    {scanResult.booking.status === 'Waiting' && (
                       <button
                         type="button"
                         className="btn btn-primary"

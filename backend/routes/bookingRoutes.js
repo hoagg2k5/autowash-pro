@@ -13,7 +13,10 @@ import {
   submitFeedback,
   getBookingDetail,
   listActiveVouchers,
-  payBooking
+  payBooking,
+  checkin,
+  createWalkInBooking,
+  undoCheckin
 } from '../controllers/bookingController.js';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware.js';
 
@@ -30,8 +33,11 @@ router.get('/by-plate', requireRole(['admin', 'staff']), getByPlate);
 router.get('/:id', getBookingDetail);
 
 router.post('/book', book);
+router.post('/walk-in', requireRole(['admin', 'staff']), createWalkInBooking);
 router.post('/:id/pay', payBooking);
 router.post('/:id/confirm', requireRole(['admin', 'staff']), confirm);
+router.post('/:id/checkin', requireRole(['admin', 'staff']), checkin);
+router.post('/:id/undo-checkin', requireRole(['admin', 'staff']), undoCheckin);
 router.post('/:id/start', requireRole(['admin', 'staff']), start);
 router.post('/:id/notes', requireRole(['admin', 'staff']), updateNotes);
 router.post('/complete/:id', requireRole(['admin', 'staff']), complete);

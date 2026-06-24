@@ -93,20 +93,20 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
           <h4 style={{ margin: '0 0 1rem 0', color: '#38bdf8', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             📊 GIÁM SÁT KHOANG RỬA HÔM NAY ({branchFilter === 'Tất cả' ? 'Tất cả chi nhánh' : branchFilter})
           </h4>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
             {["08:00 - 09:00", "09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00", "13:00 - 14:00", "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "17:00 - 18:00"].map(slot => {
-              const slotBookings = bookings.filter(b => 
+              const slotBookings = bookings.filter(b =>
                 b.bookingDate === todayStr &&
                 b.timeSlot === slot &&
                 b.status !== 'Cancelled' &&
                 (branchFilter === 'Tất cả' || b.branch === branchFilter)
               );
-              
+
               const k1 = slotBookings.find(b => b.bay === 'Khoang 1');
               const k2 = slotBookings.find(b => b.bay === 'Khoang 2');
               const k3 = slotBookings.find(b => b.bay === 'Khoang 3');
-              
+
               return (
                 <div key={slot} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.6rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#cbd5e1', marginBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.2rem' }}>

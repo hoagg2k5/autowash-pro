@@ -17,7 +17,8 @@ export default function QuickCheckout({ onSuccess }) {
     switch (status) {
       case 'Pending': return 'status-Pending';
       case 'Confirmed': return 'status-Confirmed';
-      case 'In Progress': return 'status-In-Progress';
+      case 'In Progress':
+      case 'In_Progress': return 'status-In-Progress';
       case 'Completed': return 'status-Completed';
       case 'Cancelled': return 'status-Cancelled';
       default: return 'status-Pending';

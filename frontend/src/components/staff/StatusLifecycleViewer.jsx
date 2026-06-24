@@ -31,22 +31,46 @@ const STATUSES = [
     labelVi: 'Đã xác nhận',
     icon: '✅',
     iconSymbol: '✓',
-    color: '#22c55e',
-    bg: 'rgba(34, 197, 94, 0.08)',
-    border: 'rgba(34, 197, 94, 0.3)',
+    color: '#0284c7',
+    bg: 'rgba(2, 132, 199, 0.08)',
+    border: 'rgba(2, 132, 199, 0.3)',
     description: 'Lịch đã được xác nhận — khách chuẩn bị đến',
     trigger: [
       '→ Staff bấm confirm, hoặc cron job auto-confirm sau 30 phút',
     ],
     nextStates: [
-      '→ in_progress (khách đến, bắt đầu rửa)',
+      '→ waiting (check-in xe khi khách đến)',
       '→ cancelled (hủy trước giờ)',
     ],
     timeConditions: [
       '→ Khách có thể hủy tối đa 30 phút trước giờ hẹn',
     ],
     dbApi: [
-      '+ PATCH /api/bookings/:id/confirm → "confirmed"',
+      '+ POST /api/bookings/:id/confirm → "Confirmed"',
+    ],
+  },
+  {
+    key: 'Waiting',
+    label: 'waiting',
+    labelVi: 'Chờ rửa',
+    icon: '⏳',
+    iconSymbol: '🕒',
+    color: '#6366f1',
+    bg: 'rgba(99, 102, 241, 0.08)',
+    border: 'rgba(99, 102, 241, 0.3)',
+    description: 'Xe đã check-in thành công — xếp trong hàng đợi chờ rửa',
+    trigger: [
+      '→ Staff bấm Check-in, hoặc LPR quét biển số Confirmed tại cổng',
+    ],
+    nextStates: [
+      '→ in_progress (staff bấm "Bắt đầu rửa")',
+      '→ cancelled (hủy lịch)',
+    ],
+    timeConditions: [
+      '→ Đứng trong hàng đợi phân phối theo thời gian check-in',
+    ],
+    dbApi: [
+      '+ POST /api/bookings/:id/checkin → "Waiting"',
     ],
   },
   {
@@ -146,7 +170,7 @@ export default function StatusLifecycleViewer() {
       {/* Status Tabs Row */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+        gridTemplateColumns: 'repeat(6, 1fr)',
         gap: '0',
         border: '1px solid var(--border-color)',
         borderRadius: '12px',
@@ -163,7 +187,7 @@ export default function StatusLifecycleViewer() {
               style={{
                 padding: '1rem 0.75rem',
                 border: 'none',
-                borderRight: idx < 4 ? '1px solid var(--border-color)' : 'none',
+                borderRight: idx < 5 ? '1px solid var(--border-color)' : 'none',
                 background: isActive
                   ? 'var(--primary)'
                   : isPast

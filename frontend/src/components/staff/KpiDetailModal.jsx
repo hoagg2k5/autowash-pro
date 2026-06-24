@@ -5,13 +5,17 @@ export default function KpiDetailModal({
   onClose,
   todayBookings,
   pendingCount,
+  confirmedCount,
+  waitingCount,
   inProgressCount,
   completedCount,
   cancelledCount,
   handleConfirm,
+  handleCheckin,
   handleStartWash,
   handleCompleteWash,
-  handleCancelWash
+  handleCancelWash,
+  handleUndoCheckin
 }) {
   if (!activeKpiDetail) return null;
 
@@ -19,6 +23,7 @@ export default function KpiDetailModal({
     switch (status) {
       case 'Pending': return 'status-Pending';
       case 'Confirmed': return 'status-Confirmed';
+      case 'Waiting': return 'status-Waiting';
       case 'In Progress': return 'status-In-Progress';
       case 'Completed': return 'status-Completed';
       case 'Cancelled': return 'status-Cancelled';
@@ -56,6 +61,8 @@ export default function KpiDetailModal({
           <h3 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
             {activeKpiDetail === 'total' && "📅 TỔNG LỊCH HẸN HÔM NAY"}
             {activeKpiDetail === 'Pending' && "⏳ XE CHỜ XÁC NHẬN HÔM NAY"}
+            {activeKpiDetail === 'Confirmed' && "📅 XE ĐÃ XÁC NHẬN HÔM NAY"}
+            {activeKpiDetail === 'Waiting' && "🕒 XE ĐANG TRONG HÀNG ĐỢI HÔM NAY"}
             {activeKpiDetail === 'In Progress' && "⚡ XE ĐANG RỬA HÔM NAY"}
             {activeKpiDetail === 'Completed' && "✅ XE HOÀN TẤT HÔM NAY"}
             {activeKpiDetail === 'Cancelled' && "❌ XE ĐÃ HỦY HÔM NAY"}
@@ -63,8 +70,10 @@ export default function KpiDetailModal({
               {
                 activeKpiDetail === 'total' ? todayBookings.length :
                   activeKpiDetail === 'Pending' ? pendingCount :
-                    activeKpiDetail === 'In Progress' ? inProgressCount :
-                      activeKpiDetail === 'Completed' ? completedCount : cancelledCount
+                    activeKpiDetail === 'Confirmed' ? confirmedCount :
+                      activeKpiDetail === 'Waiting' ? waitingCount :
+                        activeKpiDetail === 'In Progress' ? inProgressCount :
+                          activeKpiDetail === 'Completed' ? completedCount : cancelledCount
               } xe
             </span>
           </h3>
@@ -92,11 +101,6 @@ export default function KpiDetailModal({
           }).sort((a, b) => {
             const timeA = new Date(a.bookingDate + "T" + (a.timeSlot ? a.timeSlot.split(" ")[0] : "00:00")).getTime();
             const timeB = new Date(b.bookingDate + "T" + (b.timeSlot ? b.timeSlot.split(" ")[0] : "00:00")).getTime();
-            if (a.status === 'Completed' || a.status === 'Cancelled') {
-              // Completed and Cancelled sorted ascending (time increasing)
-              return timeA - timeB;
-            }
-            // Others sorted descending (newest first)
             return timeB - timeA;
           });
 
@@ -128,7 +132,7 @@ export default function KpiDetailModal({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                       <code style={{ fontSize: '0.95rem', color: 'var(--primary)', fontWeight: 'bold' }}>{b.licensePlate}</code>
-                      {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress')) && (
+                      {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
                         <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`}>
                           💎 Ưu Tiên {b.customerTier}
                         </span>
@@ -136,8 +140,9 @@ export default function KpiDetailModal({
                       <span className={`status-badge ${getStatusClass(b.status)}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
                         {b.status === 'Pending' ? 'Chờ xác nhận' :
                           b.status === 'Confirmed' ? 'Đã xác nhận' :
-                            b.status === 'In Progress' ? 'Đang rửa' :
-                              b.status === 'Completed' ? 'Hoàn tất' : 'Đã hủy'}
+                            b.status === 'Waiting' ? 'Chờ rửa' :
+                              b.status === 'In Progress' ? 'Đang rửa' :
+                                b.status === 'Completed' ? 'Hoàn tất' : 'Đã hủy'}
                       </span>
                     </div>
                     <div className="text-sm" style={{ fontWeight: 600 }}>{b.customerName} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({b.customerPhone})</span></div>
@@ -169,14 +174,78 @@ export default function KpiDetailModal({
                         </>
                       )}
                       {b.status === 'Confirmed' && (
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#3b82f6' }}
-                          onClick={() => { handleStartWash(b.id); }}
-                        >
-                          ⚡ Rửa xe
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#6366f1' }}
+                            onClick={() => { handleCheckin(b.id); }}
+                          >
+                            ➔ Check-in
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                            onClick={() => { handleCancelWash(b.id); }}
+                          >
+                            Hủy
+                          </button>
+                        </>
+                      )}
+                      {b.status === 'Waiting' && (
+                        <>
+                          {b.bay ? (
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#3b82f6' }}
+                              onClick={() => { handleStartWash(b.id); }}
+                            >
+                              ⚡ Rửa xe
+                            </button>
+                          ) : (
+                            <>
+                              <span
+                                style={{
+                                  padding: '0.25rem 0.5rem',
+                                  fontSize: '0.7rem',
+                                  color: 'var(--text-muted)',
+                                  background: 'var(--bg-secondary)',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: '4px',
+                                  fontWeight: 600
+                                }}
+                              >
+                                ⏳ Chờ Xếp
+                              </span>
+                              {handleUndoCheckin && (
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  style={{
+                                    padding: '0.25rem 0.5rem',
+                                    fontSize: '0.75rem',
+                                    color: '#dc2626',
+                                    background: 'rgba(239, 68, 68, 0.05)',
+                                    border: '1px solid rgba(239, 68, 68, 0.2)'
+                                  }}
+                                  onClick={() => { handleUndoCheckin(b.id); }}
+                                >
+                                  ↩ Hoàn tác
+                                </button>
+                              )}
+                            </>
+                          )}
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                            onClick={() => { handleCancelWash(b.id); }}
+                          >
+                            Hủy
+                          </button>
+                        </>
                       )}
                       {b.status === 'In Progress' && (
                         <button
