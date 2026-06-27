@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../config.js';
 import { TierPerks } from './customer/LoyaltyStatus.jsx';
 import BookingModule from './customer/BookingModule.jsx';
 import { toast } from './shared/toast.js';
 
-
-
-export default function CustomerDashboard({ user, onLogout }) {
+export default function CustomerDashboard({ user, onLogout, onUpdateUser }) {
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,6 +26,9 @@ export default function CustomerDashboard({ user, onLogout }) {
       if (!response.ok) throw new Error("Không thể tải thông tin tài khoản.");
       const data = await response.json();
       setDashboardData(data);
+      if (onUpdateUser && data.user) {
+        onUpdateUser(data.user);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -181,7 +184,7 @@ export default function CustomerDashboard({ user, onLogout }) {
           vehicles={vehicles} 
           rules={rules} 
           onBookingSuccess={fetchDashboardData}
-          onOpenAddVehicle={() => setShowAddVehicleForm(true)}
+          onOpenAddVehicle={() => navigate('/customer/profile?tab=xecuatoi')}
         />
 
 
