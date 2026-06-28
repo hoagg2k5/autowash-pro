@@ -84,7 +84,7 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
     <div className="glass-panel" style={{ padding: '1.5rem' }}>
       <div className="flex-between" style={{ marginBottom: '1rem' }}>
         <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          🚗 PHƯƠNG TIỆN CỦA BẠN ({vehicles.length})
+          PHƯƠNG TIỆN CỦA BẠN ({vehicles.length})
         </h3>
         <button 
           className="btn btn-secondary" 
