@@ -9,6 +9,7 @@ import StaffDashboard from './components/staff/StaffDashboard.jsx';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from './config.js';
 import { toast } from './components/shared/toast.js';
+import AiChatBubble from './components/shared/AiChatBubble.jsx';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -28,6 +29,11 @@ export default function App() {
       return [];
     }
   });
+
+
+  const [queueCount, setQueueCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [feedbackCount, setFeedbackCount] = useState(0);
 
   const navigate = useNavigate();
 
@@ -143,6 +149,9 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     setVehicles([]);
+    setQueueCount(0);
+    setPendingCount(0);
+    setFeedbackCount(0);
     try {
       sessionStorage.removeItem('autowash_user');
       sessionStorage.removeItem('autowash_vehicles');
@@ -214,6 +223,9 @@ export default function App() {
         onGoToHome={handleGoToHome}
         onOpenAccountModal={() => setShowAccountModal(true)}
         onOpenVouchersModal={() => setShowVouchersModal(true)}
+        queueCount={queueCount}
+        pendingCount={pendingCount}
+        feedbackCount={feedbackCount}
       />
 
       {/* Main Body */}
@@ -242,20 +254,31 @@ export default function App() {
               <Navigate to="/" replace />
             )
           } />
-          <Route path="/staff/dashboard" element={
+          <Route path="/staff/dashboard/:view" element={
             currentUser && currentUser.role === 'staff' ? (
-              <StaffDashboard user={currentUser} onLogout={handleLogout} />
+              <StaffDashboard 
+                user={currentUser} 
+                onLogout={handleLogout} 
+                setQueueCount={setQueueCount}
+              />
             ) : (
               <Navigate to="/" replace />
             )
           } />
-          <Route path="/admin/dashboard" element={
+          <Route path="/staff/dashboard" element={<Navigate to="/staff/dashboard/console" replace />} />
+          <Route path="/admin/dashboard/:tab" element={
             currentUser && currentUser.role === 'admin' ? (
-              <AdminDashboard user={currentUser} onLogout={handleLogout} />
+              <AdminDashboard 
+                user={currentUser} 
+                onLogout={handleLogout} 
+                setPendingCount={setPendingCount}
+                setFeedbackCount={setFeedbackCount}
+              />
             ) : (
               <Navigate to="/" replace />
             )
           } />
+          <Route path="/admin/dashboard" element={<Navigate to="/admin/dashboard/analytics" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -503,6 +526,7 @@ export default function App() {
           </div>
         </div>
       )}
+      <AiChatBubble />
     </div>
   );
 }

@@ -185,7 +185,7 @@ export async function createBooking(userId, bookingData) {
     branch: targetBranch,
     bookingDate: bookingData.bookingDate,
     timeSlot: bookingData.timeSlot,
-    status: { $ne: 'Cancelled' }
+    status: { $nin: ['Cancelled', 'Completed'] }
   });
 
   const BAYS = ["Khoang 1", "Khoang 2", "Khoang 3"];
@@ -246,6 +246,8 @@ export async function createBooking(userId, bookingData) {
 
   // Áp dụng mã Voucher thủ công
   let voucherDiscount = 0;
+  const newBookingId = 'b-' + Math.random().toString(36).substr(2, 9);
+  
   if (bookingData.promoCode) {
     const voucher = await Voucher.findOne({
       code: bookingData.promoCode.toUpperCase()
@@ -258,16 +260,19 @@ export async function createBooking(userId, bookingData) {
       (price - actualDiscount) >= voucher.minSpent
     ) {
       if (voucher.pointsRequired > 0) {
-        if (!user.ownedVouchers || !user.ownedVouchers.some(id => id.toString() === voucher._id.toString())) {
+        const userVoucher = await UserVoucher.findOne({
+          userId: user.id,
+          voucherId: voucher._id,
+          status: 'Available'
+        });
+        if (!userVoucher) {
           throw new Error("Bạn chưa sở hữu mã giảm giá này. Vui lòng đổi bằng điểm tích lũy trước.");
         }
-        // Tiêu thụ voucher bằng cách xóa một thực thể khỏi danh sách sở hữu của người dùng
-        const index = user.ownedVouchers.findIndex(id => id.toString() === voucher._id.toString());
-        if (index !== -1) {
-          user.ownedVouchers.splice(index, 1);
-          user.markModified('ownedVouchers');
-          await user.save();
-        }
+        // Tiêu thụ voucher bằng cách chuyển trạng thái sang Used
+        userVoucher.status = 'Used';
+        userVoucher.usedAt = new Date();
+        userVoucher.bookingId = newBookingId;
+        await userVoucher.save();
       }
 
       if (voucher.discountVnd) {
@@ -284,7 +289,7 @@ export async function createBooking(userId, bookingData) {
   const pointsEarned = Math.floor(basePointsEarned * tierSetting.pointMultiplier);
 
   const newBooking = new Booking({
-    id: 'b-' + Math.random().toString(36).substr(2, 9),
+    id: newBookingId,
     userId,
     vehicleId: bookingData.vehicleId,
     bookingDate: bookingData.bookingDate,
@@ -348,6 +353,7 @@ export async function startWashBooking(bookingId) {
   }
   
   booking.status = 'In Progress';
+  booking.washStartTime = new Date();
   await booking.save();
   return booking;
 }
@@ -365,53 +371,97 @@ export async function completeBooking(bookingId) {
   if (!booking) throw new Error("Không tìm thấy lịch đặt");
   if (booking.status === 'Completed') return booking;
 
+  // Chỉ cho phép hoàn tất khi đơn đang trong trạng thái rửa xe
+  if (booking.status !== 'In Progress' && booking.status !== 'In_Progress') {
+    throw new Error("Chỉ có thể hoàn tất đơn đang trong quá trình rửa xe (In Progress).");
+  }
+
   booking.status = 'Completed';
   await booking.save();
 
-  // Áp dụng tích điểm cho tài khoản khách hàng
+  // Nếu khách đã thanh toán trước (online), thì lúc hoàn tất sẽ tích điểm
+  if (booking.paymentStatus === 'Paid') {
+    await processPointsForBooking(booking);
+  }
+
+  return booking;
+}
+
+export async function checkoutBooking(bookingId) {
+  const booking = await Booking.findOne({ id: bookingId });
+  if (!booking) throw new Error("Không tìm thấy lịch đặt");
+
+  if (booking.status === 'Cancelled') {
+    throw new Error("Không thể thanh toán cho lịch đặt đã bị hủy.");
+  }
+
+  // Nếu đã thanh toán và đã hoàn thành, chỉ cần trả về booking
+  if (booking.paymentStatus === 'Paid' && booking.status === 'Completed') {
+    return booking;
+  }
+
+  const wasPaid = booking.paymentStatus === 'Paid';
+
+  booking.paymentStatus = 'Paid';
+  if (booking.status !== 'Completed') {
+    booking.status = 'Completed';
+  }
+
+  await booking.save();
+
+  // Tích lũy điểm nếu trước đó chưa thanh toán (vì nếu thanh toán rồi thì completeBooking đã tích điểm)
+  if (!wasPaid) {
+    await processPointsForBooking(booking);
+  }
+
+  return booking;
+}
+
+async function processPointsForBooking(booking) {
   const user = await User.findOne({ id: booking.userId });
-  if (user) {
+  if (user && user.id !== 'customer-id') {
     user.totalSpent += booking.totalPaid;
-    user.pointsBalance = (user.pointsBalance - booking.pointsRedeemed) + booking.pointsEarned;
 
-    // Ghi nhận nhật ký điểm
-    if (booking.pointsEarned > 0) {
-      const historyEarn = new PointHistory({
-        id: 'ph-' + Math.random().toString(36).substr(2, 9),
-        userId: user.id,
-        bookingId: booking.id,
-        type: 'Earned',
-        points: booking.pointsEarned,
-        reason: `Rửa xe gói ${booking.servicePackage}`
-      });
-      await historyEarn.save();
-    }
-    if (booking.pointsRedeemed > 0) {
-      const historyRedeem = new PointHistory({
-        id: 'ph-' + Math.random().toString(36).substr(2, 9),
-        userId: user.id,
-        bookingId: booking.id,
-        type: 'Redeemed',
-        points: booking.pointsRedeemed,
-        reason: 'Đổi điểm giảm giá hóa đơn'
-      });
-      await historyRedeem.save();
-    }
+    if (!user.isWalkInOnly) {
+      user.pointsBalance = (user.pointsBalance - booking.pointsRedeemed) + booking.pointsEarned;
 
-    // Tự động thăng hạng (Self-healing Tier)
-    const oldTier = user.loyaltyTier;
-    const rules = await LoyaltyRules.findOne({});
-    if (rules) {
-      const newTier = calculateTier(user.totalSpent, rules.tierSettings);
-      if (newTier !== oldTier) {
-        user.loyaltyTier = newTier;
-        user.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      // Ghi nhận nhật ký điểm
+      if (booking.pointsEarned > 0) {
+        const historyEarn = new PointHistory({
+          id: 'ph-' + Math.random().toString(36).substr(2, 9),
+          userId: user.id,
+          bookingId: booking.id,
+          type: 'Earned',
+          points: booking.pointsEarned,
+          reason: `Rửa xe gói ${booking.servicePackage} (Thanh toán hoàn tất)`
+        });
+        await historyEarn.save();
+      }
+      if (booking.pointsRedeemed > 0) {
+        const historyRedeem = new PointHistory({
+          id: 'ph-' + Math.random().toString(36).substr(2, 9),
+          userId: user.id,
+          bookingId: booking.id,
+          type: 'Redeemed',
+          points: booking.pointsRedeemed,
+          reason: 'Đổi điểm giảm giá hóa đơn (Thanh toán hoàn tất)'
+        });
+        await historyRedeem.save();
+      }
+
+      // Tự động thăng hạng (Self-healing Tier)
+      const oldTier = user.loyaltyTier;
+      const rules = await LoyaltyRules.findOne({});
+      if (rules) {
+        const newTier = calculateTier(user.totalSpent, rules.tierSettings);
+        if (newTier !== oldTier) {
+          user.loyaltyTier = newTier;
+          user.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        }
       }
     }
     await user.save();
   }
-
-  return booking;
 }
 
 export function getSlotTimes(bookingDate, timeSlot) {
@@ -456,7 +506,7 @@ export async function cancelBooking(bookingId, reason, wasNoShow) {
   // Áp dụng phạt trừ điểm cho khách hàng đối với Pending hoặc Confirmed
   if (oldStatus === 'Pending' || oldStatus === 'Confirmed') {
     const user = await User.findOne({ id: booking.userId });
-    if (user) {
+    if (user && user.id !== 'customer-id' && !user.isWalkInOnly) {
       let penaltyPoints = 0;
       let penaltyReason = '';
 
@@ -495,51 +545,53 @@ export async function cancelBooking(bookingId, reason, wasNoShow) {
     }
   }
 
-  // Nếu đơn hàng đã hoàn tất (Completed) mà bị hủy, cần hoàn trả và thu hồi điểm tương ứng
-  if (oldStatus === 'Completed') {
+  // Nếu đơn hàng đã hoàn tất VÀ ĐÃ THANH TOÁN (đã checkout) mà bị hủy, cần hoàn trả và thu hồi điểm tương ứng
+  // Lưu ý: Sau refactor, điểm chỉ được tích khi checkout (paymentStatus = 'Paid'), nên chỉ cần hoàn khi đã Paid
+  if (oldStatus === 'Completed' && booking.paymentStatus === 'Paid') {
     const user = await User.findOne({ id: booking.userId });
-    if (user) {
+    if (user && user.id !== 'customer-id') {
       // 1. Khấu trừ tổng chi tiêu
       user.totalSpent = Math.max(0, user.totalSpent - booking.totalPaid);
       
       // 2. Hoàn lại điểm đã đổi và Thu hồi điểm tích lũy được thưởng
-      user.pointsBalance = Math.max(0, user.pointsBalance + booking.pointsRedeemed - booking.pointsEarned);
+      if (!user.isWalkInOnly) {
+        user.pointsBalance = Math.max(0, user.pointsBalance + booking.pointsRedeemed - booking.pointsEarned);
 
-      // 3. Ghi nhận vào lịch sử giao dịch điểm
-      if (booking.pointsRedeemed > 0) {
-        const historyRefund = new PointHistory({
-          id: 'ph-' + Math.random().toString(36).substr(2, 9),
-          userId: user.id,
-          bookingId: booking.id,
-          type: 'Earned',
-          points: booking.pointsRedeemed,
-          reason: `Hoàn điểm đổi từ lịch hẹn bị hủy (${booking.id})`
-        });
-        await historyRefund.save();
-      }
-      if (booking.pointsEarned > 0) {
-        const historyRevoke = new PointHistory({
-          id: 'ph-' + Math.random().toString(36).substr(2, 9),
-          userId: user.id,
-          bookingId: booking.id,
-          type: 'Redeemed',
-          points: booking.pointsEarned,
-          reason: `Thu hồi điểm tích lũy của lịch hẹn bị hủy (${booking.id})`
-        });
-        await historyRevoke.save();
-      }
+        // Ghi nhận vào lịch sử giao dịch điểm
+        if (booking.pointsRedeemed > 0) {
+          const historyRefund = new PointHistory({
+            id: 'ph-' + Math.random().toString(36).substr(2, 9),
+            userId: user.id,
+            bookingId: booking.id,
+            type: 'Earned',
+            points: booking.pointsRedeemed,
+            reason: `Hoàn điểm đổi từ lịch hẹn bị hủy (${booking.id})`
+          });
+          await historyRefund.save();
+        }
+        if (booking.pointsEarned > 0) {
+          const historyRevoke = new PointHistory({
+            id: 'ph-' + Math.random().toString(36).substr(2, 9),
+            userId: user.id,
+            bookingId: booking.id,
+            type: 'Redeemed',
+            points: booking.pointsEarned,
+            reason: `Thu hồi điểm tích lũy của lịch hẹn bị hủy (${booking.id})`
+          });
+          await historyRevoke.save();
+        }
 
-      // 4. Đánh giá lại hạng hội viên khi tổng chi tiêu sụt giảm
-      const oldTier = user.loyaltyTier;
-      const rules = await LoyaltyRules.findOne({});
-      if (rules) {
-        const newTier = calculateTier(user.totalSpent, rules.tierSettings);
-        if (newTier !== oldTier) {
-          user.loyaltyTier = newTier;
-          user.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        // Đánh giá lại hạng hội viên khi tổng chi tiêu sụt giảm
+        const oldTier = user.loyaltyTier;
+        const rules = await LoyaltyRules.findOne({});
+        if (rules) {
+          const newTier = calculateTier(user.totalSpent, rules.tierSettings);
+          if (newTier !== oldTier) {
+            user.loyaltyTier = newTier;
+            user.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          }
         }
       }
-      
       await user.save();
     }
   }
@@ -574,7 +626,7 @@ export async function manualAdjustPoints(userId, newPoints, reason) {
 
 // Rà soát định kỳ (Review)
 export async function runMonthlyReview() {
-  const users = await User.find({ role: 'customer' });
+  const users = await User.find({ role: 'customer', id: { $ne: 'customer-id' }, isWalkInOnly: { $ne: true } });
   const rules = await LoyaltyRules.findOne({});
   if (!rules) return 0;
 

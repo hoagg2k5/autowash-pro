@@ -1,0 +1,10 @@
+{
+  "userId": "u-4840chfbr",
+  "vouchers": [
+    {
+      "code": "AUTOWASH50",
+      "id": "6a3eb2109f97d085d083cfb5",
+      "ownedCount": 1
+    }
+  ]
+}

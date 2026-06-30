@@ -11,6 +11,7 @@ import LoyaltyRules from '../models/LoyaltyRules.js';
 import Promotion from '../models/Promotion.js';
 import Voucher from '../models/Voucher.js';
 import PointHistory from '../models/PointHistory.js';
+import { logAdminAction } from '../utils/auditLogger.js';
 
 // Cache cho logs giả lập
 let currentSyntheticLogs = [];
@@ -18,19 +19,41 @@ let currentSyntheticLogs = [];
 export const listCustomers = async (req, res) => {
   try {
     const customers = await User.find({ role: 'customer' });
-    const list = [];
+    const customerIds = customers.map(u => u.id);
     
-    for (const u of customers) {
-      const vehicles = await Vehicle.find({ userId: u.id });
-      const userBookings = await Booking.find({ userId: u.id });
-      
-      list.push({
+    // Fetch all vehicles and bookings in parallel for all customers
+    const [allVehicles, allBookings] = await Promise.all([
+      Vehicle.find({ userId: { $in: customerIds } }),
+      Booking.find({ userId: { $in: customerIds } })
+    ]);
+    
+    // Group vehicles and bookings by userId for O(1) lookup
+    const vehiclesByUserId = {};
+    allVehicles.forEach(v => {
+      if (!vehiclesByUserId[v.userId]) {
+        vehiclesByUserId[v.userId] = [];
+      }
+      vehiclesByUserId[v.userId].push(v);
+    });
+    
+    const bookingsByUserId = {};
+    allBookings.forEach(b => {
+      if (!bookingsByUserId[b.userId]) {
+        bookingsByUserId[b.userId] = [];
+      }
+      bookingsByUserId[b.userId].push(b);
+    });
+    
+    const list = customers.map(u => {
+      const vehicles = vehiclesByUserId[u.id] || [];
+      const userBookings = bookingsByUserId[u.id] || [];
+      return {
         ...u.toObject(),
         vehicles,
         bookingCount: userBookings.length,
         completedCount: userBookings.filter(b => b.status === 'Completed').length
-      });
-    }
+      };
+    });
     
     res.json(list);
   } catch (error) {
@@ -45,6 +68,7 @@ export const adjustPoints = async (req, res) => {
     if (finalPoints === undefined) return res.status(400).json({ error: "Số điểm mới là bắt buộc." });
     
     const user = await manualAdjustPoints(req.params.id, finalPoints, reason);
+    await logAdminAction(req, 'ADJUST_POINTS', `Điều chỉnh điểm tích lũy của khách hàng có ID ${req.params.id} thành ${finalPoints} điểm. Lý do: ${reason || 'Không có lý do cụ thể'}`);
     res.json({ message: "Điều chỉnh điểm thưởng khách hàng thành công.", pointsBalance: user.pointsBalance });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -64,6 +88,7 @@ export const updateRules = async (req, res) => {
   try {
     const newRules = req.body;
     const rules = await LoyaltyRules.findOneAndUpdate({}, newRules, { new: true, upsert: true });
+    await logAdminAction(req, 'UPDATE_RULES', `Cập nhật cấu hình tích điểm và phân hạng thành viên.`);
     res.json({ message: "Cập nhật cấu hình tích điểm & nâng hạng thành công.", loyaltyRules: rules });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -99,6 +124,7 @@ export const createPromotion = async (req, res) => {
     });
 
     await newPromo.save();
+    await logAdminAction(req, 'CREATE_PROMOTION', `Tạo khuyến mãi mới: "${title}" (${discountPercentage}%).`);
     res.status(201).json(newPromo);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -112,6 +138,7 @@ export const togglePromotion = async (req, res) => {
 
     promo.isActive = !promo.isActive;
     await promo.save();
+    await logAdminAction(req, 'TOGGLE_PROMOTION', `Thay đổi trạng thái kích hoạt của khuyến mãi "${promo.title}" sang ${promo.isActive ? 'Bật' : 'Tắt'}.`);
     res.json(promo);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -326,6 +353,7 @@ export const createVoucher = async (req, res) => {
     });
 
     await newVoucher.save();
+    await logAdminAction(req, 'CREATE_VOUCHER', `Tạo voucher mới: "${uppercaseCode}" (${discountVnd ? discountVnd + ' VND' : discountPercent + '%'}).`);
     res.status(201).json(newVoucher);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -360,6 +388,7 @@ export const editVoucher = async (req, res) => {
     if (pointsRequired !== undefined) voucher.pointsRequired = Number(pointsRequired);
 
     await voucher.save();
+    await logAdminAction(req, 'EDIT_VOUCHER', `Chỉnh sửa cấu hình voucher: "${voucher.code}".`);
     res.json(voucher);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -373,6 +402,7 @@ export const removeVoucher = async (req, res) => {
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: "Không tìm thấy voucher này." });
     }
+    await logAdminAction(req, 'DELETE_VOUCHER', `Xóa mã voucher ID ${voucherId}.`);
     res.json({ message: "Xóa mã giảm giá thành công." });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -398,6 +428,7 @@ export const removeCustomer = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy tài khoản khách hàng." });
     }
 
+    await logAdminAction(req, 'DELETE_CUSTOMER', `Xóa tài khoản khách hàng ID ${customerId} cùng toàn bộ xe, lịch đặt và lịch sử điểm.`);
     res.json({ message: "Xóa tài khoản khách hàng và toàn bộ dữ liệu liên quan thành công." });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -26,6 +26,10 @@ import serviceRouter from './routes/serviceRoutes.js';
 import bookingRouter from './routes/bookingRoutes.js';
 import customerRouter from './routes/customerRoutes.js';
 import adminRouter from './routes/adminRoutes.js';
+import bayRouter from './routes/bayRoutes.js';
+import branchRouter from './routes/branchRoutes.js';
+import auditRouter from './routes/auditRoutes.js';
+import chatRouter from './routes/chatRoutes.js';
 import { assignBay } from './controllers/bookingController.js';
 import { authenticateToken } from './middleware/authMiddleware.js';
 
@@ -81,6 +85,10 @@ app.use('/api/bookings', bookingRouter);
 app.use('/api/customers', customerRouter);
 app.use('/api/customer', customerRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/bays', bayRouter);
+app.use('/api/branches', branchRouter);
+app.use('/api/admin/audit-logs', auditRouter);
+app.use('/api/chat', chatRouter);
 app.post('/api/staff/assign-bay', authenticateToken, assignBay);
 
 // Global Error Handler
