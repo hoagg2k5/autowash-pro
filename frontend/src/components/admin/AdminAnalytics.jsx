@@ -1,7 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../config.js';
 
 export default function AdminAnalytics({ bookings, promotions, user }) {
   const [hoveredBar, setHoveredBar] = useState(null);
+  const [branches, setBranches] = useState([]);
+
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/branches`);
+        if (response.ok) {
+          const data = await response.json();
+          setBranches(data.map(b => b.name));
+        }
+      } catch (err) {
+        console.error("Error fetching branches for analytics:", err);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -266,13 +283,7 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  "AutoWash Pro - Quận 1",
-                  "AutoWash Pro - Quận 7",
-                  "AutoWash Pro - Bình Thạnh",
-                  "AutoWash Pro - Cầu Giấy",
-                  "AutoWash Pro - Tây Hồ"
-                ].map(branchName => {
+                {branches.map(branchName => {
                   const branchBookings = bookings.filter(b => b.branch === branchName);
                   const completed = branchBookings.filter(b => b.status === 'Completed');
                   const cancelled = branchBookings.filter(b => b.status === 'Cancelled');

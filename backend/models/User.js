@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   loyaltyTier: { type: String, enum: ['Member', 'Silver', 'Gold', 'Platinum'], default: 'Member' },
+  isWalkInOnly: { type: Boolean, default: false },
   totalSpent: { type: Number, default: 0 },
   pointsBalance: { type: Number, default: 0 },
   pointsExpiredSoon: { type: Number, default: 0 },

@@ -1,9 +1,131 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../config.js';
+import { toast } from '../shared/toast.js';
 
 export default function AdminBookings({ bookings, user, handleCompleteWash, handleCancelWash }) {
   const [bookingSearchText, setBookingSearchText] = useState('');
   const [bookingStatusFilter, setBookingStatusFilter] = useState('Tất cả');
   const [branchFilter, setBranchFilter] = useState(user?.branch || 'Tất cả');
+  const [branches, setBranches] = useState([]);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const [bays, setBays] = useState(["Khoang 1", "Khoang 2", "Khoang 3"]);
+  const [bayFilter, setBayFilter] = useState('Tất cả');
+
+  const [staffs, setStaffs] = useState([]);
+
+  useEffect(() => {
+    const fetchStaffs = async () => {
+      try {
+        const token = sessionStorage.getItem('autowash_token');
+        const branchParam = branchFilter !== 'Tất cả' ? `?branch=${encodeURIComponent(branchFilter)}` : '';
+        const res = await fetch(`${API_BASE_URL}/api/bookings/staffs/list${branchParam}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStaffs(data);
+        }
+      } catch (err) {
+        console.error("Error loading staffs:", err);
+      }
+    };
+    fetchStaffs();
+  }, [branchFilter]);
+
+  const handleAssignStaff = async (bookingId, staffId) => {
+    try {
+      const token = sessionStorage.getItem('autowash_token');
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/assign-staff`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ staffId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gán nhân viên phụ trách thất bại.');
+      toast.success(data.message);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/branches`);
+        if (res.ok) {
+          const data = await res.json();
+          setBranches(data);
+        }
+      } catch (err) {
+        console.error("Error loading branches:", err);
+      }
+    };
+    fetchBranches();
+  }, []);
+
+  useEffect(() => {
+    setBayFilter('Tất cả');
+    const fetchBaysForAdmin = async () => {
+      if (branchFilter === 'Tất cả') {
+        setBays(["Khoang 1", "Khoang 2", "Khoang 3"]);
+        return;
+      }
+      try {
+        const token = sessionStorage.getItem('autowash_token');
+        const res = await fetch(`${API_BASE_URL}/api/bays?branch=${encodeURIComponent(branchFilter)}&status=Active`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const bayNames = data.map(b => b.name);
+          setBays(bayNames.length > 0 ? bayNames : ["Khoang 1", "Khoang 2", "Khoang 3"]);
+        } else {
+          setBays(["Khoang 1", "Khoang 2", "Khoang 3"]);
+        }
+      } catch (err) {
+        setBays(["Khoang 1", "Khoang 2", "Khoang 3"]);
+      }
+    };
+    fetchBaysForAdmin();
+  }, [branchFilter]);
+
+  // Reset to first page when search text, status filter, branch filter, or bay filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [bookingSearchText, bookingStatusFilter, branchFilter, bayFilter]);
+
+  const filteredBookings = bookings
+    .filter(b => branchFilter === 'Tất cả' || b.branch === branchFilter)
+    .filter(b => bookingStatusFilter === 'Tất cả' || b.status === bookingStatusFilter)
+    .filter(b => {
+      if (bayFilter === 'Tất cả') return true;
+      if (bayFilter === 'Chưa xếp') return !b.bay || b.bay.trim() === '';
+      return b.bay === bayFilter;
+    })
+    .filter(b => {
+      if (!bookingSearchText) return true;
+      const searchLower = bookingSearchText.toLowerCase();
+      return (
+        (b.licensePlate && b.licensePlate.toLowerCase().includes(searchLower)) ||
+        (b.customerName && b.customerName.toLowerCase().includes(searchLower)) ||
+        (b.customerPhone && b.customerPhone.includes(searchLower))
+      );
+    });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
 
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -32,6 +154,7 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
   };
 
   const todayStr = new Date().toLocaleDateString('sv-SE');
+  const [monitorDate, setMonitorDate] = useState(todayStr);
 
   return (
     <div className="glass-panel" style={{ padding: '2rem' }}>
@@ -59,6 +182,18 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
             <option value="Completed">Hoàn tất</option>
             <option value="Cancelled">Đã hủy</option>
           </select>
+          <select
+            className="form-input"
+            style={{ width: '150px', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+            value={bayFilter}
+            onChange={(e) => setBayFilter(e.target.value)}
+          >
+            <option value="Tất cả">Tất cả khoang</option>
+            <option value="Chưa xếp">Chưa xếp khoang</option>
+            {bays.map(bayName => (
+              <option key={bayName} value={bayName}>{bayName}</option>
+            ))}
+          </select>
           <span className="text-xs" style={{ fontWeight: 600 }}>Chi Nhánh:</span>
           {user?.branch ? (
             <span className="badge-info" style={{ fontSize: '0.9rem', padding: '0.4rem 1rem' }}>{user.branch}</span>
@@ -70,11 +205,9 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
               onChange={(e) => setBranchFilter(e.target.value)}
             >
               <option value="Tất cả">Tất cả chi nhánh</option>
-              <option value="AutoWash Pro - Quận 1">AutoWash Pro - Quận 1</option>
-              <option value="AutoWash Pro - Quận 7">AutoWash Pro - Quận 7</option>
-              <option value="AutoWash Pro - Bình Thạnh">AutoWash Pro - Bình Thạnh</option>
-              <option value="AutoWash Pro - Cầu Giấy">AutoWash Pro - Cầu Giấy</option>
-              <option value="AutoWash Pro - Tây Hồ">AutoWash Pro - Tây Hồ</option>
+              {branches.map(br => (
+                <option key={br._id} value={br.name}>{br.name}</option>
+              ))}
             </select>
           )}
         </div>
@@ -90,22 +223,56 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
           border: '1px solid rgba(255,255,255,0.08)',
           color: '#fff'
         }}>
-          <h4 style={{ margin: '0 0 1rem 0', color: '#38bdf8', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            📊 GIÁM SÁT KHOANG RỬA HÔM NAY ({branchFilter === 'Tất cả' ? 'Tất cả chi nhánh' : branchFilter})
-          </h4>
+          <div className="flex-between" style={{ margin: '0 0 1.25rem 0', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <h4 style={{ margin: 0, color: '#38bdf8', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              📊 GIÁM SÁT KHOANG RỬA ({branchFilter === 'Tất cả' ? 'Tất cả chi nhánh' : branchFilter})
+            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>Ngày giám sát:</span>
+              <input
+                type="date"
+                style={{
+                  width: '140px',
+                  padding: '0.25rem 0.5rem',
+                  fontSize: '0.8rem',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#fff',
+                  borderRadius: '6px',
+                  outline: 'none'
+                }}
+                value={monitorDate}
+                onChange={(e) => setMonitorDate(e.target.value)}
+              />
+              {monitorDate !== todayStr && (
+                <button
+                  type="button"
+                  className="btn"
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.75rem',
+                    borderRadius: '6px',
+                    background: 'rgba(2, 132, 199, 0.2)',
+                    border: '1px solid rgba(2, 132, 199, 0.4)',
+                    color: '#38bdf8',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setMonitorDate(todayStr)}
+                >
+                  Hôm nay
+                </button>
+              )}
+            </div>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
             {["08:00 - 09:00", "09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00", "13:00 - 14:00", "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "17:00 - 18:00"].map(slot => {
               const slotBookings = bookings.filter(b =>
-                b.bookingDate === todayStr &&
+                b.bookingDate === monitorDate &&
                 b.timeSlot === slot &&
                 b.status !== 'Cancelled' &&
                 (branchFilter === 'Tất cả' || b.branch === branchFilter)
               );
-
-              const k1 = slotBookings.find(b => b.bay === 'Khoang 1');
-              const k2 = slotBookings.find(b => b.bay === 'Khoang 2');
-              const k3 = slotBookings.find(b => b.bay === 'Khoang 3');
 
               return (
                 <div key={slot} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.6rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -113,24 +280,23 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
                     🕒 {slot}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                    {[
-                      { name: 'Khoang 1', b: k1 },
-                      { name: 'Khoang 2', b: k2 },
-                      { name: 'Khoang 3', b: k3 }
-                    ].map(k => (
-                      <div key={k.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem' }}>
-                        <span style={{ color: '#94a3b8' }}>{k.name}:</span>
-                        {k.b ? (
-                          <span style={{ color: '#f87171', fontWeight: 600 }} title={`Khách: ${k.b.customerName} - Xe: ${k.b.licensePlate}`}>
-                            🚗 {k.b.licensePlate}
-                          </span>
-                        ) : (
-                          <span style={{ color: '#4ade80', fontWeight: 600 }}>
-                            🟢 Trống
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                    {bays.map(bayName => {
+                      const b = slotBookings.find(bk => bk.bay === bayName);
+                      return (
+                        <div key={bayName} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem' }}>
+                          <span style={{ color: '#94a3b8' }}>{bayName}:</span>
+                          {b ? (
+                            <span style={{ color: '#f87171', fontWeight: 600 }} title={`Khách: ${b.customerName} - Xe: ${b.licensePlate}`}>
+                              🚗 {b.licensePlate}
+                            </span>
+                          ) : (
+                            <span style={{ color: '#4ade80', fontWeight: 600 }}>
+                              🟢 Trống
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -139,38 +305,30 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
         </div>
       )}
 
-      {bookings.length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Không có lịch đặt nào trên hệ thống.</p>
+      {filteredBookings.length === 0 ? (
+        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+          {bookings.length === 0 ? 'Không có lịch đặt nào trên hệ thống.' : 'Không tìm thấy lịch đặt phù hợp.'}
+        </p>
       ) : (
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Thông tin khách</th>
-                <th>Biển số xe</th>
-                <th>Chi nhánh</th>
-                <th>Khoang</th>
-                <th>Thời gian rửa</th>
-                <th>Gói dịch vụ</th>
-                <th>Phải thu</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings
-                .filter(b => branchFilter === 'Tất cả' || b.branch === branchFilter)
-                .filter(b => bookingStatusFilter === 'Tất cả' || b.status === bookingStatusFilter)
-                .filter(b => {
-                  if (!bookingSearchText) return true;
-                  const searchLower = bookingSearchText.toLowerCase();
-                  return (
-                    (b.licensePlate && b.licensePlate.toLowerCase().includes(searchLower)) ||
-                    (b.customerName && b.customerName.toLowerCase().includes(searchLower)) ||
-                    (b.customerPhone && b.customerPhone.includes(searchLower))
-                  );
-                })
-                .map(b => (
+        <>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Thông tin khách</th>
+                  <th>Biển số xe</th>
+                  <th>Chi nhánh</th>
+                  <th>Khoang</th>
+                  <th>Nhân viên phụ trách</th>
+                  <th>Thời gian rửa</th>
+                  <th>Gói dịch vụ</th>
+                  <th>Phải thu</th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.map(b => (
                   <tr key={b.id}>
                     <td>
                       <strong>{b.customerName}</strong>
@@ -188,6 +346,27 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
                     </td>
                     <td className="text-xs" style={{ fontWeight: 600 }}>{b.branch || "AutoWash Pro - Quận 1"}</td>
                     <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</td>
+                    <td>
+                      {(b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress') ? (
+                        <select
+                          className="form-input"
+                          style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', width: '130px' }}
+                          value={b.assignedStaffId || ''}
+                          onChange={(e) => handleAssignStaff(b.id, e.target.value)}
+                        >
+                          <option value="">-- Chưa gán --</option>
+                          {staffs.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.fullName}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span style={{ fontSize: '0.85rem' }}>
+                          {staffs.find(s => s.id === b.assignedStaffId)?.fullName || b.assignedStaffId || 'Chưa gán'}
+                        </span>
+                      )}
+                    </td>
                     <td>
                       <strong>{b.bookingDate}</strong>
                       <div className="text-xs" style={{ color: 'var(--primary)' }}>{b.timeSlot}</div>
@@ -225,9 +404,67 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
                     </td>
                   </tr>
                 ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginTop: '1.5rem',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  fontSize: '0.85rem',
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              >
+                ◀ Trước
+              </button>
+              
+              {[...Array(totalPages)].map((_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    className={`btn ${currentPage === pageNum ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', minWidth: '35px' }}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  fontSize: '0.85rem',
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                }}
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              >
+                Sau ▶
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

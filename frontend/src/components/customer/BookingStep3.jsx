@@ -85,37 +85,7 @@ export default function BookingStep3({
         </div>
       </div>
 
-      {/* Reward Redemptions */}
-      {dbUser?.pointsBalance >= 20 && (
-        <div style={{ padding: '1.25rem', background: 'rgba(2, 132, 199, 0.03)', borderRadius: '10px', border: '1px solid rgba(2, 132, 199, 0.15)', marginBottom: '1.5rem' }}>
-          <div className="flex-between">
-            <div>
-              <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem' }}>🎁 Đổi Điểm Thưởng Nhận Khấu Trừ</h4>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Tỷ lệ: 20 điểm = {formatVnd(25000)} giảm giá trực tiếp</p>
-            </div>
-            <span className="text-xs" style={{ fontWeight: 600 }}>Khả dụng: <strong style={{ color: 'var(--primary)' }}>{dbUser.pointsBalance}</strong> điểm</span>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem' }}>
-            <input
-              type="number"
-              className="form-input"
-              min="0"
-              max={dbUser.pointsBalance}
-              step="20"
-              value={redeemPoints}
-              onChange={(e) => setRedeemPoints(Math.max(0, Math.min(dbUser.pointsBalance, parseInt(e.target.value) || 0)))}
-              placeholder="Nhập số điểm muốn đổi (bội số của 20)"
-              style={{ flex: 1 }}
-            />
-            <div style={{ whiteSpace: 'nowrap' }}>
-              <span className="text-sm" style={{ fontWeight: 700, color: 'var(--status-completed)' }}>
-                -{formatVnd(redeemPoints * 1250)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Available Vouchers Selector */}
       <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
@@ -285,7 +255,7 @@ export default function BookingStep3({
         </div>
         {(estimate?.discount || 0) > 0 && (
           <div className="flex-between text-sm" style={{ color: '#ef4444', marginBottom: '0.4rem' }}>
-            <span>Ưu đãi giảm giá (Hạng hội viên / Điểm đổi):</span>
+            <span>Ưu đãi giảm giá (Hạng hội viên / Voucher):</span>
             <span style={{ fontWeight: 600 }}>-{formatVnd(estimate.discount)}</span>
           </div>
         )}

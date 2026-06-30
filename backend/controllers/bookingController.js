@@ -5,6 +5,7 @@ import {
   startWashBooking, 
   updateBookingNotes, 
   completeBooking, 
+  checkoutBooking,
   cancelBooking,
   getSlotTimes,
   assignBayToBooking
@@ -14,7 +15,9 @@ import User from '../models/User.js';
 import Vehicle from '../models/Vehicle.js';
 import LoyaltyRules from '../models/LoyaltyRules.js';
 import Voucher from '../models/Voucher.js';
+import UserVoucher from '../models/UserVoucher.js';
 import Service from '../models/Service.js';
+import Bay from '../models/Bay.js';
 import bcrypt from 'bcryptjs';
 import UserVoucher from '../models/UserVoucher.js';
 import { sendEmail, getBookingConfirmationTemplate, getBookingStatusUpdateTemplate } from '../utils/email.js';
@@ -25,26 +28,29 @@ import PointHistory from '../models/PointHistory.js';
 async function autoConfirmOldBookings(io) {
   try {
     const now = Date.now();
-    const pendingBookings = await Booking.find({ status: 'Pending' });
-    let updated = false;
-    const updatedBookings = [];
+    const cutoffTime = new Date(now - 30 * 60 * 1000);
+    const oldBookings = await Booking.find({ status: 'Pending', createdAt: { $lt: cutoffTime } });
+    
+    if (oldBookings.length > 0) {
+      const ids = oldBookings.map(b => b._id);
+      await Booking.updateMany({ _id: { $in: ids } }, { $set: { status: 'Confirmed' } });
+      
+      if (io) {
+        const vehicleIds = oldBookings.map(b => b.vehicleId);
+        const vehicles = await Vehicle.find({ id: { $in: vehicleIds } });
+        const vehicleMap = {};
+        vehicles.forEach(v => {
+          vehicleMap[v.id] = v;
+        });
 
-    for (const b of pendingBookings) {
-      if (now - new Date(b.createdAt).getTime() > 30 * 60 * 1000) {
-        b.status = 'Confirmed';
-        await b.save();
-        updated = true;
-        updatedBookings.push(b);
-      }
-    }
-
-    if (updated && io) {
-      for (const booking of updatedBookings) {
-        const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
-        const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-        io.emit('booking_updated', {
-          ...booking.toObject(),
-          licensePlate
+        oldBookings.forEach(b => {
+          b.status = 'Confirmed';
+          const vehicle = vehicleMap[b.vehicleId];
+          const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
+          io.emit('booking_updated', {
+            ...b.toObject(),
+            licensePlate
+          });
         });
       }
     }
@@ -61,27 +67,37 @@ async function autoCancelNoShowBookings(io) {
       status: { $in: ['Pending', 'Confirmed'] },
       bookingType: { $ne: 'Walk-in' } // Không tự động hủy đơn vãng lai
     });
-    let updated = false;
-    const updatedBookings = [];
-
+    
+    const bookingsToCancel = [];
     for (const b of activeBookings) {
       const { endTime } = getSlotTimes(b.bookingDate, b.timeSlot);
-      // Quá giờ hẹn kết thúc + 30 phút
       if (now > endTime.getTime() + 30 * 60 * 1000) {
-        // Tự động hủy do quá giờ hẹn không tới (No-show), truyền lý do và cờ wasNoShow = true
-        const cancelled = await cancelBooking(b.id, 'Hệ thống tự động hủy do quá giờ hẹn không tới (No-show).', true);
-        updated = true;
-        updatedBookings.push(cancelled);
+        bookingsToCancel.push(b);
       }
     }
 
-    if (updated && io) {
-      for (const booking of updatedBookings) {
-        const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
-        const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-        io.emit('booking_updated', {
-          ...booking.toObject(),
-          licensePlate
+    if (bookingsToCancel.length > 0) {
+      const updatedBookings = [];
+      for (const b of bookingsToCancel) {
+        const cancelled = await cancelBooking(b.id, 'Hệ thống tự động hủy do quá giờ hẹn không tới (No-show).', true);
+        updatedBookings.push(cancelled);
+      }
+
+      if (io) {
+        const vehicleIds = updatedBookings.map(b => b.vehicleId);
+        const vehicles = await Vehicle.find({ id: { $in: vehicleIds } });
+        const vehicleMap = {};
+        vehicles.forEach(v => {
+          vehicleMap[v.id] = v;
+        });
+
+        updatedBookings.forEach(b => {
+          const vehicle = vehicleMap[b.vehicleId];
+          const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
+          io.emit('booking_updated', {
+            ...b.toObject(),
+            licensePlate
+          });
         });
       }
     }
@@ -123,20 +139,39 @@ export const listBookings = async (req, res) => {
 
     const bookings = await Booking.find(query);
 
-    const list = [];
-    for (const b of bookings) {
-      const user = await User.findOne({ id: b.userId });
-      const vehicle = await Vehicle.findOne({ id: b.vehicleId });
-      
-      list.push({
+    // Extract all unique userIds and vehicleIds
+    const userIds = [...new Set(bookings.map(b => b.userId))];
+    const vehicleIds = [...new Set(bookings.map(b => b.vehicleId))];
+
+    // Fetch corresponding users and vehicles in parallel
+    const [users, vehicles] = await Promise.all([
+      User.find({ id: { $in: userIds } }),
+      Vehicle.find({ id: { $in: vehicleIds } })
+    ]);
+
+    // Build O(1) lookup maps
+    const userMap = {};
+    users.forEach(u => {
+      userMap[u.id] = u;
+    });
+
+    const vehicleMap = {};
+    vehicles.forEach(v => {
+      vehicleMap[v.id] = v;
+    });
+
+    const list = bookings.map(b => {
+      const user = userMap[b.userId];
+      const vehicle = vehicleMap[b.vehicleId];
+      return {
         ...b.toObject(),
         customerName: user ? user.fullName : 'Ẩn danh',
         customerPhone: user ? user.phone : '',
         customerTier: user ? user.loyaltyTier : 'Member',
         licensePlate: vehicle ? vehicle.licensePlate : 'N/A',
         carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : 'N/A'
-      });
-    }
+      };
+    });
 
     // Sắp xếp theo ngày đặt lịch và khung giờ (khung giờ lấy giờ bắt đầu đầu tiên)
     list.sort((a, b) => new Date(b.bookingDate + "T" + b.timeSlot.split(" ")[0]) - new Date(a.bookingDate + "T" + a.timeSlot.split(" ")[0]));
@@ -311,6 +346,40 @@ export const complete = async (req, res) => {
   }
 };
 
+export const checkout = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    await checkBranchAccess(req, bookingId);
+    const checkedOut = await checkoutBooking(bookingId);
+
+    const vehicle = await Vehicle.findOne({ id: checkedOut.vehicleId });
+    const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...checkedOut.toObject(),
+        licensePlate
+      });
+    }
+
+    // Gửi email hoàn thành dịch vụ / thanh toán
+    const user = await User.findOne({ id: checkedOut.userId });
+    if (user && user.email && vehicle) {
+      const emailHtml = getBookingStatusUpdateTemplate(checkedOut, user, vehicle, 'completed');
+      sendEmail({
+        to: user.email,
+        subject: `[AutoWash Pro] Hóa đơn thanh toán và hoàn tất dịch vụ ${checkedOut.id}`,
+        html: emailHtml
+      }).catch(err => console.error("Error sending checkout email:", err));
+    }
+
+    res.json({ message: "Thanh toán và hoàn tất dịch vụ thành công.", booking: checkedOut });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 export const cancel = async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -367,10 +436,11 @@ export const getOccupancy = async (req, res) => {
       branch,
       bookingDate: date,
       timeSlot,
-      status: { $ne: 'Cancelled' }
+      status: { $nin: ['Cancelled', 'Completed'] }
     });
     
-    const BAYS = ["Khoang 1", "Khoang 2", "Khoang 3"];
+    const dbBays = await Bay.find({ branch, status: 'Active' });
+    const BAYS = dbBays.length > 0 ? dbBays.map(b => b.name) : ["Khoang 1", "Khoang 2", "Khoang 3"];
     const bays = [];
     
     for (const bayName of BAYS) {
@@ -478,7 +548,12 @@ export const validateVoucherEndpoint = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy thông tin người dùng." });
     }
     if (voucher.pointsRequired > 0) {
-      if (!user.ownedVouchers || !user.ownedVouchers.some(id => id.toString() === voucher._id.toString())) {
+      const userVoucher = await UserVoucher.findOne({
+        userId: user.id,
+        voucherId: voucher._id,
+        status: 'Available'
+      });
+      if (!userVoucher) {
         return res.status(400).json({ error: "Bạn chưa sở hữu mã giảm giá này. Vui lòng đổi bằng điểm tích lũy trước." });
       }
     }
@@ -546,8 +621,7 @@ export const getBookingDetail = async (req, res) => {
     
     // Tìm kiếm không phân biệt hoa thường
     const normalizedId = bookingId.toLowerCase().trim();
-    const bookings = await Booking.find({});
-    const booking = bookings.find(b => b.id.toLowerCase() === normalizedId);
+    const booking = await Booking.findOne({ id: normalizedId });
 
     if (!booking) {
       return res.status(404).json({ error: "Không tìm thấy lịch đặt xe với mã này." });
@@ -589,7 +663,9 @@ export const listActiveVouchers = async (req, res) => {
     }
     const loyaltyTier = user.loyaltyTier || 'Member';
     const today = new Date().toLocaleDateString('sv-SE');
-    const ownedIds = user.ownedVouchers || [];
+    
+    const userVouchers = await UserVoucher.find({ userId: user.id, status: 'Available' });
+    const ownedVoucherIds = userVouchers.map(uv => uv.voucherId);
     
     const vouchers = await Voucher.find({
       isActive: true,
@@ -598,7 +674,7 @@ export const listActiveVouchers = async (req, res) => {
       $or: [
         { pointsRequired: { $exists: false } },
         { pointsRequired: 0 },
-        { _id: { $in: ownedIds } }
+        { _id: { $in: ownedVoucherIds } }
       ]
     });
     
@@ -614,6 +690,19 @@ export const payBooking = async (req, res) => {
     const booking = await Booking.findOne({ id: bookingId });
     if (!booking) {
       return res.status(404).json({ error: "Không tìm thấy lịch đặt xe này." });
+    }
+
+    // Bảo mật: Khách hàng chỉ được thanh toán đơn hàng của chính mình
+    if (req.user.role === 'customer' && booking.userId !== req.user.id) {
+      return res.status(403).json({ error: "Bạn không có quyền thanh toán đơn hàng này." });
+    }
+
+    if (booking.status === 'Cancelled') {
+      return res.status(400).json({ error: "Không thể thanh toán cho đơn hàng đã bị hủy." });
+    }
+
+    if (booking.paymentStatus === 'Paid') {
+      return res.status(400).json({ error: "Đơn hàng này đã được thanh toán trước đó." });
     }
 
     // Update payment and status
@@ -693,6 +782,11 @@ export const createWalkInBooking = async (req, res) => {
       return res.status(400).json({ error: "Biển số xe và gói dịch vụ là bắt buộc." });
     }
 
+    const plateRegex = /^[0-9]{2}[A-Za-z][A-Za-z0-9]?[-.\s]?[0-9]{4,5}$/;
+    if (!plateRegex.test(licensePlate.replace(/\./g, ''))) {
+      return res.status(400).json({ error: "Biển số xe không hợp lệ. Ví dụ đúng: 51K-12345, 30A-123.45" });
+    }
+
     const plateUpper = licensePlate.toUpperCase().trim();
     const branchName = branch || req.user.branch || "AutoWash Pro - Quận 1";
 
@@ -701,7 +795,13 @@ export const createWalkInBooking = async (req, res) => {
     let userId = "customer-id";
 
     if (customerPhone && customerPhone.trim() !== "") {
-      const phone = customerPhone.trim();
+      const phoneRegex = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/;
+      const cleanedPhone = customerPhone.replace(/[\s.-]/g, '');
+      if (!phoneRegex.test(cleanedPhone)) {
+        return res.status(400).json({ error: "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại Việt Nam." });
+      }
+
+      const phone = cleanedPhone;
       user = await User.findOne({ phone });
       if (!user) {
         // Tạo mật khẩu ngẫu nhiên đã được mã hóa để thỏa mãn điều kiện required trong User schema
@@ -715,6 +815,7 @@ export const createWalkInBooking = async (req, res) => {
           password: hashedPassword,
           role: 'customer',
           loyaltyTier: 'Member',
+          isWalkInOnly: true,
           pointsBalance: 0,
           totalSpent: 0,
           createdAt: new Date()
@@ -747,7 +848,8 @@ export const createWalkInBooking = async (req, res) => {
     }
 
     // 3. Tạo Booking với status 'Waiting' và bay = "" (đưa thẳng vào hàng đợi)
-    const BAYS = ["Khoang 1", "Khoang 2", "Khoang 3"];
+    const dbBays = await Bay.find({ branch: branchName, status: 'Active' });
+    const BAYS = dbBays.length > 0 ? dbBays.map(b => b.name) : ["Khoang 1", "Khoang 2", "Khoang 3"];
     
     // Lấy timeslot từ request hoặc tự động tính theo giờ hiện tại
     const getCurrentTimeSlot = () => {
@@ -764,17 +866,6 @@ export const createWalkInBooking = async (req, res) => {
     };
     const timeSlot = bodyTimeSlot || getCurrentTimeSlot();
     const todayStr = new Date().toLocaleDateString('sv-SE');
-
-    const activeBookings = await Booking.find({
-      branch: branchName,
-      bookingDate: todayStr,
-      timeSlot: timeSlot,
-      status: { $ne: 'Cancelled' }
-    });
-
-    if (activeBookings.length >= BAYS.length) {
-      return res.status(400).json({ error: "Khung giờ đã chọn tại chi nhánh đã đầy hết tất cả các khoang rửa." });
-    }
 
     // Kiểm tra xe đã có lịch đặt trùng ngày và khung giờ chưa
     const existingVehicleBooking = await Booking.findOne({
@@ -979,7 +1070,61 @@ export const listMyVouchers = async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
->>>>>>> 7640736d82e120ce4f485f2d72bc8eba4402b5d3
+  }
+};
+
+export const assignStaff = async (req, res) => {
+  try {
+    const { staffId } = req.body; // id nhân viên hoặc null/empty để hủy gán
+    const bookingId = req.params.id;
+
+    await checkBranchAccess(req, bookingId);
+
+    const booking = await Booking.findOne({ id: bookingId });
+    if (!booking) {
+      return res.status(404).json({ error: "Không tìm thấy lịch đặt xe này." });
+    }
+
+    if (staffId) {
+      const staffUser = await User.findOne({ id: staffId, role: 'staff' });
+      if (!staffUser) {
+        return res.status(404).json({ error: "Không tìm thấy thông tin nhân viên hoặc người này không phải nhân sự rửa xe." });
+      }
+      booking.assignedStaffId = staffId;
+    } else {
+      booking.assignedStaffId = null;
+    }
+
+    await booking.save();
+
+    const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
+    const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
+
+    res.json({ message: "Gán nhân viên phụ trách thành công.", booking });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const listStaffForAssignment = async (req, res) => {
+  try {
+    const { branch } = req.query;
+    let query = { role: 'staff' };
+    if (branch) {
+      query.branch = branch;
+    }
+    const staffs = await User.find(query, { id: 1, fullName: 1, phone: 1, branch: 1 });
+    res.json(staffs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 

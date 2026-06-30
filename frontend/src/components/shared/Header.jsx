@@ -1,8 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { ShowerHead, User, Wrench, Crown, LogOut, Home, Sun, Moon, Ticket } from 'lucide-react';
 import { Button } from '../ui/Button.jsx';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-export default function Header({ currentUser, onLogout, onGoToHome, onOpenAccountModal, onOpenVouchersModal }) {
+export default function Header({ 
+  currentUser, 
+  onLogout, 
+  onGoToHome, 
+  onOpenAccountModal, 
+  onOpenVouchersModal,
+  queueCount,
+  pendingCount,
+  feedbackCount
+}) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const pathParts = location.pathname.split('/');
+  const adminActiveTab = pathParts[1] === 'admin' ? pathParts[3] || 'analytics' : 'analytics';
+  const staffViewMode = pathParts[1] === 'staff' ? pathParts[3] || 'console' : 'console';
+
   const [isDark, setIsDark] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || document.body.classList.contains('dark');
   });
@@ -33,9 +50,134 @@ export default function Header({ currentUser, onLogout, onGoToHome, onOpenAccoun
 
   return (
     <header className="header flex justify-between items-center px-8 py-5 border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-      <div className="logo flex items-center gap-2 text-2xl font-black font-heading bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer" onClick={onGoToHome}>
-        <ShowerHead className="w-7 h-7 text-sky-500 shrink-0" />
-        <span>AutoWash Pro</span>
+      <div className="flex items-center gap-6 overflow-x-auto select-none max-w-[85%] scrollbar-hide">
+        <div className="logo flex items-center gap-2 text-2xl font-black font-heading bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer shrink-0" onClick={onGoToHome}>
+          <ShowerHead className="w-7 h-7 text-sky-500 shrink-0" />
+          <span>AutoWash Pro</span>
+        </div>
+
+        {currentUser && currentUser.role === 'admin' && (
+          <nav className="flex items-center gap-1 text-xs font-semibold text-slate-600 shrink-0">
+            <button
+              onClick={() => navigate('/admin/dashboard/analytics')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'analytics' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Tổng Quan</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/bookings')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'bookings' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Lịch Hẹn</span>
+              {pendingCount > 0 && (
+                <span className="px-1.5 py-0.5 text-[9px] font-bold text-white bg-amber-500 rounded-full leading-none">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/customers')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'customers' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Hội Viên</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/services')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'services' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Gói Rửa</span>
+            </button>
+            {!currentUser.branch && (
+              <button
+                onClick={() => navigate('/admin/dashboard/staffs')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'staffs' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+              >
+                <span>Nhân Sự</span>
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/admin/dashboard/rules')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'rules' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Cấu Hình</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/promotions')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'promotions' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Khuyến Mãi</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/vouchers')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'vouchers' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Vouchers</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/bays')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'bays' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Khoang Rửa</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/branches')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'branches' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Chi Nhánh</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/audit-logs')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'audit-logs' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Nhật Ký</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/dashboard/feedbacks')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${adminActiveTab === 'feedbacks' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Đánh Giá</span>
+              {feedbackCount > 0 && (
+                <span className="px-1.5 py-0.5 text-[9px] font-bold text-white bg-indigo-500 rounded-full leading-none">
+                  {feedbackCount}
+                </span>
+              )}
+            </button>
+          </nav>
+        )}
+
+        {currentUser && currentUser.role === 'staff' && (
+          <nav className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 shrink-0">
+            <button
+              onClick={() => navigate('/staff/dashboard/console')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${staffViewMode === 'console' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Tổng Quan</span>
+            </button>
+            <button
+              onClick={() => navigate('/staff/dashboard/list')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${staffViewMode === 'list' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Danh Sách</span>
+            </button>
+            <button
+              onClick={() => navigate('/staff/dashboard/timeline')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${staffViewMode === 'timeline' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Sơ Đồ Khoang</span>
+            </button>
+            <button
+              onClick={() => navigate('/staff/dashboard/queue')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${staffViewMode === 'queue' ? 'bg-sky-50 text-sky-700 font-bold border border-sky-100 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+            >
+              <span>Hàng Đợi</span>
+              {queueCount > 0 && (
+                <span className="px-1.5 py-0.5 text-[9px] font-bold text-white bg-red-500 rounded-full leading-none shadow-sm">
+                  {queueCount}
+                </span>
+              )}
+            </button>
+          </nav>
+        )}
       </div>
 
       <div className="nav-buttons flex items-center gap-3">
