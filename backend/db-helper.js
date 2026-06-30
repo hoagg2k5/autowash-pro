@@ -7,6 +7,7 @@ import Promotion from './models/Promotion.js';
 import PointHistory from './models/PointHistory.js';
 import Service from './models/Service.js';
 import Voucher from './models/Voucher.js';
+import UserVoucher from './models/UserVoucher.js';
 
 // Dành cho khả năng tương thích ngược của controller
 export async function getDb() {
@@ -178,7 +179,7 @@ export async function createBooking(userId, bookingData) {
     }
   }
 
-  // Kiểm tra khoang rửa trùng giờ tại chi nhánh
+  // Kiểm tra sức chứa (Tối đa 3 đơn cho 3 khoang) tại chi nhánh trùng giờ
   const targetBranch = bookingData.branch || "AutoWash Pro - Quận 1";
   const activeBookings = await Booking.find({
     branch: targetBranch,
@@ -193,7 +194,7 @@ export async function createBooking(userId, bookingData) {
   if (bookingData.bay && BAYS.includes(bookingData.bay)) {
     const isOccupied = activeBookings.some(b => b.bay === bookingData.bay);
     if (isOccupied) {
-      throw new Error(`Khoang rửa này (${bookingData.bay}) đã có người đặt trước. Vui lòng chọn khoang khác hoặc giờ khác.`);
+      throw new Error(`Khoang rửa này (${bookingData.bay}) đã có xe khác sử dụng trong khung giờ này.`);
     }
     assignedBay = bookingData.bay;
   } else {
@@ -239,15 +240,9 @@ export async function createBooking(userId, bookingData) {
   const actualDiscount = Math.max(discountApplied, bestPromoDiscount);
   let totalPaid = price - actualDiscount;
 
-  // Đổi điểm tích lũy
+  // Loại bỏ đổi điểm trực tiếp trên form đặt lịch (bắt buộc phải đổi lấy Voucher trước ở shop)
   let pointsRedeemed = 0;
   let redemptionDiscount = 0;
-  if (bookingData.redeemPoints && bookingData.redeemPoints > 0) {
-    const pointsToRedeem = Math.min(bookingData.redeemPoints, user.pointsBalance);
-    redemptionDiscount = pointsToRedeem * rules.vndPerPointRedeemed;
-    pointsRedeemed = pointsToRedeem;
-    totalPaid = Math.max(0, totalPaid - redemptionDiscount);
-  }
 
   // Áp dụng mã Voucher thủ công
   let voucherDiscount = 0;
@@ -312,6 +307,16 @@ export async function createBooking(userId, bookingData) {
   });
 
   await newBooking.save();
+
+  // Đánh dấu Voucher của người dùng là đã sử dụng
+  if (bookingData.promoCode) {
+    const codeUpper = bookingData.promoCode.toUpperCase().trim();
+    await UserVoucher.updateOne(
+      { userId, voucherCode: codeUpper, isUsed: false },
+      { $set: { isUsed: true, usedAt: new Date() } }
+    );
+  }
+
   return newBooking;
 }
 
@@ -438,6 +443,15 @@ export async function cancelBooking(bookingId, reason, wasNoShow) {
   booking.status = 'Cancelled';
   booking.cancelReason = reason || '';
   await booking.save();
+
+  // Hoàn trả Voucher đã sử dụng (nếu có) để khách hàng có thể dùng lại
+  if (booking.promoCode) {
+    const codeUpper = booking.promoCode.toUpperCase().trim();
+    await UserVoucher.updateOne(
+      { userId: booking.userId, voucherCode: codeUpper },
+      { $set: { isUsed: false, usedAt: null } }
+    );
+  }
 
   // Áp dụng phạt trừ điểm cho khách hàng đối với Pending hoặc Confirmed
   if (oldStatus === 'Pending' || oldStatus === 'Confirmed') {
@@ -577,4 +591,29 @@ export async function runMonthlyReview() {
   }
 
   return updatedCount;
+}
+
+// Sắp xếp khoang rửa xe (Staff/Admin gán khoang)
+export async function assignBayToBooking(bookingId, bay) {
+  const booking = await Booking.findOne({ id: bookingId });
+  if (!booking) throw new Error("Không tìm thấy lịch đặt");
+
+  if (bay) {
+    // Kiểm tra xem khoang rửa này đã có xe khác sử dụng cùng chi nhánh, ngày, giờ chưa
+    const occupied = await Booking.findOne({
+      id: { $ne: bookingId },
+      branch: booking.branch,
+      bookingDate: booking.bookingDate,
+      timeSlot: booking.timeSlot,
+      bay: bay,
+      status: { $ne: 'Cancelled' }
+    });
+    if (occupied) {
+      throw new Error(`Khoang ${bay} đã có xe khác sử dụng trong khung giờ này.`);
+    }
+  }
+
+  booking.bay = bay || "";
+  await booking.save();
+  return booking;
 }

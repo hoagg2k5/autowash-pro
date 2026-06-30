@@ -6,7 +6,8 @@ import {
   updateBookingNotes, 
   completeBooking, 
   cancelBooking,
-  getSlotTimes
+  getSlotTimes,
+  assignBayToBooking
 } from '../db-helper.js';
 import Booking from '../models/Booking.js';
 import User from '../models/User.js';
@@ -15,7 +16,10 @@ import LoyaltyRules from '../models/LoyaltyRules.js';
 import Voucher from '../models/Voucher.js';
 import Service from '../models/Service.js';
 import bcrypt from 'bcryptjs';
+import UserVoucher from '../models/UserVoucher.js';
 import { sendEmail, getBookingConfirmationTemplate, getBookingStatusUpdateTemplate } from '../utils/email.js';
+import PointHistory from '../models/PointHistory.js';
+
 
 // Tự động xác nhận các đơn đặt lịch chờ duyệt quá 30 phút
 async function autoConfirmOldBookings(io) {
@@ -647,7 +651,8 @@ export const payBooking = async (req, res) => {
 
 export const assignBay = async (req, res) => {
   try {
-    const { bookingId, bayId } = req.body;
+    const bookingId = req.body.bookingId || req.params.id;
+    const bayId = req.body.bayId || req.body.bay;
     if (!bookingId) {
       return res.status(400).json({ error: "Thiếu thông tin bookingId." });
     }
@@ -836,6 +841,87 @@ export const createWalkInBooking = async (req, res) => {
   }
 };
 
+const REWARD_TEMPLATES = {
+  'rw-10k': { points: 10, discountVnd: 10000, discountPercent: 0, label: 'Voucher giảm 10.000đ', minSpent: 0 },
+  'rw-30k': { points: 25, discountVnd: 30000, discountPercent: 0, label: 'Voucher giảm 30.000đ', minSpent: 100000 },
+  'rw-50k': { points: 40, discountVnd: 50000, discountPercent: 0, label: 'Voucher giảm 50.000đ', minSpent: 150000 },
+  'rw-10pct': { points: 20, discountVnd: 0, discountPercent: 10, label: 'Voucher giảm 10%', minSpent: 50000 },
+  'rw-20pct': { points: 35, discountVnd: 0, discountPercent: 20, label: 'Voucher giảm 20%', minSpent: 100000 },
+};
+
+export const redeemVoucher = async (req, res) => {
+  try {
+    const { templateId } = req.body;
+    const userId = req.user.id;
+
+    const template = REWARD_TEMPLATES[templateId];
+    if (!template) {
+      return res.status(400).json({ error: "Gói đổi thưởng không hợp lệ." });
+    }
+
+    const user = await User.findOne({ id: userId });
+    if (!user) {
+      return res.status(404).json({ error: "Không tìm thấy người dùng." });
+    }
+
+    if (user.pointsBalance < template.points) {
+      return res.status(400).json({ error: "Số điểm tích lũy của bạn không đủ để đổi voucher này." });
+    }
+
+    // Trừ điểm tích lũy của người dùng
+    const originalPoints = user.pointsBalance;
+    user.pointsBalance -= template.points;
+    await user.save();
+
+    // Sinh mã Voucher ngẫu nhiên có độ dài 8 ký tự với tiền tố RW-
+    const randomCode = 'RW-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE'); // Hạn 30 ngày
+
+    // Tạo bản ghi Voucher mới
+    const newVoucher = new Voucher({
+      code: randomCode,
+      discountVnd: template.discountVnd,
+      discountPercent: template.discountPercent,
+      minSpent: template.minSpent,
+      targetTiers: ['Member', 'Silver', 'Gold', 'Platinum'],
+      isActive: true,
+      expiryDate
+    });
+    await newVoucher.save();
+
+    // Tạo bản ghi UserVoucher mới liên kết với user
+    const newUserVoucher = new UserVoucher({
+      id: 'uv-' + Math.random().toString(36).substr(2, 9),
+      userId: user.id,
+      voucherCode: randomCode,
+      redeemedAt: new Date(),
+      isUsed: false,
+      expiryDate
+    });
+    await newUserVoucher.save();
+
+    // Lưu vào lịch sử điểm thưởng
+    const historyRedeem = new PointHistory({
+      id: 'ph-' + Math.random().toString(36).substr(2, 9),
+      userId: user.id,
+      bookingId: null,
+      type: 'Redeemed',
+      points: template.points,
+      reason: `Đổi điểm lấy ${template.label}`
+    });
+    await historyRedeem.save();
+
+    res.status(201).json({
+      message: "Đổi voucher thành công!",
+      voucher: newVoucher,
+      userVoucher: newUserVoucher,
+      pointsBalance: user.pointsBalance
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const undoCheckin = async (req, res) => {
   try {
     await checkBranchAccess(req, req.params.id);
@@ -866,6 +952,34 @@ export const undoCheckin = async (req, res) => {
     res.json({ message: "Hoàn tác check-in thành công. Đơn hàng đã quay lại trạng thái 'Đã xác nhận'.", booking });
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+export const listMyVouchers = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userVouchers = await UserVoucher.find({ userId, isUsed: false });
+
+    const codes = userVouchers.map(uv => uv.voucherCode);
+    const vouchers = await Voucher.find({ code: { $in: codes }, isActive: true });
+
+    const result = userVouchers.map(uv => {
+      const v = vouchers.find(item => item.code === uv.voucherCode);
+      return {
+        id: uv.id,
+        voucherCode: uv.voucherCode,
+        redeemedAt: uv.redeemedAt,
+        expiryDate: uv.expiryDate,
+        discountVnd: v ? v.discountVnd : 0,
+        discountPercent: v ? v.discountPercent : 0,
+        minSpent: v ? v.minSpent : 0
+      };
+    }).filter(r => r.discountVnd > 0 || r.discountPercent > 0);
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+>>>>>>> 7640736d82e120ce4f485f2d72bc8eba4402b5d3
   }
 };
 
