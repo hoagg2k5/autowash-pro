@@ -158,3 +158,4 @@ export default function BookingStep2({
     </div>
   );
 }
+

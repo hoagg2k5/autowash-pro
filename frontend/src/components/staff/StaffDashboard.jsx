@@ -450,6 +450,7 @@ export default function StaffDashboard({ user, onLogout }) {
             handleCompleteWash={handleCompleteWash}
             handleCancelWash={handleCancelWash}
             handleQuickBook={handleQuickBook}
+            handleAssignBay={handleAssignBay}
           />
         ) : viewMode === 'queue' ? (
           <QueueView

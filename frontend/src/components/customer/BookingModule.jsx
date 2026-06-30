@@ -192,7 +192,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
       const fetchVouchers = async () => {
         setLoadingVouchers(true);
         try {
-          const response = await fetch(`${API_BASE_URL}/api/bookings/vouchers/active`, {
+          const response = await fetch(`${API_BASE_URL}/api/bookings/vouchers/my`, {
             headers: {
               'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
             }
@@ -373,9 +373,9 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
     const baseDiscount = Math.max(perkDiscount, bestPromoDiscount);
     let tempTotal = price - baseDiscount;
 
-    // Redemption Discount
-    const ptsRedeemed = Math.min(Number(redeemPoints) || 0, dbUser.pointsBalance);
-    const redemptionDiscount = ptsRedeemed * 1250;
+    // Redemption Discount (Removed direct point redemption)
+    const ptsRedeemed = 0;
+    const redemptionDiscount = 0;
     
     // Voucher Discount
     const total = Math.max(0, tempTotal - redemptionDiscount - voucherDiscount);
@@ -441,6 +441,10 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         return;
       }
 
+      if (bays.length > 0 && bays.every(b => b.occupied)) {
+        setError("Tất cả các khoang rửa ở khung giờ này đã được đặt hết. Vui lòng chọn giờ khác.");
+        return;
+      }
       setCurrentStep(3);
     }
   };
