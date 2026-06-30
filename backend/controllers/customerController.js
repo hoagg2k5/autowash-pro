@@ -7,44 +7,11 @@ import Booking from '../models/Booking.js';
 import PointHistory from '../models/PointHistory.js';
 import LoyaltyRules from '../models/LoyaltyRules.js';
 import Voucher from '../models/Voucher.js';
+import UserVoucher from '../models/UserVoucher.js';
 import { addVehicle } from '../db-helper.js';
-
-// Tự động xác nhận các đơn đặt lịch chờ duyệt quá 30 phút
-async function autoConfirmOldBookings(io) {
-  try {
-    const now = Date.now();
-    const pendingBookings = await Booking.find({ status: 'Pending' });
-    let updated = false;
-    const updatedBookings = [];
-
-    for (const b of pendingBookings) {
-      if (now - new Date(b.createdAt).getTime() > 30 * 60 * 1000) {
-        b.status = 'Confirmed';
-        await b.save();
-        updated = true;
-        updatedBookings.push(b);
-      }
-    }
-
-    if (updated && io) {
-      for (const booking of updatedBookings) {
-        const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
-        const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-        io.emit('booking_updated', {
-          ...booking.toObject(),
-          licensePlate
-        });
-      }
-    }
-  } catch (err) {
-    console.error("Error in auto-confirm simulator:", err);
-  }
-}
 
 export const getDashboard = async (req, res) => {
   try {
-    const io = req.app.get('io');
-    await autoConfirmOldBookings(io);
 
     const userId = req.params.id;
 
@@ -61,15 +28,22 @@ export const getDashboard = async (req, res) => {
 
     const vehicles = await Vehicle.find({ userId });
     const bookings = await Booking.find({ userId }).sort({ createdAt: -1 });
-    const populatedBookings = [];
-    for (const b of bookings) {
-      const vehicle = await Vehicle.findOne({ id: b.vehicleId });
-      populatedBookings.push({
+    
+    // Create lookup map of vehicles by id
+    const vehicleMap = {};
+    vehicles.forEach(v => {
+      vehicleMap[v.id] = v;
+    });
+
+    const populatedBookings = bookings.map(b => {
+      const vehicle = vehicleMap[b.vehicleId];
+      return {
         ...b.toObject(),
         licensePlate: vehicle ? vehicle.licensePlate : 'N/A',
         carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : 'N/A'
-      });
-    }
+      };
+    });
+
     const pointsHistory = await PointHistory.find({ userId }).sort({ createdAt: -1 });
     const rules = await LoyaltyRules.findOne({});
     
@@ -199,7 +173,10 @@ export const getMyVouchers = async (req, res) => {
     }
     const loyaltyTier = user.loyaltyTier || 'Member';
     const today = new Date().toLocaleDateString('sv-SE');
-    const ownedIds = user.ownedVouchers || [];
+
+    // Lấy các UserVoucher đang khả dụng của khách hàng
+    const userVouchers = await UserVoucher.find({ userId: user.id, status: 'Available' });
+    const ownedVoucherIds = userVouchers.map(uv => uv.voucherId.toString());
 
     const vouchers = await Voucher.find({
       isActive: true,
@@ -208,7 +185,7 @@ export const getMyVouchers = async (req, res) => {
       $or: [
         { pointsRequired: { $exists: false } },
         { pointsRequired: 0 },
-        { _id: { $in: ownedIds } }
+        { _id: { $in: ownedVoucherIds } }
       ]
     });
 
@@ -216,9 +193,14 @@ export const getMyVouchers = async (req, res) => {
       const vObj = v.toObject();
       const isRedeemed = vObj.pointsRequired > 0;
       if (isRedeemed) {
-        vObj.ownedCount = ownedIds.filter(id => id.toString() === vObj._id.toString()).length;
+        vObj.ownedCount = userVouchers.filter(uv => uv.voucherId.toString() === vObj._id.toString()).length;
+        // Gắn danh sách mã coupon chi tiết (uniqueCode) để khách hàng xem
+        vObj.uniqueCodes = userVouchers
+          .filter(uv => uv.voucherId.toString() === vObj._id.toString())
+          .map(uv => uv.uniqueCode);
       } else {
         vObj.ownedCount = 1;
+        vObj.uniqueCodes = [vObj.code];
       }
       return vObj;
     });
@@ -226,7 +208,6 @@ export const getMyVouchers = async (req, res) => {
     try {
       fs.writeFileSync('debug_log.txt', JSON.stringify({
         userId: user.id,
-        ownedVouchers: user.ownedVouchers,
         vouchers: vouchersWithCount.map(x => ({ code: x.code, id: x._id, ownedCount: x.ownedCount }))
       }, null, 2));
     } catch (e) {
@@ -271,13 +252,19 @@ export const redeemVoucher = async (req, res) => {
 
     // Deduct points
     user.pointsBalance -= pointsRequired;
-
-    // Add to ownedVouchers
-    if (!user.ownedVouchers) {
-      user.ownedVouchers = [];
-    }
-    user.ownedVouchers.push(voucher._id);
     await user.save({ session });
+
+    // Generate uniqueCode
+    const uniqueCode = `${voucher.code}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+    // Add to UserVoucher collection
+    const userVoucher = new UserVoucher({
+      userId: user.id,
+      voucherId: voucher._id,
+      uniqueCode,
+      status: 'Available'
+    });
+    await userVoucher.save({ session });
 
     // Save Point History log
     const history = new PointHistory({
@@ -293,10 +280,14 @@ export const redeemVoucher = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
+    // Lấy lại danh sách voucher đã sở hữu (ID) để tương thích ngược
+    const uvList = await UserVoucher.find({ userId: user.id, status: 'Available' });
+    const ownedIds = uvList.map(uv => uv.voucherId);
+
     res.json({
-      message: `Đổi voucher thành công! Bạn đã dùng ${pointsRequired} điểm.`,
+      message: `Đổi voucher thành công! Mã của bạn là ${uniqueCode}. Đã dùng ${pointsRequired} điểm.`,
       pointsBalance: user.pointsBalance,
-      ownedVouchers: user.ownedVouchers
+      ownedVouchers: ownedIds
     });
   } catch (error) {
     await session.abortTransaction();

@@ -3,6 +3,7 @@ import { toast } from '../shared/toast.js';
 
 export default function AdminStaffs({ user, API_BASE_URL }) {
   const [staffs, setStaffs] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [staffLoading, setStaffLoading] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
@@ -11,7 +12,7 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
     phone: '', 
     password: '', 
     role: 'staff', 
-    branch: 'AutoWash Pro - Quận 1' 
+    branch: '' 
   });
 
   const fetchStaffs = async () => {
@@ -30,8 +31,24 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
     }
   };
 
+  const fetchBranches = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/branches`);
+      if (res.ok) {
+        const data = await res.json();
+        setBranches(data);
+        if (data.length > 0 && !staffForm.branch) {
+          setStaffForm(prev => ({ ...prev, branch: data[0].name }));
+        }
+      }
+    } catch (err) {
+      console.error("Error loading branches:", err);
+    }
+  };
+
   useEffect(() => {
     fetchStaffs();
+    fetchBranches();
   }, []);
 
   const handleCreateOrUpdateStaff = async (e) => {
@@ -84,7 +101,7 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
           className="btn btn-primary"
           onClick={() => {
             setEditingStaff(null);
-            setStaffForm({ fullName: '', phone: '', password: '', role: 'staff', branch: 'AutoWash Pro - Quận 1' });
+            setStaffForm({ fullName: '', phone: '', password: '', role: 'staff', branch: branches[0]?.name || '' });
             setShowStaffModal(true);
           }}
         >
@@ -230,11 +247,9 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
                   onChange={(e) => setStaffForm(prev => ({ ...prev, branch: e.target.value }))}
                   required
                 >
-                  <option value="AutoWash Pro - Quận 1">AutoWash Pro - Quận 1</option>
-                  <option value="AutoWash Pro - Quận 7">AutoWash Pro - Quận 7</option>
-                  <option value="AutoWash Pro - Bình Thạnh">AutoWash Pro - Bình Thạnh</option>
-                  <option value="AutoWash Pro - Cầu Giấy">AutoWash Pro - Cầu Giấy</option>
-                  <option value="AutoWash Pro - Tây Hồ">AutoWash Pro - Tây Hồ</option>
+                  {branches.map(br => (
+                    <option key={br._id} value={br.name}>{br.name}</option>
+                  ))}
                 </select>
               </div>
 

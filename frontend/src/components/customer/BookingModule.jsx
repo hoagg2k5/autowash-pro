@@ -13,14 +13,6 @@ const TIME_SLOTS = [
   "13:00 - 14:00", "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "17:00 - 18:00"
 ];
 
-const BRANCHES = [
-  "AutoWash Pro - Quận 1",
-  "AutoWash Pro - Quận 7",
-  "AutoWash Pro - Bình Thạnh",
-  "AutoWash Pro - Cầu Giấy",
-  "AutoWash Pro - Tây Hồ"
-];
-
 export default function BookingModule({ dbUser, vehicles, rules, onBookingSuccess, onOpenAddVehicle }) {
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1); // 1, 2, 3
@@ -28,10 +20,31 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
   // Form selections state
   const [selectedVehicle, setSelectedVehicle] = useState(vehicles[0]?.id || '');
   const [selectedBranch, setSelectedBranch] = useState('AutoWash Pro - Quận 1');
+  const [branches, setBranches] = useState([]);
   const [bookingDate, setBookingDate] = useState('');
   const [selectedSlot, setSelectedSlot] = useState('');
   const [selectedPackage, setSelectedPackage] = useState('Express');
   const [redeemPoints, setRedeemPoints] = useState(0);
+
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/branches?isActive=true`);
+        if (response.ok) {
+          const data = await response.json();
+          setBranches(data);
+          if (data.length > 0) {
+            if (!data.some(b => b.name === selectedBranch)) {
+              setSelectedBranch(data[0].name);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading branches:", err);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   // Payment states
   const [paymentMethod, setPaymentMethod] = useState('Cash'); // 'Cash' or 'Online'
@@ -630,7 +643,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
           dbUser={dbUser}
           selectedBranch={selectedBranch}
           setSelectedBranch={setSelectedBranch}
-          BRANCHES={BRANCHES}
+          BRANCHES={branches.map(b => b.name)}
           calendarDays={calendarDays}
           bookingDate={bookingDate}
           setBookingDate={setBookingDate}

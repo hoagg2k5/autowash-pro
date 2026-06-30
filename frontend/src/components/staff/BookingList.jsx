@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from '../shared/toast.js';
 
 export default function BookingList({
   sortedBookings,
@@ -19,7 +20,9 @@ export default function BookingList({
   handleStartWash,
   handleCompleteWash,
   handleAssignBay,
-  handleUndoCheckin
+  handleUndoCheckin,
+  staffs = [],
+  handleAssignStaff
 }) {
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -131,15 +134,29 @@ export default function BookingList({
                       </span>
                     )}
                     <span className="badge-info" style={{ fontSize: '0.75rem' }}>{b.branch}</span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Mã đặt: <code>{b.id}</code></span>
                   </div>
 
                   <h4 style={{ marginTop: '0.5rem', marginBottom: '0.25rem', fontSize: '1.1rem' }}>
                     {b.customerName} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({b.customerPhone})</span>
                   </h4>
 
-                  <p style={{ margin: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
+                  <p style={{ margin: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
                     Xe: <code style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.95rem' }}>{b.licensePlate}</code>
+                    <span style={{ color: '#cbd5e1' }}>|</span>
+                    <span style={{ fontSize: '0.85rem', color: '#475569', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      Mã đặt: <code style={{ background: '#f1f5f9', padding: '0.15rem 0.4rem', borderRadius: '6px', fontWeight: 'bold', color: '#0ea5e9', fontFamily: 'monospace' }}>{b.id}</code>
+                      <button
+                        type="button"
+                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8rem', padding: 0 }}
+                        onClick={() => {
+                          navigator.clipboard.writeText(b.id);
+                          toast.success("Đã sao chép mã đặt lịch!");
+                        }}
+                        title="Sao chép mã"
+                      >
+                        📋
+                      </button>
+                    </span>
                     {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
                       <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`}>
                         💎 Ưu Tiên {b.customerTier}
@@ -147,8 +164,29 @@ export default function BookingList({
                     )}
                     <span style={{ color: 'var(--text-muted)' }}> - {b.carDetails}</span>
                   </p>
-                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', fontWeight: 600 }}>
-                    Khoang rửa: <span style={{ color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</span>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span>Khoang rửa: <span style={{ color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</span></span>
+                    <span style={{ color: 'var(--text-muted)' }}>|</span>
+                    <span>Nhân viên phụ trách:</span>
+                    {(b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress') ? (
+                      <select
+                        className="form-input"
+                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', width: '150px', display: 'inline-block' }}
+                        value={b.assignedStaffId || ''}
+                        onChange={(e) => handleAssignStaff(b.id, e.target.value)}
+                      >
+                        <option value="">-- Chưa gán --</option>
+                        {staffs.map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.fullName}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>
+                        {staffs.find(s => s.id === b.assignedStaffId)?.fullName || b.assignedStaffId || 'Chưa gán'}
+                      </span>
+                    )}
                   </p>
                 </div>
 

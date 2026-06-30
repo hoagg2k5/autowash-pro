@@ -1,23 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../config.js';
 import { toast } from './shared/toast.js';
 import AdminAnalytics from './admin/AdminAnalytics.jsx';
 import AdminRules from './admin/AdminRules.jsx';
 import AdminPromotions from './admin/AdminPromotions.jsx';
-import AdminSimulation from './admin/AdminSimulation.jsx';
 import AdminServices from './admin/AdminServices.jsx';
 import AdminVouchers from './admin/AdminVouchers.jsx';
+import AdminBays from './admin/AdminBays.jsx';
+import AdminBranches from './admin/AdminBranches.jsx';
 
 // Import newly refactored modular subcomponents
 import AdminBookings from './admin/AdminBookings.jsx';
 import AdminCustomers from './admin/AdminCustomers.jsx';
 import AdminStaffs from './admin/AdminStaffs.jsx';
 import AdminFeedbacks from './admin/AdminFeedbacks.jsx';
+import AdminAuditLogs from './admin/AdminAuditLogs.jsx';
 
-export default function AdminDashboard({ user, onLogout }) {
-  const [activeTab, setActiveTab] = useState('bookings');
+export default function AdminDashboard({ user, onLogout, setPendingCount, setFeedbackCount }) {
+  const { tab } = useParams();
+  const activeTab = tab || 'analytics';
   const [bookings, setBookings] = useState([]);
+
+  useEffect(() => {
+    if (setPendingCount) {
+      setPendingCount(bookings.filter(b => b.status === 'Pending').length);
+    }
+    if (setFeedbackCount) {
+      setFeedbackCount(bookings.filter(b => b.status === 'Completed' && b.rating).length);
+    }
+  }, [bookings, setPendingCount, setFeedbackCount]);
   const [customers, setCustomers] = useState([]);
   const [rules, setRules] = useState(null);
   const [promotions, setPromotions] = useState([]);
@@ -230,8 +243,7 @@ export default function AdminDashboard({ user, onLogout }) {
     <div className="container">
       <div className="flex-between" style={{ marginBottom: '2rem' }}>
         <div>
-          <h2 style={{ fontFamily: 'var(--font-heading)' }}>BẢNG QUẢN TRỊ VIÊN {user?.branch ? `- ${user.branch.toUpperCase()}` : '(SUPER ADMIN)'}</h2>
-          <p style={{ color: 'var(--text-muted)' }}>Quản lý đặt lịch hẹn rửa xe, cấu hình tích điểm và phân tích logs nghiên cứu</p>
+          <h2 style={{ fontFamily: 'var(--font-heading)' }}>BẢNG QUẢN TRỊ VIÊN (ADMIN)</h2>
         </div>
         <button className="btn btn-secondary" onClick={handleRunMonthlyReview}>
           🔄 Rà Soát Hạng Tháng
@@ -239,40 +251,9 @@ export default function AdminDashboard({ user, onLogout }) {
       </div>
 
       {/* Analytics Card Component */}
-      <AdminAnalytics bookings={bookings} promotions={promotions} user={user} />
-
-      {/* Tabs list */}
-      <div className="tabs">
-        <span className={`tab ${activeTab === 'bookings' ? 'active' : ''}`} onClick={() => setActiveTab('bookings')}>
-          📅 Lịch Hẹn Chờ Rửa ({bookings.filter(b => b.status === 'Pending').length})
-        </span>
-        <span className={`tab ${activeTab === 'customers' ? 'active' : ''}`} onClick={() => setActiveTab('customers')}>
-          👥 Khách Hàng Thân Thiết ({customers.length})
-        </span>
-        <span className={`tab ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')}>
-          🧼 Gói Rửa Xe
-        </span>
-        {!user?.branch && (
-          <span className={`tab ${activeTab === 'staffs' ? 'active' : ''}`} onClick={() => setActiveTab('staffs')}>
-            👔 Quản Lý Nhân Sự
-          </span>
-        )}
-        <span className={`tab ${activeTab === 'rules' ? 'active' : ''}`} onClick={() => setActiveTab('rules')}>
-          ⚙️ Cấu Hình Điểm & Hạng
-        </span>
-        <span className={`tab ${activeTab === 'promotions' ? 'active' : ''}`} onClick={() => setActiveTab('promotions')}>
-          🎯 Khuyến Mãi Targeted
-        </span>
-        <span className={`tab ${activeTab === 'vouchers' ? 'active' : ''}`} onClick={() => setActiveTab('vouchers')}>
-          🎟️ Quản Lý Vouchers
-        </span>
-        <span className={`tab ${activeTab === 'research' ? 'active' : ''}`} onClick={() => setActiveTab('research')}>
-          📊 Nghiên Cứu & Mô Phỏng
-        </span>
-        <span className={`tab ${activeTab === 'feedbacks' ? 'active' : ''}`} onClick={() => setActiveTab('feedbacks')}>
-          💬 Đánh Giá & Phản Hồi ({bookings.filter(b => b.status === 'Completed' && b.rating).length})
-        </span>
-      </div>
+      {activeTab === 'analytics' && (
+        <AdminAnalytics bookings={bookings} promotions={promotions} user={user} />
+      )}
 
       {/* 1. BOOKINGS LIST */}
       {activeTab === 'bookings' && (
@@ -307,10 +288,6 @@ export default function AdminDashboard({ user, onLogout }) {
         />
       )}
 
-      {/* 5. SIMULATION SECTION */}
-      {activeTab === 'research' && (
-        <AdminSimulation />
-      )}
 
       {/* 6. SERVICES CRUD SECTION */}
       {activeTab === 'services' && (
@@ -320,6 +297,16 @@ export default function AdminDashboard({ user, onLogout }) {
       {/* 8. VOUCHER CRUD SECTION */}
       {activeTab === 'vouchers' && (
         <AdminVouchers />
+      )}
+
+      {/* 10. BAYS CRUD SECTION */}
+      {activeTab === 'bays' && (
+        <AdminBays />
+      )}
+
+      {/* 11. BRANCHES CRUD SECTION */}
+      {activeTab === 'branches' && (
+        <AdminBranches />
       )}
 
       {/* 7. STAFF MANAGEMENT SECTION */}
@@ -333,6 +320,11 @@ export default function AdminDashboard({ user, onLogout }) {
       {/* 9. FEEDBACKS SECTION */}
       {activeTab === 'feedbacks' && (
         <AdminFeedbacks bookings={bookings} />
+      )}
+
+      {/* 12. AUDIT LOGS SECTION */}
+      {activeTab === 'audit-logs' && (
+        <AdminAuditLogs />
       )}
     </div>
   );

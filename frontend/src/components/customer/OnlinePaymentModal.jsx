@@ -53,7 +53,7 @@ export default function OnlinePaymentModal({
             <img
               src={
                 paymentActiveTab === 'vietqr'
-                  ? `https://img.vietqr.io/image/vietinbank-102872635489-compact2.png?amount=${booking.totalPaid}&addInfo=AUTOWASH%20${booking.id}&accountName=CONG%20TY%20AUTOWASH%20PRO`
+                  ? `https://img.vietqr.io/image/bidv-6353935463-compact2.png?amount=${booking.totalPaid}&addInfo=AUTOWASH%20${booking.id}&accountName=CONG%20TY%20AUTOWASH%20PRO`
                   : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`2.1|02|08|AUTOWASH_PRO|${booking.id}|${booking.totalPaid}`)}`
               }
               alt="QR Code Thanh Toán"
@@ -65,8 +65,8 @@ export default function OnlinePaymentModal({
           <div className="w-full bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm mb-4">
             {paymentActiveTab === 'vietqr' ? (
               <div className="space-y-1.5">
-                <div className="flex justify-between"><span className="text-slate-500">Ngân hàng:</span><span className="font-semibold text-slate-800">VietinBank</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Số TK:</span><span className="font-semibold text-slate-800">102872635489</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Ngân hàng:</span><span className="font-semibold text-slate-800">BIDV</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Số TK:</span><span className="font-semibold text-slate-800">6353935463</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Chủ TK:</span><span className="font-semibold text-slate-800">CONG TY AUTOWASH PRO</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Số tiền:</span><span className="font-bold text-sky-600">{formatVnd(booking.totalPaid)}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Nội dung:</span><span className="font-bold text-indigo-600">AUTOWASH {booking.id}</span></div>

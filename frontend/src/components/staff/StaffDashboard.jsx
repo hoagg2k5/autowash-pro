@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 
@@ -13,8 +14,11 @@ import BookingList from './BookingList.jsx';
 import QueueView from './QueueView.jsx';
 import CreateWalkInModal from './CreateWalkInModal.jsx';
 
-export default function StaffDashboard({ user, onLogout }) {
+export default function StaffDashboard({ user, onLogout, setQueueCount }) {
+  const { view } = useParams();
+  const viewMode = view || 'console';
   const [bookings, setBookings] = useState([]);
+  const [staffs, setStaffs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -28,8 +32,8 @@ export default function StaffDashboard({ user, onLogout }) {
   const [recentlyUpdatedBookingId, setRecentlyUpdatedBookingId] = useState(null);
 
   // Timeline & Quick Book states
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'timeline'
-  const [timelineDate, setTimelineDate] = useState(new Date().toLocaleDateString('sv-SE'));
+  const [dashboardDate, setDashboardDate] = useState(new Date().toLocaleDateString('sv-SE'));
+  const [bays, setBays] = useState([]);
   const [showQuickBook, setShowQuickBook] = useState(false);
   const [showWalkInModal, setShowWalkInModal] = useState(false);
   const [quickBookSlot, setQuickBookSlot] = useState('');
@@ -66,6 +70,50 @@ export default function StaffDashboard({ user, onLogout }) {
   useEffect(() => {
     fetchBookings(false);
   }, []);
+
+  const fetchBays = async () => {
+    try {
+      const branchName = user.branch || "AutoWash Pro - Quận 1";
+      const token = sessionStorage.getItem('autowash_token');
+      const res = await fetch(`${API_BASE_URL}/api/bays?branch=${encodeURIComponent(branchName)}&status=Active`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const bayNames = data.map(b => b.name);
+        setBays(bayNames.length > 0 ? bayNames : ["Khoang 1", "Khoang 2", "Khoang 3"]);
+      } else {
+        setBays(["Khoang 1", "Khoang 2", "Khoang 3"]);
+      }
+    } catch (err) {
+      setBays(["Khoang 1", "Khoang 2", "Khoang 3"]);
+    }
+  };
+
+  const fetchStaffs = async () => {
+    try {
+      const branchName = user.branch || "";
+      const token = sessionStorage.getItem('autowash_token');
+      const res = await fetch(`${API_BASE_URL}/api/bookings/staffs/list?branch=${encodeURIComponent(branchName)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStaffs(data);
+      }
+    } catch (err) {
+      console.error("Error loading staffs:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBays();
+    fetchStaffs();
+  }, [user.branch]);
 
   useEffect(() => {
     const socket = io(API_BASE_URL);
@@ -198,6 +246,26 @@ export default function StaffDashboard({ user, onLogout }) {
     }
   };
 
+  const handleAssignStaff = async (bookingId, staffId) => {
+    try {
+      const token = sessionStorage.getItem('autowash_token');
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/assign-staff`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ staffId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gán nhân viên phụ trách thất bại.');
+      toast.success(data.message);
+      fetchBookings(true);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   const handleNotesChange = (id, val) => {
     setEditingNotes(prev => ({
       ...prev,
@@ -218,7 +286,7 @@ export default function StaffDashboard({ user, onLogout }) {
 
   // Filter & Search Logic
   const filteredBookings = bookings.filter(b => {
-    if (dateFilter === 'today' && b.bookingDate !== todayStr) return false;
+    if (dateFilter === 'today' && b.bookingDate !== dashboardDate) return false;
     if (statusFilter !== 'All' && b.status !== statusFilter) return false;
 
     if (searchQuery.trim() !== '') {
@@ -257,7 +325,7 @@ export default function StaffDashboard({ user, onLogout }) {
   });
 
   // KPI calculations
-  const todayBookings = bookings.filter(b => b.bookingDate === todayStr);
+  const todayBookings = bookings.filter(b => b.bookingDate === dashboardDate);
   const pendingCount = todayBookings.filter(b => b.status === 'Pending').length;
   const confirmedCount = todayBookings.filter(b => b.status === 'Confirmed').length;
   const waitingCount = todayBookings.filter(b => b.status === 'Waiting').length;
@@ -265,106 +333,154 @@ export default function StaffDashboard({ user, onLogout }) {
   const completedCount = todayBookings.filter(b => b.status === 'Completed').length;
   const cancelledCount = todayBookings.filter(b => b.status === 'Cancelled').length;
 
+  const isToday = dashboardDate === todayStr;
+  const dateLabel = isToday ? 'hôm nay' : new Date(dashboardDate).toLocaleDateString('vi-VN');
+
   const queueCount = bookings.filter(b => 
     b.status === 'Waiting' && 
     (!b.bay || b.bay.trim() === '') && 
     b.branch === (user.branch || "AutoWash Pro - Quận 1")
   ).length;
 
+  useEffect(() => {
+    if (setQueueCount) {
+      setQueueCount(queueCount);
+    }
+  }, [queueCount, setQueueCount]);
+
   if (loading && bookings.length === 0) return <div style={{ textAlign: 'center', padding: '4rem' }}>Đang tải danh sách công việc...</div>;
 
   return (
     <div className="container">
-      {/* Welcome & Shift Stats */}
+      {/* Welcome Banner - Shared by all view modes */}
       <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
-        <div className="flex-between" style={{ flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        <div className="flex-between" style={{ flexWrap: 'wrap', gap: '1.5rem' }}>
           <div>
             <h2 style={{ fontFamily: 'var(--font-heading)' }}>XIN CHÀO, {user.fullName}!</h2>
-            <p style={{ color: 'var(--text-muted)' }}>Chi nhánh: <strong style={{ color: 'var(--primary)' }}>{user.branch || 'Chưa gán'}</strong> | Ca làm việc: {new Date().toLocaleDateString('vi-VN')}</p>
+            <p style={{ color: 'var(--text-muted)' }}>Chi nhánh: <strong style={{ color: 'var(--primary)' }}>{user.branch || 'Chưa gán'}</strong> | Ngày làm việc: {new Date(dashboardDate).toLocaleDateString('vi-VN')}</p>
           </div>
-          <button className="btn btn-secondary" onClick={onLogout}>Đăng Xuất</button>
-        </div>
-
-        {/* Shift Stats Card Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-          <div
-            className="clickable-kpi-card"
-            style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}
-            onClick={() => setActiveKpiDetail('total')}
-          >
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Tổng lịch hôm nay (Bấm xem chi tiết)</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.25rem' }}>{todayBookings.length}</h3>
-          </div>
-          <div
-            className="clickable-kpi-card"
-            style={{ background: 'rgba(245, 158, 11, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.2)' }}
-            onClick={() => setActiveKpiDetail('Pending')}
-          >
-            <span className="text-xs" style={{ color: 'amber' }}>Chờ xác nhận (Bấm xem chi tiết)</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706', marginTop: '0.25rem' }}>{pendingCount}</h3>
-          </div>
-          <div
-            className="clickable-kpi-card"
-            style={{ background: 'rgba(2, 132, 199, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(2, 132, 199, 0.2)' }}
-            onClick={() => setActiveKpiDetail('Confirmed')}
-          >
-            <span className="text-xs" style={{ color: 'var(--primary)' }}>Đã xác nhận (Bấm xem chi tiết)</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>{confirmedCount}</h3>
-          </div>
-          <div
-            className="clickable-kpi-card"
-            style={{ background: 'rgba(99, 102, 241, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(99, 102, 241, 0.2)' }}
-            onClick={() => setActiveKpiDetail('Waiting')}
-          >
-            <span className="text-xs" style={{ color: '#6366f1' }}>Chờ rửa (Bấm xem chi tiết)</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#6366f1', marginTop: '0.25rem' }}>{waitingCount}</h3>
-          </div>
-          <div
-            className="clickable-kpi-card"
-            style={{ background: 'var(--secondary-glow)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(2, 132, 199, 0.2)' }}
-            onClick={() => setActiveKpiDetail('In Progress')}
-          >
-            <span className="text-xs" style={{ color: 'var(--primary)' }}>Đang rửa (Bấm xem chi tiết)</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>{inProgressCount}</h3>
-          </div>
-          <div
-            className="clickable-kpi-card"
-            style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}
-            onClick={() => setActiveKpiDetail('Completed')}
-          >
-            <span className="text-xs" style={{ color: 'emerald' }}>Hoàn tất hôm nay (Bấm xem chi tiết)</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669', marginTop: '0.25rem' }}>{completedCount}</h3>
-          </div>
-          <div
-            className="clickable-kpi-card"
-            style={{ background: 'rgba(220, 38, 38, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(220, 38, 38, 0.2)' }}
-            onClick={() => setActiveKpiDetail('Cancelled')}
-          >
-            <span className="text-xs" style={{ color: 'var(--status-cancelled)' }}>Đã hủy hôm nay (Bấm xem chi tiết)</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--status-cancelled)', marginTop: '0.25rem' }}>{cancelledCount}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Chọn ngày:</span>
+              <input
+                type="date"
+                className="form-input"
+                style={{
+                  width: '140px',
+                  padding: '0.4rem 0.6rem',
+                  fontSize: '0.85rem',
+                  borderRadius: '8px',
+                  background: '#ffffff',
+                  border: '1px solid var(--border-color)',
+                  outline: 'none'
+                }}
+                value={dashboardDate}
+                onChange={(e) => setDashboardDate(e.target.value)}
+              />
+              {dashboardDate !== todayStr && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '0.4rem 0.8rem',
+                    fontSize: '0.8rem',
+                    borderRadius: '8px'
+                  }}
+                  onClick={() => setDashboardDate(todayStr)}
+                >
+                  Hôm nay
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Bookings Queue Console */}
-      <div className="glass-panel" style={{ padding: '2rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
-          {/* Left Column: Lpr Recognition */}
-          <LprSimulator 
-            bookings={bookings} 
-            todayStr={todayStr} 
-            currentBranch={user.branch || "AutoWash Pro - Quận 1"} 
-            onRefresh={fetchBookings} 
-          />
+      {/* Render conditional sections based on viewMode */}
+      {viewMode === 'console' && (
+        <>
+          {/* Shift Stats Card Grid */}
+          <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
+            <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>📊 THỐNG KÊ CA LÀM VIỆC</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+              <div
+                className="clickable-kpi-card"
+                style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}
+                onClick={() => setActiveKpiDetail('total')}
+              >
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Tổng lịch {dateLabel} (Bấm xem chi tiết)</span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.25rem' }}>{todayBookings.length}</h3>
+              </div>
+              <div
+                className="clickable-kpi-card"
+                style={{ background: 'rgba(245, 158, 11, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.2)' }}
+                onClick={() => setActiveKpiDetail('Pending')}
+              >
+                <span className="text-xs" style={{ color: '#d97706' }}>Chờ xác nhận (Bấm xem chi tiết)</span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706', marginTop: '0.25rem' }}>{pendingCount}</h3>
+              </div>
+              <div
+                className="clickable-kpi-card"
+                style={{ background: 'rgba(2, 132, 199, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(2, 132, 199, 0.2)' }}
+                onClick={() => setActiveKpiDetail('Confirmed')}
+              >
+                <span className="text-xs" style={{ color: 'var(--primary)' }}>Đã xác nhận (Bấm xem chi tiết)</span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>{confirmedCount}</h3>
+              </div>
+              <div
+                className="clickable-kpi-card"
+                style={{ background: 'rgba(99, 102, 241, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(99, 102, 241, 0.2)' }}
+                onClick={() => setActiveKpiDetail('Waiting')}
+              >
+                <span className="text-xs" style={{ color: '#6366f1' }}>Chờ rửa (Bấm xem chi tiết)</span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#6366f1', marginTop: '0.25rem' }}>{waitingCount}</h3>
+              </div>
+              <div
+                className="clickable-kpi-card"
+                style={{ background: 'var(--secondary-glow)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(2, 132, 199, 0.2)' }}
+                onClick={() => setActiveKpiDetail('In Progress')}
+              >
+                <span className="text-xs" style={{ color: 'var(--primary)' }}>Đang rửa (Bấm xem chi tiết)</span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>{inProgressCount}</h3>
+              </div>
+              <div
+                className="clickable-kpi-card"
+                style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}
+                onClick={() => setActiveKpiDetail('Completed')}
+              >
+                <span className="text-xs" style={{ color: 'emerald' }}>Hoàn tất {dateLabel} (Bấm xem chi tiết)</span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669', marginTop: '0.25rem' }}>{completedCount}</h3>
+              </div>
+              <div
+                className="clickable-kpi-card"
+                style={{ background: 'rgba(220, 38, 38, 0.05)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(220, 38, 38, 0.2)' }}
+                onClick={() => setActiveKpiDetail('Cancelled')}
+              >
+                <span className="text-xs" style={{ color: 'var(--status-cancelled)' }}>Đã hủy {dateLabel} (Bấm xem chi tiết)</span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--status-cancelled)', marginTop: '0.25rem' }}>{cancelledCount}</h3>
+              </div>
+            </div>
+          </div>
 
-          {/* Right Column: Checkout by code */}
-          <QuickCheckout onSuccess={() => fetchBookings(true)} />
-        </div>
+          {/* LPR & Checkout Console */}
+          <div className="glass-panel" style={{ padding: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+              <LprSimulator 
+                bookings={bookings} 
+                todayStr={todayStr} 
+                currentBranch={user.branch || "AutoWash Pro - Quận 1"} 
+                onRefresh={fetchBookings} 
+              />
+              <QuickCheckout bookings={bookings} onSuccess={() => fetchBookings(true)} />
+            </div>
+          </div>
+        </>
+      )}
 
-        <div className="flex-between" style={{ marginBottom: '1.25rem', marginTop: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h3 style={{ margin: 0 }}>📋 ĐIỀU HÀNH LỊCH ĐẶT RỬA XE</h3>
-          
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      {viewMode === 'list' && (
+        <div className="glass-panel" style={{ padding: '2rem' }}>
+          <div className="flex-between" style={{ marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>📋 DANH SÁCH LỊCH ĐẶT RỬA XE</h3>
             <button
               type="button"
               className="btn btn-sm"
@@ -387,79 +503,11 @@ export default function StaffDashboard({ user, onLogout }) {
             >
               ➕ Đặt Lịch
             </button>
-
-            {/* View Mode Toggle */}
-            <div style={{ display: 'flex', background: 'var(--bg-secondary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
-              <button
-                type="button"
-                className={`btn btn-sm ${viewMode === 'list' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem', fontSize: '0.8rem' }}
-                onClick={() => setViewMode('list')}
-              >
-                📋 Danh Sách
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${viewMode === 'timeline' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem', fontSize: '0.8rem' }}
-                onClick={() => setViewMode('timeline')}
-              >
-                📅 Sơ Đồ Khoang (Timeline)
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${viewMode === 'queue' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem', fontSize: '0.8rem', position: 'relative', display: 'flex', alignItems: 'center', gap: '4px' }}
-                onClick={() => setViewMode('queue')}
-              >
-                ⏳ Hàng Đợi
-                {queueCount > 0 && (
-                  <span style={{
-                    background: '#ef4444',
-                    color: '#ffffff',
-                    fontSize: '0.65rem',
-                    borderRadius: '50%',
-                    width: '16px',
-                    height: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    boxShadow: '0 2px 4px rgba(239, 68, 68, 0.4)'
-                  }}>
-                    {queueCount}
-                  </span>
-                )}
-              </button>
-            </div>
           </div>
-        </div>
 
-        {error && <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>{error}</div>}
+          {error && <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>{error}</div>}
 
-        {viewMode === 'timeline' ? (
-          <StaffTimelineView
-            bookings={bookings}
-            timelineDate={timelineDate}
-            setTimelineDate={setTimelineDate}
-            user={user}
-            recentlyUpdatedBookingId={recentlyUpdatedBookingId}
-            handleConfirm={handleConfirm}
-            handleCheckin={handleCheckin}
-            handleStartWash={handleStartWash}
-            handleCompleteWash={handleCompleteWash}
-            handleCancelWash={handleCancelWash}
-            handleQuickBook={handleQuickBook}
-            handleAssignBay={handleAssignBay}
-          />
-        ) : viewMode === 'queue' ? (
-          <QueueView
-            bookings={bookings}
-            currentBranch={user.branch || "AutoWash Pro - Quận 1"}
-            handleAssignBay={handleAssignBay}
-            handleUndoCheckin={handleUndoCheckin}
-          />
-        ) : (
+
           <BookingList
             sortedBookings={sortedBookings}
             recentlyUpdatedBookingId={recentlyUpdatedBookingId}
@@ -469,7 +517,7 @@ export default function StaffDashboard({ user, onLogout }) {
             setDateFilter={setDateFilter}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
-            todayStr={todayStr}
+            todayStr={dashboardDate}
             editingNotes={editingNotes}
             handleNotesChange={handleNotesChange}
             handleSaveNotes={handleSaveNotes}
@@ -480,9 +528,74 @@ export default function StaffDashboard({ user, onLogout }) {
             handleCompleteWash={handleCompleteWash}
             handleAssignBay={handleAssignBay}
             handleUndoCheckin={handleUndoCheckin}
+            staffs={staffs}
+            handleAssignStaff={handleAssignStaff}
           />
-        )}
-      </div>
+        </div>
+      )}
+
+      {viewMode === 'timeline' && (
+        <div className="glass-panel" style={{ padding: '2rem' }}>
+          <div className="flex-between" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>📅 SƠ ĐỒ KHOANG RỬA XE (TIMELINE)</h3>
+          </div>
+          {error && <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>{error}</div>}
+          <StaffTimelineView
+            bookings={bookings}
+            timelineDate={dashboardDate}
+            setTimelineDate={setDashboardDate}
+            user={user}
+            recentlyUpdatedBookingId={recentlyUpdatedBookingId}
+            handleConfirm={handleConfirm}
+            handleCheckin={handleCheckin}
+            handleStartWash={handleStartWash}
+            handleCompleteWash={handleCompleteWash}
+            handleCancelWash={handleCancelWash}
+            handleQuickBook={handleQuickBook}
+            bays={bays}
+          />
+        </div>
+      )}
+
+      {viewMode === 'queue' && (
+        <div className="glass-panel" style={{ padding: '2rem' }}>
+          <div className="flex-between" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>⏳ HÀNG ĐỢI RỬA XE</h3>
+            <button
+              type="button"
+              className="btn btn-sm"
+              style={{
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 'bold',
+                padding: '0.4rem 1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
+                transition: 'all 0.2s ease',
+                fontSize: '0.8rem'
+              }}
+              onClick={() => setShowWalkInModal(true)}
+            >
+              ➕ Đặt Lịch
+            </button>
+          </div>
+          {error && <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>{error}</div>}
+          <QueueView
+            bookings={bookings}
+            currentBranch={user.branch || "AutoWash Pro - Quận 1"}
+            handleAssignBay={handleAssignBay}
+            handleUndoCheckin={handleUndoCheckin}
+            handleStartWash={handleStartWash}
+            handleCompleteWash={handleCompleteWash}
+            bays={bays}
+          />
+        </div>
+      )}
 
       {/* Modal for KPI Detail */}
       <KpiDetailModal
@@ -510,7 +623,7 @@ export default function StaffDashboard({ user, onLogout }) {
         onSuccess={() => fetchBookings(true)}
         quickBookSlot={quickBookSlot}
         quickBookBay={quickBookBay}
-        timelineDate={timelineDate}
+        timelineDate={dashboardDate}
         user={user}
       />
 

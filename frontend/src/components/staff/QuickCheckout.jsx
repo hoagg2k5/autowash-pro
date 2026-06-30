@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 
-export default function QuickCheckout({ onSuccess }) {
+export default function QuickCheckout({ bookings = [], onSuccess }) {
   const [checkoutCode, setCheckoutCode] = useState('');
   const [checkoutBooking, setCheckoutBooking] = useState(null);
   const [checkoutError, setCheckoutError] = useState('');
@@ -52,7 +52,7 @@ export default function QuickCheckout({ onSuccess }) {
     if (!checkoutBooking) return;
     setCheckoutCompleting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/bookings/complete/${checkoutBooking.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/bookings/${checkoutBooking.id}/checkout`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -91,6 +91,56 @@ export default function QuickCheckout({ onSuccess }) {
         </button>
       </form>
 
+      {/* Danh sách các đơn chưa thanh toán */}
+      {(() => {
+        const unpaidBookings = bookings.filter(b => b.paymentStatus === 'Unpaid' && b.status !== 'Cancelled' && b.status !== 'Pending');
+        if (unpaidBookings.length === 0) return null;
+        return (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+              ⏳ ĐƠN CHỜ THANH TOÁN ({unpaidBookings.length}):
+            </span>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', maxHeight: '110px', overflowY: 'auto', padding: '0.25rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255,255,255,0.5)' }}>
+              {unpaidBookings.map(b => (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => {
+                    setCheckoutCode(b.id);
+                    setCheckoutBooking(b);
+                    setCheckoutError('');
+                  }}
+                  className="btn btn-secondary"
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '0.25rem 0.5rem',
+                    border: '1px solid var(--border-color)',
+                    background: checkoutBooking?.id === b.id ? 'var(--secondary-glow)' : '#ffffff',
+                    color: checkoutBooking?.id === b.id ? 'var(--primary)' : 'var(--text-main)',
+                    fontWeight: checkoutBooking?.id === b.id ? 'bold' : 'normal',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{b.id}</span>
+                  <span>({b.licensePlate})</span>
+                  <span style={{ 
+                    color: b.status === 'Completed' ? 'var(--status-completed)' : 'var(--primary)',
+                    fontSize: '0.65rem'
+                  }}>
+                    ● {b.status === 'Completed' ? 'Đã rửa xong' : b.status === 'In Progress' ? 'Đang rửa' : 'Chờ rửa'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {checkoutError && <div className="alert alert-danger" style={{ padding: '0.5rem 1rem', margin: '0 0 1rem 0', fontSize: '0.8rem' }}>⚠️ {checkoutError}</div>}
 
       {checkoutBooking && (
@@ -119,6 +169,12 @@ export default function QuickCheckout({ onSuccess }) {
             <span>Trạng thái đơn:</span>
             <span className={`status-badge ${getStatusClass(checkoutBooking.status)}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>{checkoutBooking.status}</span>
           </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+            <span>Thanh toán:</span>
+            <span className={`status-badge ${checkoutBooking.paymentStatus === 'Paid' ? 'status-Completed' : 'status-Cancelled'}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
+              {checkoutBooking.paymentStatus === 'Paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+            </span>
+          </div>
           
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '0.95rem' }}>
             <span>Tổng tiền thu:</span>
@@ -127,7 +183,7 @@ export default function QuickCheckout({ onSuccess }) {
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
             <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setCheckoutBooking(null)}>Hủy</button>
-            {checkoutBooking.status !== 'Completed' && checkoutBooking.status !== 'Cancelled' ? (
+            {checkoutBooking.paymentStatus === 'Unpaid' && checkoutBooking.status !== 'Cancelled' ? (
               <button 
                 type="button" 
                 className="btn btn-primary btn-sm" 
@@ -135,10 +191,12 @@ export default function QuickCheckout({ onSuccess }) {
                 onClick={handleConfirmCheckoutPayment}
                 disabled={checkoutCompleting}
               >
-                {checkoutCompleting ? 'Đang hoàn tất...' : '✓ Xác Nhận & Hoàn Tất'}
+                {checkoutCompleting ? 'Đang xử lý...' : '✓ Xác Nhận & Thanh Toán'}
               </button>
             ) : (
-              <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 2 }} disabled>Đã xử lý</button>
+              <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 2 }} disabled>
+                {checkoutBooking.status === 'Cancelled' ? 'Đã hủy' : 'Đã thanh toán'}
+              </button>
             )}
           </div>
         </div>

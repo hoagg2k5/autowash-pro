@@ -6,6 +6,7 @@ import {
   start, 
   updateNotes, 
   complete, 
+  checkout,
   cancel, 
   getOccupancy, 
   getByPlate,
@@ -19,7 +20,9 @@ import {
   undoCheckin,
   assignBay,
   redeemVoucher,
-  listMyVouchers
+  listMyVouchers,
+  assignStaff,
+  listStaffForAssignment
 } from '../controllers/bookingController.js';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware.js';
 
@@ -46,9 +49,12 @@ router.post('/:id/start', requireRole(['admin', 'staff']), start);
 router.post('/:id/notes', requireRole(['admin', 'staff']), updateNotes);
 router.post('/:id/assign-bay', requireRole(['admin', 'staff']), assignBay);
 router.post('/complete/:id', requireRole(['admin', 'staff']), complete);
+router.post('/:id/checkout', requireRole(['admin', 'staff']), checkout);
 router.post('/cancel/:id', cancel);
 router.post('/:id/feedback', submitFeedback);
 router.post('/vouchers/redeem', redeemVoucher);
+router.get('/staffs/list', listStaffForAssignment);
+router.post('/:id/assign-staff', requireRole(['admin', 'staff']), assignStaff);
 
 export default router;
 
