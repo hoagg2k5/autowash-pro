@@ -76,7 +76,7 @@ export default function BookingStep3({
           </div>
           <div>
             <span style={{ color: 'var(--text-muted)' }}>Khoang rửa:</span><br />
-            <strong style={{ color: 'var(--primary)' }}>Chờ xếp khoang</strong>
+            <strong style={{ color: 'var(--primary)' }}>{selectedBay || 'Chờ xếp khoang (Nhân viên điều phối)'}</strong>
           </div>
           <div style={{ gridColumn: 'span 2' }}>
             <span style={{ color: 'var(--text-muted)' }}>Gói dịch vụ:</span><br />
@@ -117,45 +117,109 @@ export default function BookingStep3({
         </div>
       )}
 
-      {/* Available Vouchers Dropdown Selector */}
+      {/* Available Vouchers Selector */}
       <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
-        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🎟️ Danh Sách Voucher Của Tôi</h4>
+        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🎟️ Voucher Ưu Đãi Của Bạn</h4>
         
         {fetchingVouchers ? (
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Đang tải danh sách voucher...</p>
         ) : myVouchers.length === 0 ? (
           <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0 }}>Hiện chưa có voucher nào</p>
         ) : (
-          <div className="form-group" style={{ margin: 0 }}>
-            <select
-              className="form-input"
-              value={appliedVoucherId || ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (!val) {
-                  handleVoucherSelect(null);
-                } else {
-                  const found = myVouchers.find(v => v._id === val);
-                  handleVoucherSelect(found);
-                }
-              }}
-              style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}
-            >
-              <option value="">-- Không áp dụng voucher --</option>
-              {myVouchers.map(v => {
-                let valText = "";
-                if (v.discountVnd) valText = `giảm ${formatVnd(v.discountVnd)}`;
-                else if (v.discountPercent) valText = `giảm ${v.discountPercent}%`;
-                
-                const minText = v.minSpent > 0 ? ` (Đơn tối thiểu: ${formatVnd(v.minSpent)})` : '';
-                const countText = ` (x${v.ownedCount || 1})`;
-                return (
-                  <option key={v._id} value={v._id}>
-                    {v.code}{countText} - {valText}{minText} - HSD: {v.expiryDate}
-                  </option>
-                );
-              })}
-            </select>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '180px', overflowY: 'auto', marginBottom: '1rem', paddingRight: '0.25rem' }}>
+            {availableVouchers.map(v => {
+              const isApplied = promoCode === v.voucherCode;
+              
+              let valText = "";
+              if (v.discountVnd) valText = `Giảm ${formatVnd(v.discountVnd)}`;
+              else if (v.discountPercent) valText = `Giảm ${v.discountPercent}%`;
+
+              const meetsMinSpent = (estimate?.price || 0) >= v.minSpent;
+              
+              return (
+                <div 
+                  key={v.voucherCode}
+                  onClick={() => {
+                    if (!meetsMinSpent) {
+                      return;
+                    }
+                    if (isApplied) {
+                      setPromoCode('');
+                      applyVoucherCode('');
+                    } else {
+                      setPromoCode(v.voucherCode);
+                      applyVoucherCode(v.voucherCode);
+                    }
+                  }}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    border: `1.5px dashed ${isApplied ? '#10b981' : 'var(--border-color)'}`,
+                    borderLeft: `5px solid ${isApplied ? '#10b981' : meetsMinSpent ? 'var(--primary)' : '#ef4444'}`,
+                    background: isApplied ? 'rgba(16, 185, 129, 0.05)' : meetsMinSpent ? '#ffffff' : 'var(--bg-secondary)',
+                    cursor: meetsMinSpent ? 'pointer' : 'not-allowed',
+                    opacity: meetsMinSpent ? 1 : 0.65,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isApplied ? '0 0 10px rgba(16, 185, 129, 0.15)' : 'none'
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <code style={{ fontSize: '0.9rem', color: isApplied ? '#10b981' : 'var(--primary)', fontWeight: 'bold' }}>{v.voucherCode}</code>
+                      <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: isApplied ? '#10b981' : 'var(--border-color)', color: isApplied ? '#fff' : 'var(--primary)', fontWeight: 600 }}>
+                        {valText}
+                      </span>
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      HSD: {v.expiryDate} {v.minSpent > 0 && `| Tối thiểu: ${formatVnd(v.minSpent)}`}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    {isApplied ? (
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: '#10b981', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        ✓ Đang Áp Dụng
+                      </span>
+                    ) : meetsMinSpent ? (
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: 'var(--primary)', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        Dùng Mã
+                      </span>
+                    ) : (
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: '#ef4444', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        Chưa Đủ HĐ
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
         

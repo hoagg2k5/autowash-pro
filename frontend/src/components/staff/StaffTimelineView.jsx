@@ -6,6 +6,34 @@ const TIME_SLOTS = [
   "13:00 - 14:00", "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "17:00 - 18:00"
 ];
 
+const isTimeSlotPassed = (slot, dateStr) => {
+  if (!dateStr) return false;
+  try {
+    const startHourStr = slot.split("-")[0].trim();
+    const [slotHour, slotMinute] = startHourStr.split(":").map(Number);
+    
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    
+    if (dateStr < todayStr) {
+      return true;
+    } else if (dateStr === todayStr) {
+      const currentHour = today.getHours();
+      const currentMin = today.getMinutes();
+      if (slotHour < currentHour || (slotHour === currentHour && slotMinute <= currentMin)) {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.error("Error checking passed slot:", err);
+  }
+  return false;
+};
+
+
 export default function StaffTimelineView({
   bookings,
   timelineDate,
@@ -17,7 +45,8 @@ export default function StaffTimelineView({
   handleStartWash,
   handleCompleteWash,
   handleCancelWash,
-  handleQuickBook
+  handleQuickBook,
+  handleAssignBay
 }) {
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -28,8 +57,154 @@ export default function StaffTimelineView({
     b.branch === (user.branch || "AutoWash Pro - Quận 1")
   );
 
+  const unassignedBookings = branchBookings.filter(b => 
+    (!b.bay || b.bay === "") &&
+    b.status !== 'Cancelled' &&
+    b.status !== 'Completed'
+  );
+
   return (
-    <div style={{ overflowX: 'auto', background: '#ffffff', borderRadius: '12px', marginTop: '1rem' }}>
+    <div style={{ background: '#ffffff', borderRadius: '12px', marginTop: '1rem', padding: '1rem' }}>
+      
+      {/* Unassigned Booking Queue (Hàng đợi chờ xếp khoang) */}
+      <div style={{ 
+        background: '#f8fafc', 
+        borderRadius: '12px', 
+        padding: '1.25rem', 
+        border: '1px solid var(--border-color)', 
+        marginBottom: '1.5rem' 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1.25rem' }}>⏳</span>
+            <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1rem', fontWeight: 700 }}>
+              HÀNG ĐỢI CHỜ XẾP KHOANG RỬA ({unassignedBookings.length})
+            </h4>
+          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Khách đặt trước chưa phân khoang trong ngày {timelineDate}
+          </span>
+        </div>
+
+        {unassignedBookings.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '1.5rem', 
+            color: 'var(--text-muted)', 
+            fontSize: '0.85rem',
+            border: '1px dashed var(--border-color)',
+            borderRadius: '8px',
+            background: '#ffffff'
+          }}>
+            🎉 Không có lịch hẹn nào đang đợi xếp khoang trong ngày này.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+            {unassignedBookings.map(b => {
+              const isHighPriority = b.customerTier === 'Platinum' || b.customerTier === 'Gold';
+              // Check which bays are occupied in this booking's specific timeslot
+              const occupiedBaysInSlot = branchBookings
+                .filter(bk => 
+                  bk.timeSlot === b.timeSlot && 
+                  bk.bay && 
+                  bk.status !== 'Cancelled'
+                )
+                .map(bk => bk.bay);
+
+              return (
+                <div 
+                  key={b.id} 
+                  style={{
+                    background: '#ffffff',
+                    border: `1.5px solid ${isHighPriority ? 'var(--primary)' : 'var(--border-color)'}`,
+                    borderRadius: '10px',
+                    padding: '1rem',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '0.5rem',
+                    position: 'relative'
+                  }}
+                >
+                  {isHighPriority && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '-10px',
+                      right: '10px',
+                      background: b.customerTier === 'Platinum' ? '#7c3aed' : '#ca8a04',
+                      color: '#fff',
+                      fontSize: '0.6rem',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontWeight: 'bold',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}>
+                      ⚡ VIP {b.customerTier.toUpperCase()}
+                    </span>
+                  )}
+                  
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>🚗 {b.licensePlate}</strong>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }}>
+                        🕒 {b.timeSlot}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      👤 {b.customerName} ({b.customerPhone})
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-main)', marginTop: '0.25rem' }}>
+                      🧼 {b.servicePackage} | 💵 {formatVnd(b.totalPaid)}
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    borderTop: '1px solid var(--border-color)', 
+                    paddingTop: '0.5rem', 
+                    marginTop: '0.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.35rem'
+                  }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      Chọn khoang để xếp vào:
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.35rem' }}>
+                      {["Khoang 1", "Khoang 2", "Khoang 3"].map(bayName => {
+                        const isOccupied = occupiedBaysInSlot.includes(bayName);
+                        return (
+                          <button
+                            key={bayName}
+                            type="button"
+                            disabled={isOccupied}
+                            onClick={() => handleAssignBay(b.id, bayName)}
+                            style={{
+                              flex: 1,
+                              padding: '0.35rem 0',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              borderRadius: '6px',
+                              cursor: isOccupied ? 'not-allowed' : 'pointer',
+                              border: `1px solid ${isOccupied ? 'var(--border-color)' : 'var(--primary)'}`,
+                              background: isOccupied ? '#f1f5f9' : '#ffffff',
+                              color: isOccupied ? '#94a3b8' : 'var(--primary)',
+                              transition: 'all 0.1s ease'
+                            }}
+                          >
+                            {bayName} {isOccupied ? '(Bận)' : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h4 style={{ margin: 0, color: 'var(--text-main)' }}>📅 SƠ ĐỒ PHÂN LỊCH THEO KHOANG RỬA</h4>
@@ -254,3 +429,4 @@ export default function StaffTimelineView({
     </div>
   );
 }
+
