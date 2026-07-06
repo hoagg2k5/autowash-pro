@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   User, 
   Bell, 
@@ -22,15 +22,27 @@ import VehicleManager from './VehicleManager.jsx';
 import PointsHistoryTab from './PointsHistoryTab.jsx';
 import BookingHistoryTab from './BookingHistoryTab.jsx';
 import { io } from 'socket.io-client';
-
 export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('tab') === 'vouchers' ? 'khovoucher' : 'hoso';
+    const tab = params.get('tab');
+    if (tab === 'vouchers') return 'khovoucher';
+    if (tab === 'xecuatoi') return 'xecuatoi';
+    if (tab === 'orders') return 'donmua';
+    return 'hoso';
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'xecuatoi') setActiveTab('xecuatoi');
+    else if (tab === 'vouchers') setActiveTab('khovoucher');
+    else if (tab === 'orders') setActiveTab('donmua');
+  }, [location.search]);
   
   const [dbUser, setDbUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -82,6 +94,9 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
             dateOfBirth: data.user.dateOfBirth || '',
             avatar: data.user.avatar || ''
           });
+          if (onUpdateUser) {
+            onUpdateUser(data.user);
+          }
         }
       }
     } catch (err) {
@@ -162,6 +177,43 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
     }
   };
 
+  const saveAvatarDirectly = async (base64Avatar) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/customers/${user.id}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        },
+        body: JSON.stringify({
+          fullName: profile.fullName,
+          email: profile.email,
+          phone: profile.phone,
+          gender: profile.gender,
+          dateOfBirth: profile.dateOfBirth,
+          avatar: base64Avatar
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Không thể cập nhật ảnh đại diện.");
+      }
+
+      toast.success("Cập nhật ảnh đại diện thành công!");
+      setProfile(prev => ({ ...prev, avatar: base64Avatar }));
+
+      if (onUpdateUser && data.user) {
+        onUpdateUser(data.user);
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -178,7 +230,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setProfile(prev => ({ ...prev, avatar: reader.result }));
+      saveAvatarDirectly(reader.result);
     };
     reader.readAsDataURL(file);
   };
@@ -678,7 +730,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
 
               {/* Total points summary */}
               <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
-                <div style={{ fontSize: '2.5rem' }}>🎁</div>
+                <div style={{ fontSize: '2.5rem' }}></div>
                 <div>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500, display: 'block' }}>Số dư điểm hiện tại</span>
                   <strong style={{ fontSize: '1.75rem', color: 'var(--primary)', fontWeight: 900 }}>{dbUser.pointsBalance} <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>điểm</span></strong>
@@ -688,7 +740,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
               {/* Points history table */}
               <div className="glass-panel" style={{ padding: '1.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  📊 LỊCH SỬ BIẾN ĐỘNG ĐIỂM
+                  LỊCH SỬ BIẾN ĐỘNG ĐIỂM
                 </h3>
                 <PointsHistoryTab pointsHistory={pointsHistory} />
               </div>
