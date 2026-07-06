@@ -22,8 +22,17 @@ export default function VehicleManager({ userId, vehicles = [], onVehicleAdded, 
     setError('');
     setLoading(true);
 
-    if (!plate) {
+    const plateRegex = /^[0-9]{2}[A-Z]-[0-9]{3,5}(\.[0-9]{2})?$/;
+    const cleanPlate = plate.replace(/\s+/g, '').toUpperCase();
+
+    if (!cleanPlate) {
       setError("Biển số xe là bắt buộc.");
+      setLoading(false);
+      return;
+    }
+
+    if (!plateRegex.test(cleanPlate)) {
+      setError("Biển số không hợp lệ. Ví dụ đúng: 30A-12345 hoặc 29C-123.45");
       setLoading(false);
       return;
     }
