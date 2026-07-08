@@ -332,7 +332,15 @@ export default function App() {
           } />
           <Route path="/customer/dashboard" element={
             currentUser && currentUser.role === 'customer' ? (
-              <CustomerDashboard user={currentUser} onLogout={handleLogout} />
+              <CustomerDashboard 
+                user={currentUser} 
+                onLogout={handleLogout} 
+                onUpdateUser={(updatedData) => {
+                  const newUser = { ...currentUser, ...updatedData };
+                  setCurrentUser(newUser);
+                  sessionStorage.setItem('autowash_user', JSON.stringify(newUser));
+                }}
+              />
             ) : (
               <Navigate to="/" replace />
             )
@@ -412,7 +420,7 @@ export default function App() {
             animation: 'fadeIn 0.25s ease-out'
           }}>
             <h3 style={{ marginBottom: '1.5rem', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-main)' }}>
-              👤 QUẢN LÝ TÀI KHOẢN
+              QUẢN LÝ TÀI KHOẢN
             </h3>
             
             {/* Profile Fields */}
