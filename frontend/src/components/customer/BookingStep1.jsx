@@ -68,12 +68,29 @@ export default function BookingStep1({
               >
                 {/* Selection indicator */}
                 {isSelected && (
-                  <div className="absolute top-0 right-0 w-8 h-8 bg-cyan-500 rounded-bl-xl flex items-center justify-center text-white text-xs font-bold shadow">
+                  <div className="absolute top-0 right-0 w-8 h-8 bg-cyan-500 rounded-bl-xl flex items-center justify-center text-white text-xs font-bold shadow z-10">
                     ✓
                   </div>
                 )}
+
+                {/* Package Tag Badge */}
+                {pkg.name.toLowerCase().includes('premium') && (
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[9px] font-bold text-amber-400 uppercase tracking-wider">
+                    Phổ Biến Nhất
+                  </div>
+                )}
+                {pkg.name.toLowerCase().includes('standard') && (
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-bold text-cyan-400 uppercase tracking-wider">
+                    Khuyên Dùng
+                  </div>
+                )}
+                {pkg.name.toLowerCase().includes('basic') && (
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-slate-500/10 border border-slate-500/20 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                    Tiết Kiệm
+                  </div>
+                )}
                 
-                <h4 className="text-base font-extrabold mb-2 tracking-wide text-white">Gói {pkg.name}</h4>
+                <h4 className="text-base font-extrabold mb-2 tracking-wide text-white mt-1">Gói {pkg.name}</h4>
                 <p className="text-xs text-slate-400 mb-4 min-h-[40px] leading-relaxed">
                   {pkg.description}
                 </p>
