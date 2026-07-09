@@ -52,7 +52,7 @@ export const toast = {
     toastEl.style.backdropFilter = 'blur(16px)';
     toastEl.style.webkitBackdropFilter = 'blur(16px)';
     toastEl.style.border = '1px solid rgba(255, 255, 255, 0.12)';
-    toastEl.style.fontFamily = 'var(--font-main, "Outfit", "Inter", sans-serif)';
+    toastEl.style.fontFamily = 'var(--font-main, "Inter", sans-serif)';
     toastEl.style.transition = 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
 
     // Set gradients and icons based on type
