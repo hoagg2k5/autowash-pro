@@ -152,6 +152,39 @@ export default function BookingStep2({
         </div>
       </div>
 
+      {/* Bay Selection */}
+      {selectedSlot && (
+        <div className="space-y-3">
+          <label className="text-sm font-bold text-slate-300 block">Chọn Khoang Rửa Xe Sẵn Sàng *</label>
+          {loadingBays ? (
+            <p className="text-xs text-cyan-400 animate-pulse">Đang kiểm tra trạng thái các khoang rửa...</p>
+          ) : bays.length === 0 ? (
+            <p className="text-xs text-amber-400">Rất tiếc, không còn khoang rửa trống trong khung giờ này. Vui lòng chọn giờ khác.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {bays.map(bay => {
+                const isSelected = selectedBay === bay.id;
+                return (
+                  <button
+                    key={bay.id}
+                    type="button"
+                    className={`py-3 px-4 rounded-xl border text-sm font-bold transition-all duration-200 text-center flex flex-col items-center justify-center gap-0.5 ${
+                      isSelected
+                        ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-md shadow-cyan-500/5'
+                        : 'bg-slate-900/40 border-slate-850 text-slate-300 hover:border-slate-800'
+                    }`}
+                    onClick={() => setSelectedBay(bay.id)}
+                  >
+                    <span className="block">{bay.name}</span>
+                    <span className={`text-[9px] uppercase tracking-wider ${isSelected ? 'text-cyan-400' : 'text-slate-500'}`}>Sẵn sàng</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Navigation Buttons */}
       <div className="flex justify-between items-center pt-4 border-t border-slate-900">
         <button 
@@ -165,7 +198,7 @@ export default function BookingStep2({
           type="button" 
           className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-95 text-white font-bold rounded-xl text-sm shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2"
           onClick={nextStep}
-          disabled={!bookingDate || !selectedSlot}
+          disabled={!bookingDate || !selectedSlot || (bays.length > 0 && !selectedBay)}
         >
           Tiếp Theo <span>➔</span>
         </button>
