@@ -14,6 +14,8 @@ export default function QueueView({
   const [selectedBookingId, setSelectedBookingId] = useState(null);
   const [baysList, setBaysList] = useState([]);
   const [loadingBays, setLoadingBays] = useState(false);
+  const [draggingId, setDraggingId] = useState(null);
+  const [draggedOverBayId, setDraggedOverBayId] = useState(null);
   const [, setTick] = useState(0);
 
   const getBayDisplayNum = (name, index) => {
@@ -140,19 +142,71 @@ export default function QueueView({
 
   // Drag and Drop handlers
   const handleDragStart = (e, bookingId) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', bookingId);
     e.dataTransfer.setData('bookingId', bookingId);
+    setDraggingId(bookingId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+    setDraggedOverBayId(null);
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    try {
+      e.dataTransfer.dropEffect = 'move';
+    } catch (err) {}
   };
 
-  const handleDrop = (e, bayName) => {
+  const handleDragEnter = (e, bay) => {
     e.preventDefault();
-    const bookingId = e.dataTransfer.getData('bookingId');
+    const occupyingBooking = bookings.find(b => 
+      b.branch === currentBranch && 
+      b.bay === bay.name && 
+      ['Waiting', 'In Progress'].includes(b.status)
+    );
+    if (bay.status === 'Active' && !occupyingBooking) {
+      setDraggedOverBayId(bay._id);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDraggedOverBayId(null);
+  };
+
+  const handleDrop = (e, bay) => {
+    e.preventDefault();
+    setDraggedOverBayId(null);
+    const occupyingBooking = bookings.find(b => 
+      b.branch === currentBranch && 
+      b.bay === bay.name && 
+      ['Waiting', 'In Progress'].includes(b.status)
+    );
+    if (bay.status === 'Maintenance' || occupyingBooking) {
+      return;
+    }
+    // Only accept booking IDs starting with 'b-' to prevent browser-selected text garbage
+    let bookingId = draggingId;
+    if (!bookingId) {
+      const dataId = e.dataTransfer.getData('bookingId');
+      if (dataId && dataId.startsWith('b-')) {
+        bookingId = dataId;
+      }
+    }
+    if (!bookingId) {
+      const textId = e.dataTransfer.getData('text/plain');
+      if (textId && textId.startsWith('b-')) {
+        bookingId = textId;
+      }
+    }
+
     if (bookingId) {
-      handleAssignBay(bookingId, bayName);
+      handleAssignBay(bookingId, bay.name);
       setSelectedBookingId(null);
+      setDraggingId(null);
     }
   };
 
@@ -296,6 +350,12 @@ export default function QueueView({
           background: #f8fafc;
           opacity: 0.85;
         }
+        .bay-item-card.drag-over {
+          border: 2px dashed var(--primary) !important;
+          background: rgba(2, 132, 199, 0.05) !important;
+          transform: scale(1.01);
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+        }
         .bay-num-container {
           width: 40px;
           height: 40px;
@@ -375,6 +435,7 @@ export default function QueueView({
           gap: 2.5px;
           margin-right: 0.75rem;
           color: #cbd5e1;
+          pointer-events: none;
         }
         .q-num-box {
           width: 32px;
@@ -467,12 +528,17 @@ export default function QueueView({
           background: var(--bg-secondary);
           color: var(--text-muted);
         }
+        
+        /* Prevent child elements from intercepting pointer events during drag to prevent dragenter/dragleave flickering */
+        .bay-item-card.dragging-active * {
+          pointer-events: none;
+        }
       `}</style>
 
       <div className="coordinator-grid">
         {/* LEFT COLUMN: ACTIVE BAYS COORDINATION */}
         <div>
-          <h3 className="bay-section-title">🚿 Khoang Rửa Xe (Staff Điều Phối)</h3>
+          <h3 className="bay-section-title">Khoang Rửa Xe (Staff Điều Phối)</h3>
           
           {loadingBays && baysList.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem' }}>Đang tải sơ đồ khoang...</div>
@@ -504,12 +570,20 @@ export default function QueueView({
                   }
                 }
 
+                const isDraggedOver = draggedOverBayId === bay._id;
+                if (isDraggedOver && !isBayMaintenance && !occupyingBooking) {
+                  cardClass += ' drag-over';
+                }
+                const activeDragClass = draggingId ? 'dragging-active' : '';
+
                 return (
                   <div 
                     key={bay._id} 
-                    className={`bay-item-card ${cardClass}`}
+                    className={`bay-item-card ${cardClass} ${activeDragClass}`}
                     onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, bay.name)}
+                    onDragEnter={(e) => handleDragEnter(e, bay)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, bay)}
                   >
                     {/* Bay number label block */}
                     <div className={`bay-num-container ${numClass}`}>
@@ -520,10 +594,7 @@ export default function QueueView({
                     <div className="bay-content-area">
                       {isBayMaintenance ? (
                         <>
-                          <div className="bay-status-dot-row">
-                            <span style={{ color: '#ef4444', fontSize: '0.9rem' }}>🔴</span>
                             <span className="status-text-maintenance">{bay.name.toUpperCase()} - BẢO TRÌ</span>
-                          </div>
                           <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Không khả dụng</div>
                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                             {bay.description || 'Bảo trì máy móc / dọn dẹp.'}
@@ -534,15 +605,14 @@ export default function QueueView({
                           <>
                             <div className="bay-status-dot-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <span style={{ color: '#3b82f6', fontSize: '0.9rem' }}>🔵</span>
                                 <span className="status-text-washing">{bay.name.toUpperCase()} - ĐANG RỬA</span>
                               </div>
                               <span className="bay-countdown" style={{ color: isOvertime(occupyingBooking) ? '#ef4444' : '#f59e0b' }}>
-                                ⏳ {getElapsedWashTimeStr(occupyingBooking)}
+                                {getElapsedWashTimeStr(occupyingBooking)}
                               </span>
                             </div>
                             <div className="bay-customer-name">
-                              👤 {occupyingBooking.customerName}
+                              {occupyingBooking.customerName}
                               <span 
                                 className="q-badge-tier"
                                 style={{ background: getTierBadgeColor(occupyingBooking.customerTier), fontSize: '0.6rem', padding: '0.1rem 0.35rem' }}
@@ -552,16 +622,16 @@ export default function QueueView({
                               {occupyingBooking.paymentMethod === 'Online' ? (
                                 occupyingBooking.paymentStatus === 'Paid' ? (
                                   <span style={{ fontSize: '0.65rem', background: '#d1fae5', color: '#065f46', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
-                                    💳 Đã thanh toán (VNPay)
+                                    Đã thanh toán (VNPay)
                                   </span>
                                 ) : (
                                   <span style={{ fontSize: '0.65rem', background: '#ffedd5', color: '#9a3412', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
-                                    💳 Chờ thanh toán (VNPay)
+                                    Chờ thanh toán (VNPay)
                                   </span>
                                 )
                               ) : (
                                 <span style={{ fontSize: '0.65rem', background: '#dbeafe', color: '#1e40af', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
-                                  💵 Tiền mặt
+                                  Tiền mặt
                                 </span>
                               )}
                               <span className="text-xs" style={{ color: 'var(--text-muted)', fontWeight: 500, marginLeft: '0.3rem' }}>
@@ -586,11 +656,10 @@ export default function QueueView({
                         ) : (
                           <>
                             <div className="bay-status-dot-row">
-                              <span style={{ color: '#eab308', fontSize: '0.9rem' }}>🟡</span>
-                              <span className="status-text-waiting">{bay.name.toUpperCase()} - CHỜ RỬA (ĐÃ GÁN)</span>
+                            <span className="status-text-waiting">{bay.name.toUpperCase()} - CHỜ RỬA (ĐÃ GÁN)</span>
                             </div>
                             <div className="bay-customer-name">
-                              👤 {occupyingBooking.customerName}
+                              {occupyingBooking.customerName}
                               <span 
                                 className="q-badge-tier"
                                 style={{ background: getTierBadgeColor(occupyingBooking.customerTier), fontSize: '0.6rem', padding: '0.1rem 0.35rem' }}
@@ -600,16 +669,16 @@ export default function QueueView({
                               {occupyingBooking.paymentMethod === 'Online' ? (
                                 occupyingBooking.paymentStatus === 'Paid' ? (
                                   <span style={{ fontSize: '0.65rem', background: '#d1fae5', color: '#065f46', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
-                                    💳 Đã thanh toán (VNPay)
+                                    Đã thanh toán (VNPay)
                                   </span>
                                 ) : (
                                   <span style={{ fontSize: '0.65rem', background: '#ffedd5', color: '#9a3412', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
-                                    💳 Chờ thanh toán (VNPay)
+                                    Chờ thanh toán (VNPay)
                                   </span>
                                 )
                               ) : (
                                 <span style={{ fontSize: '0.65rem', background: '#dbeafe', color: '#1e40af', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
-                                  💵 Tiền mặt
+                                  Tiền mặt
                                 </span>
                               )}
                               <span className="text-xs" style={{ color: 'var(--text-muted)', fontWeight: 500, marginLeft: '0.3rem' }}>
@@ -624,7 +693,6 @@ export default function QueueView({
                       ) : (
                         <>
                           <div className="bay-status-dot-row">
-                            <span style={{ color: '#10b981', fontSize: '0.9rem' }}>🟢</span>
                             <span className="status-text-ready">{bay.name.toUpperCase()} - SẴN SÀNG</span>
                           </div>
                           <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Chờ phân công</div>
@@ -647,7 +715,7 @@ export default function QueueView({
                           style={{ borderColor: '#f97316', color: '#f97316', background: 'rgba(249, 115, 22, 0.02)', padding: '0.35rem 0.75rem', fontWeight: 'bold' }}
                           onClick={() => handleToggleBayStatus(bay)}
                         >
-                          🔓 Mở
+                          Mở
                         </button>
                       ) : occupyingBooking ? (
                         occupyingBooking.status === 'In Progress' ? (
@@ -657,7 +725,7 @@ export default function QueueView({
                               style={{ background: '#10b981', color: '#ffffff', border: 'none', padding: '0.4rem 0.75rem', fontWeight: 700 }}
                               onClick={() => handleCompleteWash(occupyingBooking.id)}
                             >
-                              ✓ Xong
+                              Xong
                             </button>
                             <button
                               className="btn btn-secondary btn-sm"
@@ -665,7 +733,7 @@ export default function QueueView({
                               onClick={() => handleToggleBayStatus(bay)}
                               title="Bảo trì khoang"
                             >
-                              ⚙️
+                              Bảo trì
                             </button>
                           </>
                         ) : (
@@ -675,7 +743,7 @@ export default function QueueView({
                               style={{ background: '#3b82f6', color: '#ffffff', border: 'none', padding: '0.4rem 0.75rem', fontWeight: 700 }}
                               onClick={() => handleStartWash(occupyingBooking.id)}
                             >
-                              ⚡ Rửa
+                              Rửa
                             </button>
                             <button
                               className="btn btn-secondary btn-sm"
@@ -683,7 +751,7 @@ export default function QueueView({
                               onClick={() => handleUndoCheckin(occupyingBooking.id)}
                               title="Hủy xếp khoang"
                             >
-                              ↩ Hoàn tác
+                              Hoàn tác
                             </button>
                           </>
                         )
@@ -709,7 +777,7 @@ export default function QueueView({
                             onClick={() => handleToggleBayStatus(bay)}
                             title="Bảo trì khoang"
                           >
-                            🛠️
+                            Bảo trì
                           </button>
                         </>
                       )}
@@ -724,7 +792,7 @@ export default function QueueView({
         {/* RIGHT COLUMN: QUEUE LIST */}
         <div>
           <div className="flex-between" style={{ marginBottom: '1.25rem' }}>
-            <h3 className="bay-section-title">📋 Hàng Đợi Rửa Xe</h3>
+            <h3 className="bay-section-title">Hàng Đợi Rửa Xe</h3>
             {sortedQueue.length > 0 && (
               <span 
                 className="q-badge-tier animate-bounce"
@@ -744,7 +812,6 @@ export default function QueueView({
               border: '1px dashed var(--border-color)',
               color: 'var(--text-muted)'
             }}>
-              <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.5rem' }}>🚗💨</span>
               Hàng đợi trống. Tất cả xe đều đã được xếp vào khoang!
             </div>
           ) : (
@@ -759,8 +826,9 @@ export default function QueueView({
                     key={b.id}
                     className={`queue-item-card ${isSelected ? 'selected' : ''}`}
                     onClick={() => setSelectedBookingId(b.id)}
-                    draggable
+                    draggable={true}
                     onDragStart={(e) => handleDragStart(e, b.id)}
+                    onDragEnd={handleDragEnd}
                     style={{
                       borderLeft: `4px solid ${
                         isWalkin ? '#64748b' :
@@ -810,24 +878,24 @@ export default function QueueView({
                         {b.paymentMethod === 'Online' ? (
                           b.paymentStatus === 'Paid' ? (
                             <span className="q-badge-tier" style={{ background: '#10b981', fontWeight: 'bold' }}>
-                              💳 Đã thanh toán (VNPay)
+                              Đã thanh toán (VNPay)
                             </span>
                           ) : (
                             <span className="q-badge-tier" style={{ background: '#f97316', fontWeight: 'bold' }}>
-                              💳 Chờ thanh toán (VNPay)
+                              Chờ thanh toán (VNPay)
                             </span>
                           )
                         ) : (
                           <span className="q-badge-tier" style={{ background: '#3b82f6', fontWeight: 'bold' }}>
-                            💵 Tiền mặt
+                            Tiền mặt
                           </span>
                         )}
                         <span className="q-badge-time">
-                          ⏱️ {getWaitingTime(b)}
+                          {getWaitingTime(b)}
                         </span>
                         {isLateBooking && (
                           <span className="q-badge-late">
-                            ⚠️ Trễ hẹn
+                            Trễ hẹn
                           </span>
                         )}
                       </div>
@@ -843,7 +911,7 @@ export default function QueueView({
                           handleQuickAssign(b.id);
                         }}
                       >
-                        ⚡ Assign
+                        Assign
                       </button>
                     </div>
                   </div>
@@ -854,9 +922,8 @@ export default function QueueView({
 
           {/* User helper tips banner */}
           <div className="coordinator-tip-card">
-            <span>💡</span>
             <span>
-              <strong>Staff:</strong> Kéo thẻ thả vào khoang để phân công - Nhấn <strong>⚡ Assign</strong> để gán nhanh - Nhấn <strong>✓ Xong</strong> để hoàn thành
+              <strong>Staff:</strong> Kéo thẻ thả vào khoang để phân công - Nhấn <strong>Assign</strong> để gán nhanh - Nhấn <strong>Xong</strong> để hoàn thành
             </span>
           </div>
         </div>
