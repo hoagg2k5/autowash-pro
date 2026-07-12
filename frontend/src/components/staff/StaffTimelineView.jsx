@@ -240,7 +240,7 @@ export default function StaffTimelineView({
       {/* Date selector header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem' }}>
         <div>
-          <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>📅 SƠ ĐỒ PHÂN LỊCH THEO KHOANG RỬA</h4>
+          <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>SƠ ĐỒ PHÂN LỊCH THEO KHOANG RỬA</h4>
           <p className="text-xs" style={{ color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>Trực quan hóa lịch hoạt động và tình trạng rửa của các khoang trong ngày</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
@@ -268,7 +268,7 @@ export default function StaffTimelineView({
             <th>Khung Giờ</th>
             {bays.map(bay => (
               <th key={bay}>
-                🚿 {bay.toUpperCase()}
+                {bay.toUpperCase()}
               </th>
             ))}
           </tr>
@@ -281,7 +281,7 @@ export default function StaffTimelineView({
                 {/* Time display cell */}
                 <td style={{ verticalAlign: 'middle', padding: '0.5rem' }}>
                   <div className="time-cell">
-                    <span>🕒 {slot.split(" ")[0]}</span>
+                    <span>{slot.split(" ")[0]}</span>
                     <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 500 }}>tới {slot.split(" ")[2]}</span>
                   </div>
                 </td>
@@ -325,13 +325,13 @@ export default function StaffTimelineView({
                                   className={`timeline-booking-card card-completed ${recentlyUpdatedBookingId === b.id ? 'booking-updated-highlight' : ''}`}
                                   style={{ padding: '0.5rem 0.75rem', opacity: 0.85, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                                 >
-                                  <strong style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>🚗 {b.licensePlate}</strong>
+                                  <strong style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{b.licensePlate}</strong>
                                   <span className="status-badge status-Completed" style={{ fontSize: '0.6rem', padding: '0.1rem 0.3 --status-padding', textTransform: 'capitalize', fontWeight: 'bold' }}>
                                     Hoàn tất
                                   </span>
                                   <div className="custom-tooltip">
-                                    👤 {b.customerName} <br />
-                                    🧼 {b.servicePackage}
+                                    {b.customerName} <br />
+                                    {b.servicePackage}
                                   </div>
                                 </div>
                               );
@@ -348,13 +348,13 @@ export default function StaffTimelineView({
                                     className="vip-timeline-badge"
                                     style={{ background: getTierBadgeColor(b.customerTier) }}
                                   >
-                                    💎 {b.customerTier.toUpperCase()}
+                                    {b.customerTier.toUpperCase()}
                                   </span>
                                 )}
 
                                 {/* Card Header: Plate & Status badge */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                                  <strong style={{ fontSize: '0.95rem', fontFamily: 'monospace', letterSpacing: '0.5px' }}>🚗 {b.licensePlate}</strong>
+                                  <strong style={{ fontSize: '0.95rem', fontFamily: 'monospace', letterSpacing: '0.5px' }}>{b.licensePlate}</strong>
                                   <span className={`status-badge ${badgeStyle}`} style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', textTransform: 'capitalize', fontWeight: 'bold' }}>
                                     {badgeText}
                                   </span>
@@ -362,12 +362,12 @@ export default function StaffTimelineView({
 
                                 {/* Customer info */}
                                 <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-                                  👤 {b.customerName} <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>({b.customerPhone})</span>
+                                  {b.customerName} <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>({b.customerPhone})</span>
                                 </div>
 
                                 {/* Package & Pricing info */}
                                 <div style={{ fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.9 }}>
-                                  <span style={{ color: 'var(--text-muted)' }}>🧼 {b.servicePackage}</span>
+                                  <span style={{ color: 'var(--text-muted)' }}>{b.servicePackage}</span>
                                   <strong style={{ fontSize: '0.85rem' }}>{formatVnd(b.totalPaid)}</strong>
                                 </div>
 
@@ -397,7 +397,7 @@ export default function StaffTimelineView({
                                       style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#3b82f6', color: '#fff', flex: 2, fontWeight: 700 }}
                                       onClick={() => handleStartWash(b.id)}
                                     >
-                                      ▶ Bắt Đầu
+                                      Bắt Đầu
                                     </button>
                                   )}
                                   {b.status === 'In Progress' && (
@@ -406,7 +406,7 @@ export default function StaffTimelineView({
                                       style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#10b981', color: '#fff', flex: 2, fontWeight: 700 }}
                                       onClick={() => handleCompleteWash(b.id)}
                                     >
-                                      ✓ Hoàn Tất
+                                      Hoàn Tất
                                     </button>
                                   )}
                                   {b.status === 'Waiting' && handleUndoCheckin ? (
@@ -416,7 +416,7 @@ export default function StaffTimelineView({
                                       onClick={() => handleUndoCheckin(b.id)}
                                       title="Hoàn tác check-in / Hủy xếp khoang"
                                     >
-                                      ↩ Hoàn tác
+                                      Hoàn tác
                                     </button>
                                   ) : b.status !== 'In Progress' ? (
                                     <button
@@ -436,12 +436,10 @@ export default function StaffTimelineView({
                           {!hasActiveBooking && (
                             isPassed ? (
                               <div className="empty-slot-card disabled" style={{ background: '#f8fafc', borderStyle: 'solid', color: 'var(--text-muted)', cursor: 'not-allowed', opacity: 0.6 }} title="Khung giờ này đã trôi qua">
-                                <span>🔒</span>
                                 <span>Đã Đóng</span>
                               </div>
                             ) : (
                               <div className="empty-slot-card" onClick={() => handleQuickBook && handleQuickBook(slot, bay)}>
-                                <span>🟢</span>
                                 <span>Trống</span>
                               </div>
                             )
@@ -450,12 +448,10 @@ export default function StaffTimelineView({
                       ) : (
                         isPassed ? (
                           <div className="empty-slot-card disabled" style={{ background: '#f8fafc', borderStyle: 'solid', color: 'var(--text-muted)', cursor: 'not-allowed', opacity: 0.6 }} title="Khung giờ này đã trôi qua">
-                            <span>🔒</span>
                             <span>Đã Đóng</span>
                           </div>
                         ) : (
                           <div className="empty-slot-card" onClick={() => handleQuickBook && handleQuickBook(slot, bay)}>
-                            <span>🟢</span>
                             <span>Trống</span>
                           </div>
                         )
