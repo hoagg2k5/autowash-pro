@@ -10,6 +10,14 @@ export default function VehicleManager({ userId, vehicles = [], onVehicleAdded, 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handlePlateChange = (val) => {
+    let clean = val.replace(/[^a-zA-Z0-9-.]/g, '').toUpperCase();
+    if (clean.length > 3 && clean[3] !== '-') {
+      clean = clean.slice(0, 3) + '-' + clean.slice(3);
+    }
+    setPlate(clean);
+  };
+
   // Sync state with prop triggers
   React.useEffect(() => {
     if (showAddFormDefault) {
@@ -108,7 +116,7 @@ export default function VehicleManager({ userId, vehicles = [], onVehicleAdded, 
                 type="text"
                 className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
                 value={plate}
-                onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                onChange={(e) => handlePlateChange(e.target.value)}
                 placeholder="30A-XXXXX"
                 required
               />
