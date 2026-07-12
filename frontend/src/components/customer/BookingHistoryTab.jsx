@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 
-export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBooking, recentlyUpdatedBookingId, onRefresh }) {
+export default function BookingHistoryTab({ bookings = [], pointsHistory, onCancelBooking, recentlyUpdatedBookingId, onRefresh }) {
   const [feedbackBooking, setFeedbackBooking] = useState(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [selectedBookingForQr, setSelectedBookingForQr] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('All');
 
   // Cancellation states
   const [cancellingBooking, setCancellingBooking] = useState(null);
@@ -195,11 +196,49 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
     }
   };
 
+  const filteredBookings = bookings.filter(b => {
+    if (statusFilter === 'All') return true;
+    if (statusFilter === 'In Progress') return b.status === 'In Progress' || b.status === 'In_Progress';
+    return b.status === statusFilter;
+  });
+
   return (
     <div className="space-y-6">
-      {bookings.length === 0 ? (
+      
+      {/* Filter Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1.5 border-b border-slate-900 scrollbar-none">
+        {[
+          { key: 'All', label: 'Tất cả' },
+          { key: 'Pending', label: 'Chờ xác nhận' },
+          { key: 'Confirmed', label: 'Đã xác nhận' },
+          { key: 'In Progress', label: 'Đang rửa' },
+          { key: 'Completed', label: 'Hoàn tất' },
+          { key: 'Cancelled', label: 'Đã hủy' }
+        ].map(tab => {
+          const count = tab.key === 'All' 
+            ? bookings.length 
+            : bookings.filter(b => b.status === tab.key || (tab.key === 'In Progress' && b.status === 'In_Progress')).length;
+          
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                statusFilter === tab.key
+                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent hover:bg-slate-900/50'
+              }`}
+              onClick={() => setStatusFilter(tab.key)}
+            >
+              {tab.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {filteredBookings.length === 0 ? (
         <div className="text-center py-12 text-slate-400 bg-slate-900/40 border border-slate-850 rounded-2xl">
-          <p className="text-sm">Bạn chưa có yêu cầu đặt lịch nào trong hệ thống.</p>
+          <p className="text-sm">Không tìm thấy yêu cầu đặt lịch nào phù hợp.</p>
         </div>
       ) : (
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-md">
@@ -220,7 +259,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
-                {bookings.map(b => {
+                {filteredBookings.map(b => {
                   const cancellable = (b.status === 'Pending' || b.status === 'Confirmed') && 
                                       isCancellableBooking(b.bookingDate, b.timeSlot);
                   const showFeedback = b.status === 'Completed' && !b.rating;
