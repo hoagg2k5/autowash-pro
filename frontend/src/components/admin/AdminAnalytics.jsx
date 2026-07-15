@@ -78,23 +78,23 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
       {/* 4 Stats Cards */}
       <div className="admin-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-panel stat-card" style={{ borderLeft: '4px solid var(--primary)', padding: '1.5rem' }}>
-          <span className="text-sm text-gray-500 font-medium block mb-1">💰 Doanh Thu Thực Tế (Hoàn Tất)</span>
+          <span className="text-sm text-gray-500 font-medium block mb-1">Doanh Thu Thực Tế (Hoàn Tất)</span>
           <div className="stat-val text-2xl font-bold text-slate-800">{formatVnd(totalRevenue)}</div>
         </div>
         <div className="glass-panel stat-card" style={{ borderLeft: '4px solid var(--secondary)', padding: '1.5rem' }}>
-          <span className="text-sm text-gray-500 font-medium block mb-1">🗓️ Tổng Số Đơn Đặt Lịch</span>
+          <span className="text-sm text-gray-500 font-medium block mb-1">Tổng Số Đơn Đặt Lịch</span>
           <div className="stat-val text-2xl font-bold text-sky-600">
             {totalBookingsCount} <span className="text-sm font-normal text-slate-500">lượt</span>
           </div>
         </div>
         <div className="glass-panel stat-card" style={{ borderLeft: '4px solid var(--status-completed)', padding: '1.5rem' }}>
-          <span className="text-sm text-gray-500 font-medium block mb-1">🎁 Điểm Tích Lũy Đã Trả</span>
+          <span className="text-sm text-gray-500 font-medium block mb-1">Điểm Tích Lũy Đã Trả</span>
           <div className="stat-val text-2xl font-bold text-green-600">
             {totalPointsGiven} <span className="text-sm font-normal text-slate-500">điểm</span>
           </div>
         </div>
         <div className="glass-panel stat-card" style={{ borderLeft: '4px solid var(--accent)', padding: '1.5rem' }}>
-          <span className="text-sm text-gray-500 font-medium block mb-1">🎯 Chiến Dịch Khuyến Mãi</span>
+          <span className="text-sm text-gray-500 font-medium block mb-1">Chiến Dịch Khuyến Mãi</span>
           <div className="stat-val text-2xl font-bold text-indigo-600">
             {activePromoCount} <span className="text-sm font-normal text-slate-500">đang chạy</span>
           </div>
@@ -106,7 +106,7 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
         {/* Biểu đồ xu hướng doanh thu 7 ngày */}
         <div className="glass-panel lg:col-span-2" style={{ padding: '2rem' }}>
           <h3 className="text-base font-bold mb-4 text-slate-800 flex items-center gap-2">
-            📈 XU HƯỚNG DOANH THU 7 NGÀY QUA (Đơn hoàn tất)
+            XU HƯỚNG DOANH THU 7 NGÀY QUA (Đơn hoàn tất)
           </h3>
           
           <div style={{ position: 'relative', height: '240px', width: '100%' }}>
@@ -204,7 +204,7 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
                 }}
               >
                 <div style={{ fontWeight: 600, borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '3px', marginBottom: '3px' }}>
-                  📅 {hoveredBar.date}
+                  {hoveredBar.date}
                 </div>
                 <div>Doanh thu: <strong style={{ color: '#38bdf8' }}>{formatVnd(hoveredBar.revenue)}</strong></div>
                 <div>Đơn rửa xong: <strong>{hoveredBar.count} đơn</strong></div>
@@ -216,14 +216,14 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
         {/* Biểu đồ phân bổ tỷ trọng gói dịch vụ */}
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <h3 className="text-base font-bold mb-5 text-slate-800 flex items-center gap-2">
-            🍩 TỶ TRỌNG GÓI DỊCH VỤ RỬA XE
+            TỶ TRỌNG GÓI DỊCH VỤ RỬA XE
           </h3>
 
           <div className="flex flex-col gap-5 justify-center h-full" style={{ minHeight: '180px' }}>
             {/* Express Package */}
             <div>
               <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                <span>🧼 Gói Express</span>
+                <span>Gói Express</span>
                 <span>{expressCount} lượt ({expressPct}%)</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
@@ -237,7 +237,7 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
             {/* Deluxe Package */}
             <div>
               <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                <span>✨ Gói Deluxe</span>
+                <span>Gói Deluxe</span>
                 <span>{deluxeCount} lượt ({deluxePct}%)</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
@@ -251,7 +251,7 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
             {/* Premium Ultimate Package */}
             <div>
               <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                <span>💎 Gói Premium Ultimate</span>
+                <span>Gói Premium Ultimate</span>
                 <span>{premiumCount} lượt ({premiumPct}%)</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
@@ -269,7 +269,7 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
       {!user?.branch && (
         <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
           <h3 style={{ fontSize: '1.15rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-            📊 TỔNG HỢP DOANH THU & HOẠT ĐỘNG THEO CHI NHÁNH
+            TỔNG HỢP DOANH THU & HOẠT ĐỘNG THEO CHI NHÁNH
           </h3>
           <div className="table-container">
             <table>

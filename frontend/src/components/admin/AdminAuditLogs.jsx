@@ -98,7 +98,7 @@ export default function AdminAuditLogs() {
   return (
     <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
       <h3 style={{ marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>
-        🛡️ NHẬT KÝ HOẠT ĐỘNG HỆ THỐNG
+        NHẬT KÝ HOẠT ĐỘNG HỆ THỐNG
       </h3>
 
       {/* Filter bar */}
@@ -107,7 +107,7 @@ export default function AdminAuditLogs() {
           <input 
             type="text" 
             className="form-input" 
-            placeholder="🔍 Tìm theo tên Admin..."
+            placeholder="Tìm theo tên Admin..."
             value={adminNameSearch}
             onChange={(e) => setAdminNameSearch(e.target.value)}
           />
