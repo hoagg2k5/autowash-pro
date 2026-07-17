@@ -48,7 +48,7 @@ export default function AdminPromotions({ promotions, onCreatePromo, onTogglePro
     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
       {/* Active Campaigns */}
       <div className="glass-panel" style={{ padding: '2rem' }}>
-        <h3 style={{ marginBottom: '1.25rem' }}>🎯 CHIẾN DỊCH KHUYẾN MÃI ĐANG CHẠY</h3>
+        <h3 style={{ marginBottom: '1.25rem' }}>CHIẾN DỊCH KHUYẾN MÃI ĐANG CHẠY</h3>
         
         {promotions.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>Chưa có chiến dịch nào được tạo.</p>
@@ -89,7 +89,7 @@ export default function AdminPromotions({ promotions, onCreatePromo, onTogglePro
 
       {/* New Promotion Designer */}
       <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
-        <h3 style={{ marginBottom: '1.25rem' }}>✨ THIẾT KẾ KHUYẾN MÃI HẠNG (TIER) MỚI</h3>
+        <h3 style={{ marginBottom: '1.25rem' }}>THIẾT KẾ KHUYẾN MÃI HẠNG (TIER) MỚI</h3>
         {promoSuccess && <div className="alert alert-success">{promoSuccess}</div>}
 
         <form onSubmit={handleSubmit}>
