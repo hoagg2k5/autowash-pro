@@ -40,7 +40,7 @@ export default function AdminSimulation() {
   return (
     <div className="glass-panel" style={{ padding: '2rem' }}>
       <h3 style={{ marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-        📊 PHÒNG NGHIÊN CỨU DỮ LIỆU THÀNH VIÊN & MÔ PHỎNG TRANSACTIONS (RESEARCH PORTAL)
+        PHÒNG NGHIÊN CỨU DỮ LIỆU THÀNH VIÊN & MÔ PHỎNG TRANSACTIONS (RESEARCH PORTAL)
       </h3>
       <p className="text-sm" style={{ marginBottom: '1.5rem', color: 'var(--text-muted)' }}>
         Để hỗ trợ cho việc nghiên cứu <strong>"Yếu tố ảnh hưởng đến sự phát triển bậc loyalty của khách hàng Việt"</strong>, Admin có thể tạo ra tập dữ liệu mô phỏng hành vi rửa xe dựa trên phân bố thực tế (gồm: SĐT, Biển số xe ô tô, loại xe SUV/Sedan, gói rửa, số lần rửa tích lũy, số điểm thưởng, có dùng phần thưởng hay không, doanh thu, thời điểm giao dịch).

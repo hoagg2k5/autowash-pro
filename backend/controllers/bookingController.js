@@ -504,7 +504,7 @@ export const getByPlate = async (req, res) => {
     const user = await User.findOne({ id: vehicle.userId });
     const rules = await LoyaltyRules.findOne({});
 
-    const todayStr = new Date().toLocaleDateString('sv-SE');
+    const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
     const bookingQuery = {
       vehicleId: vehicle.id,
       bookingDate: todayStr,
@@ -591,7 +591,8 @@ export const validateVoucherEndpoint = async (req, res) => {
     if (!voucher.isActive) {
       return res.status(400).json({ error: "Mã giảm giá đã bị vô hiệu hóa." });
     }
-    if (new Date(voucher.expiryDate) < new Date()) {
+    const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+    if (voucher.expiryDate < todayStr) {
       return res.status(400).json({ error: "Mã giảm giá đã hết hạn sử dụng." });
     }
 
@@ -711,7 +712,7 @@ export const listActiveVouchers = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy người dùng." });
     }
     const loyaltyTier = user.loyaltyTier || 'Member';
-    const today = new Date().toLocaleDateString('sv-SE');
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     const userVouchers = await UserVoucher.find({ userId: user.id, isUsed: false });
     const ownedVoucherCodes = userVouchers.map(uv => uv.voucherCode);
@@ -897,7 +898,7 @@ export const createWalkInBooking = async (req, res) => {
 
     // Lấy timeslot từ request hoặc tự động tính theo giờ hiện tại
     const getCurrentTimeSlot = () => {
-      const hr = new Date().getHours();
+      const hr = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' })).getHours();
       if (hr < 9) return "08:00 - 09:00";
       if (hr < 10) return "09:00 - 10:00";
       if (hr < 11) return "10:00 - 11:00";
@@ -909,7 +910,7 @@ export const createWalkInBooking = async (req, res) => {
       return "17:00 - 18:00";
     };
     const timeSlot = bodyTimeSlot || getCurrentTimeSlot();
-    const todayStr = new Date().toLocaleDateString('sv-SE');
+    const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     // Kiểm tra xe đã có lịch đặt trùng ngày và khung giờ chưa
     const existingVehicleBooking = await Booking.findOne({
@@ -1004,7 +1005,7 @@ export const redeemVoucher = async (req, res) => {
 
     // Sinh mã Voucher ngẫu nhiên có độ dài 8 ký tự với tiền tố RW-
     const randomCode = 'RW-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE'); // Hạn 30 ngày
+    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }); // Hạn 30 ngày
 
     // Tạo bản ghi Voucher mới
     const newVoucher = new Voucher({

@@ -208,7 +208,7 @@ export default function AdminVouchers() {
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 items-start">
       {/* List Panel */}
       <div className="glass-panel" style={{ padding: '2rem' }}>
-        <h3 style={{ marginBottom: '1.25rem' }}>🎟️ DANH SÁCH MÃ GIẢM GIÁ (VOUCHERS)</h3>
+        <h3 style={{ marginBottom: '1.25rem' }}>DANH SÁCH MÃ GIẢM GIÁ (VOUCHERS)</h3>
         {error && <div className="alert alert-danger">{error}</div>}
         
         {vouchers.length === 0 ? (
@@ -289,7 +289,7 @@ export default function AdminVouchers() {
       {/* Editor Form Panel */}
       <div id="voucher-form" className="glass-panel" style={{ padding: '2rem' }}>
         <h3 style={{ marginBottom: '1.25rem' }}>
-          {editingId ? '📝 CẬP NHẬT MÃ GIẢM GIÁ' : '✨ THÊM MÃ GIẢM GIÁ MỚI'}
+          {editingId ? 'CẬP NHẬT MÃ GIẢM GIÁ' : 'THÊM MÃ GIẢM GIÁ MỚI'}
         </h3>
         
         <form onSubmit={handleSubmit}>

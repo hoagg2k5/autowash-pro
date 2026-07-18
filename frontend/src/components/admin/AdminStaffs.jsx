@@ -96,7 +96,7 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
   return (
     <div className="glass-panel" style={{ padding: '2rem' }}>
       <div className="flex-between" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>📋 QUẢN LÝ NHÂN SỰ & CHI NHÁNH</h3>
+        <h3 style={{ margin: 0 }}>QUẢN LÝ NHÂN SỰ & CHI NHÁNH</h3>
         <button 
           className="btn btn-primary"
           onClick={() => {
@@ -105,7 +105,7 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
             setShowStaffModal(true);
           }}
         >
-          ➕ Thêm Nhân Viên Mới
+          Thêm Nhân Viên Mới
         </button>
       </div>
 
@@ -189,7 +189,7 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
             position: 'relative'
           }}>
             <h3 style={{ marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', color: 'var(--text-main)' }}>
-              {editingStaff ? '📝 Cập nhật tài khoản nhân sự' : '➕ Thêm tài khoản nhân sự mới'}
+              {editingStaff ? 'Cập nhật tài khoản nhân sự' : 'Thêm tài khoản nhân sự mới'}
             </h3>
             
             <form onSubmit={handleCreateOrUpdateStaff}>
