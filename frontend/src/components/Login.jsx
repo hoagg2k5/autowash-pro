@@ -161,10 +161,6 @@ export default function Login({ onLoginSuccess }) {
           fullName,
           email,
           password,
-          licensePlate,
-          brand,
-          model,
-          color,
           otp
         })
       });
@@ -176,7 +172,7 @@ export default function Login({ onLoginSuccess }) {
 
       setSuccess('Đăng ký thành công! Đang tự động đăng nhập...');
       setTimeout(() => {
-        onLoginSuccess(data.user, [data.vehicle], data.token);
+        onLoginSuccess(data.user, data.vehicle ? [data.vehicle] : [], data.token);
       }, 1500);
     } catch (err) {
       setError(err.message);

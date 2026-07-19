@@ -363,7 +363,7 @@ export default function AdminVouchers() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="v-points-required">Số điểm cần để đổi (pointsRequired)</label>
+            <label htmlFor="v-points-required">Số điểm cần để đổi</label>
             <input 
               id="v-points-required"
               type="number" 
@@ -376,14 +376,14 @@ export default function AdminVouchers() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="v-expiry">Ngày Hết Hạn * (Định dạng: DD-MM-YYYY, ví dụ: 31-12-2026)</label>
+            <label htmlFor="v-expiry">Ngày Hết Hạn * (dd-MM-yyyy)</label>
             <input 
               id="v-expiry"
               type="text" 
               className="form-input" 
               value={expiryDate} 
               onChange={handleExpiryChange} 
-              placeholder="DD-MM-YYYY"
+              placeholder="dd-MM-yyyy"
               maxLength={10}
               pattern="\d{2}-\d{2}-\d{4}"
               title="Định dạng ngày phải là DD-MM-YYYY (Ví dụ: 31-12-2026)"

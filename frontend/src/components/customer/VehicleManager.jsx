@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../../config.js';
+import { toast } from '../shared/toast.js';
 
 export default function VehicleManager({ userId, vehicles, onVehicleAdded, showAddFormDefault, onCloseForm }) {
   const [showForm, setShowForm] = useState(showAddFormDefault || false);
@@ -16,6 +17,27 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
       setShowForm(true);
     }
   }, [showAddFormDefault]);
+
+  const handleDelete = async (vehicleId, plate) => {
+    const confirm = window.confirm(`Bạn có chắc chắn muốn xóa xe biển số ${plate} khỏi tài khoản không?`);
+    if (!confirm) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/customers/${userId}/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Không thể xóa xe.");
+
+      toast.success(data.message || "Xóa xe thành công!");
+      if (onVehicleAdded) onVehicleAdded();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -145,7 +167,28 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
                 <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>{v.licensePlate}</strong>
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{v.brand} {v.model} ({v.color})</div>
               </div>
-              <span className="badge-info" style={{ fontSize: '0.65rem' }}>Đã đồng bộ</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className="badge-info" style={{ fontSize: '0.65rem' }}>Đã đồng bộ</span>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(v.id, v.licensePlate)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '4px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.background = '#ffe4e6'}
+                  onMouseOut={(e) => e.target.style.background = 'transparent'}
+                >
+                  Xóa
+                </button>
+              </div>
             </div>
           ))
         )}

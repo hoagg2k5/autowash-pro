@@ -2,6 +2,7 @@ import express from 'express';
 import { 
   listCustomers, 
   adjustPoints, 
+  getCustomerPointsHistory,
   getRules, 
   updateRules, 
   listPromotions, 
@@ -32,6 +33,7 @@ router.use(requireRole(['admin']));
 // Customer management
 router.get('/customers', listCustomers);
 router.post('/customers/:id/adjust-points', adjustPoints);
+router.get('/customers/:id/points-history', getCustomerPointsHistory);
 router.delete('/customers/:id', removeCustomer);
 
 // Rules management

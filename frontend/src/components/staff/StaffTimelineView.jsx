@@ -44,6 +44,7 @@ export default function StaffTimelineView({
   handleStartWash,
   handleCompleteWash,
   handleCancelWash,
+  handleUndoCheckin,
   handleQuickBook,
   bays = ["Khoang 1", "Khoang 2", "Khoang 3"]
 }) {
@@ -66,7 +67,7 @@ export default function StaffTimelineView({
   };
 
   return (
-    <div style={{ overflowX: 'auto', background: '#ffffff', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid var(--border-color)' }}>
+    <div style={{ overflowX: 'auto', background: 'var(--bg-card)', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid var(--border-color)' }}>
       <style>{`
         /* Timeline UI Overrides */
         .timeline-table {
@@ -387,7 +388,7 @@ export default function StaffTimelineView({
                                       style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#6366f1', color: '#fff', flex: 2, fontWeight: 700 }}
                                       onClick={() => handleCheckin(b.id)}
                                     >
-                                      Check-in
+                                      Check in
                                     </button>
                                   )}
                                   {b.status === 'Waiting' && (
@@ -408,13 +409,25 @@ export default function StaffTimelineView({
                                       ✓ Hoàn Tất
                                     </button>
                                   )}
-                                  <button
-                                    className="btn btn-danger btn-sm"
-                                    style={{ padding: '0.25rem 0.4rem', fontSize: '0.75rem', flex: 1 }}
-                                    onClick={() => handleCancelWash(b.id)}
-                                  >
-                                    Hủy
-                                  </button>
+                                  {b.status === 'Waiting' && handleUndoCheckin ? (
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      style={{ padding: '0.25rem 0.4rem', fontSize: '0.75rem', flex: 1.5, color: '#dc2626', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                                      onClick={() => handleUndoCheckin(b.id)}
+                                      title="Hoàn tác check-in / Hủy xếp khoang"
+                                    >
+                                      ↩ Hoàn tác
+                                    </button>
+                                  ) : b.status !== 'In Progress' ? (
+                                    <button
+                                      className="btn btn-danger btn-sm"
+                                      style={{ padding: '0.25rem 0.4rem', fontSize: '0.75rem', flex: 1 }}
+                                      onClick={() => handleCancelWash(b.id)}
+                                      title="Hủy đặt lịch"
+                                    >
+                                      Hủy
+                                    </button>
+                                  ) : null}
                                 </div>
                               </div>
                             );

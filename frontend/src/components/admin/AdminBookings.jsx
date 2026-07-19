@@ -2,7 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 
-export default function AdminBookings({ bookings, user, handleCompleteWash, handleCancelWash }) {
+const formatDateStr = (dateStr) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return dateStr;
+};
+
+export default function AdminBookings({ bookings, user, handleConfirmBooking, handleCompleteWash, handleCancelWash, handleRefundBooking }) {
   const [bookingSearchText, setBookingSearchText] = useState('');
   const [bookingStatusFilter, setBookingStatusFilter] = useState('Tất cả');
   const [branchFilter, setBranchFilter] = useState(user?.branch || 'Tất cả');
@@ -56,6 +65,11 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
     }
   };
 
+  const isRefundable = (booking) => {
+    // Đơn đặt online đã thanh toán trước nhưng chưa check-in/vào hàng chờ (Pending hoặc Confirmed) thì được hoàn tiền khi hủy
+    return (booking.status === 'Pending' || booking.status === 'Confirmed') && booking.paymentStatus === 'Paid';
+  };
+
   useEffect(() => {
     const fetchBranches = async () => {
       try {
@@ -88,7 +102,10 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
         if (res.ok) {
           const data = await res.json();
           const bayNames = data.map(b => b.name);
-          setBays(bayNames.length > 0 ? bayNames : ["Khoang 1", "Khoang 2", "Khoang 3"]);
+          const sortedBayNames = bayNames.length > 0
+            ? [...bayNames].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+            : ["Khoang 1", "Khoang 2", "Khoang 3"];
+          setBays(sortedBayNames);
         } else {
           setBays(["Khoang 1", "Khoang 2", "Khoang 3"]);
         }
@@ -312,7 +329,7 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
       ) : (
         <>
           <div className="table-container">
-            <table>
+            <table style={{ minWidth: '1100px' }}>
               <thead>
                 <tr>
                   <th>Thông tin khách</th>
@@ -330,23 +347,23 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
               <tbody>
                 {currentItems.map(b => (
                   <tr key={b.id}>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <strong>{b.customerName}</strong>
                       <div className="text-xs">{b.customerPhone} | <span className={`tier-indicator tier-${b.customerTier}`} style={{ padding: '0.1rem 0.4rem', fontSize: '0.65rem' }}>{b.customerTier}</span></div>
                     </td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
                         <code style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>{b.licensePlate}</code>
                         {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress')) && (
-                          <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`}>
-                            💎 Ưu Tiên {b.customerTier}
+                          <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`} title={`Khách hàng ưu tiên hạng ${b.customerTier}`} style={{ padding: '0.1rem 0.3rem', fontSize: '0.65rem' }}>
+                            💎 VIP
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="text-xs" style={{ fontWeight: 600 }}>{b.branch || "AutoWash Pro - Quận 1"}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</td>
-                    <td>
+                    <td className="text-xs" style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{(b.branch || "AutoWash Pro - Quận 1").replace("AutoWash Pro - ", "")}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--primary)', whiteSpace: 'nowrap' }}>{b.bay || 'Chưa xếp'}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       {(b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress') ? (
                         <select
                           className="form-input"
@@ -367,27 +384,27 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
                         </span>
                       )}
                     </td>
-                    <td>
-                      <strong>{b.bookingDate}</strong>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <strong>{formatDateStr(b.bookingDate)}</strong>
                       <div className="text-xs" style={{ color: 'var(--primary)' }}>{b.timeSlot}</div>
                     </td>
-                    <td>{b.servicePackage}</td>
-                    <td style={{ fontWeight: 700 }}>{formatVnd(b.totalPaid)}</td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{b.servicePackage}</td>
+                    <td style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formatVnd(b.totalPaid)}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <span className={`status-badge ${getStatusClass(b.status)}`}>
                         {getStatusLabel(b.status)}
                       </span>
                       {b.status === 'Cancelled' && b.cancelReason && (
-                        <div className="text-xs" style={{ color: 'var(--status-cancelled)', marginTop: '0.25rem', fontStyle: 'italic', maxWidth: '180px' }} title={b.cancelReason}>
+                        <div className="text-xs" style={{ color: 'var(--status-cancelled)', marginTop: '0.25rem', fontStyle: 'italic', maxWidth: '180px', whiteSpace: 'normal' }} title={b.cancelReason}>
                           Lý do: {b.cancelReason}
                         </div>
                       )}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                        {(b.status === 'Pending' || b.status === 'Confirmed') && (
-                          <button className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => handleCompleteWash(b.id)}>
-                            Hoàn Tất Rửa
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {b.status === 'Pending' && (
+                          <button className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => handleConfirmBooking(b.id)}>
+                            Xác Nhận
                           </button>
                         )}
                         {b.status === 'In Progress' && (
@@ -395,9 +412,19 @@ export default function AdminBookings({ bookings, user, handleCompleteWash, hand
                             ✓ Hoàn Tất
                           </button>
                         )}
-                        {(b.status === 'Pending' || b.status === 'Confirmed') && (
+                        {(b.status === 'Pending' || b.status === 'Confirmed') && !isRefundable(b) && (
                           <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => handleCancelWash(b.id)}>
                             Hủy
+                          </button>
+                        )}
+                        {isRefundable(b) && (
+                          <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', background: '#dc2626', color: 'white', whiteSpace: 'nowrap' }} onClick={() => handleCancelWash(b.id, true)}>
+                            Hoàn tiền & Hủy
+                          </button>
+                        )}
+                        {b.paymentStatus === 'Refund Pending' && (
+                          <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', background: '#e11d48', color: 'white', whiteSpace: 'nowrap' }} onClick={() => handleRefundBooking(b.id)}>
+                            💸 Duyệt Hoàn Tiền
                           </button>
                         )}
                       </div>

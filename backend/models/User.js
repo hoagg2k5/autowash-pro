@@ -14,9 +14,13 @@ const userSchema = new mongoose.Schema({
   pointsExpiredSoon: { type: Number, default: 0 },
   ownedVouchers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' }],
   tierExpiryDate: { type: Date },
+  tierExpiryWarningSent: { type: Boolean, default: false },
   branch: { type: String }, // Tên chi nhánh cho tài khoản Staff/Branch Admin
   email: { type: String, unique: true, sparse: true }, // Email liên kết (bắt buộc khi đăng ký mới)
-  sessionSalt: { type: String, default: '' }
+  sessionSalt: { type: String, default: '' },
+  gender: { type: String, enum: ['Nam', 'Nữ', 'Khác'], default: 'Nam' },
+  dateOfBirth: { type: String },
+  avatar: { type: String, default: '' }
 }, { id: false });
 
 const User = mongoose.model('User', userSchema);

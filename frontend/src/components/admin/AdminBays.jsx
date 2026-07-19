@@ -196,7 +196,7 @@ export default function AdminBays() {
                   .filter(bay => listBranchFilter === 'Tất cả' || bay.branch === listBranchFilter)
                   .map(bay => (
                   <tr key={bay._id}>
-                    <td><strong>{bay.name}</strong></td>
+                    <td style={{ whiteSpace: 'nowrap' }}><strong>{bay.name}</strong></td>
                     <td className="text-sm"><strong>{bay.branch}</strong></td>
                     <td>{getStatusBadge(bay.status)}</td>
                     <td className="text-sm">{bay.description || 'Chưa có'}</td>

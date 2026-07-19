@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import BookingHistoryTab from './BookingHistoryTab.jsx';
 import PointsHistoryTab from './PointsHistoryTab.jsx';
-import VoucherExchange from './VoucherExchange.jsx';
 
-export default function HistoryList({ bookings, pointsHistory, onCancelBooking, recentlyUpdatedBookingId, onRefresh, dbUser }) {
+export default function HistoryList({ bookings, pointsHistory, onCancelBooking, recentlyUpdatedBookingId, onRefresh }) {
   const [activeSubTab, setActiveSubTab] = useState('bookings');
 
   return (
@@ -24,13 +23,6 @@ export default function HistoryList({ bookings, pointsHistory, onCancelBooking, 
         >
           🎁 Nhật Ký Điểm Thưởng
         </span>
-        <span 
-          className={`tab ${activeSubTab === 'vouchers' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('vouchers')}
-          style={{ fontSize: '1rem', paddingBottom: '0.75rem', cursor: 'pointer', fontWeight: activeSubTab === 'vouchers' ? 700 : 500 }}
-        >
-          🎟️ Đổi Điểm Nhận Voucher
-        </span>
       </div>
 
       {/* 1. BOOKINGS HISTORY */}
@@ -47,11 +39,6 @@ export default function HistoryList({ bookings, pointsHistory, onCancelBooking, 
       {/* 2. POINTS HISTORY LOG */}
       {activeSubTab === 'points' && (
         <PointsHistoryTab pointsHistory={pointsHistory} />
-      )}
-
-      {/* 3. VOUCHER EXCHANGE SHOP */}
-      {activeSubTab === 'vouchers' && (
-        <VoucherExchange dbUser={dbUser} onRedeemSuccess={onRefresh} />
       )}
     </div>
   );

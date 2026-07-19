@@ -16,6 +16,11 @@ export default function QueueView({
   const [loadingBays, setLoadingBays] = useState(false);
   const [, setTick] = useState(0);
 
+  const getBayDisplayNum = (name, index) => {
+    const match = name.match(/\d+/);
+    return match ? match[0] : (index + 1);
+  };
+
   // Live timer for countdowns and waiting durations
   useEffect(() => {
     const interval = setInterval(() => {
@@ -36,7 +41,11 @@ export default function QueueView({
       if (res.ok) {
         const data = await res.json();
         if (data && data.length > 0) {
-          setBaysList(data);
+          // Sort naturally by name (e.g., "Khoang 1", "Khoang 2"...)
+          const sortedData = [...data].sort((a, b) => 
+            a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+          );
+          setBaysList(sortedData);
           return;
         }
       }
@@ -50,7 +59,10 @@ export default function QueueView({
   };
 
   const fallbackBays = () => {
-    const fallbackList = bays.map((name, index) => ({
+    const sortedFallback = [...bays].sort((a, b) => 
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+    );
+    const fallbackList = sortedFallback.map((name, index) => ({
       _id: `fallback-${index}`,
       name,
       branch: currentBranch,
@@ -207,7 +219,10 @@ export default function QueueView({
       const startStr = booking.timeSlot.split("-")[0].trim();
       const [startH, startM] = startStr.split(":").map(Number);
       const appointmentStart = new Date(year, month, day, startH, startM, 0, 0).getTime();
-      return (Date.now() - appointmentStart) > 15 * 60 * 1000;
+      
+      // Nếu khách đã check-in thực tế, tính trễ hẹn dựa trên giờ check-in chứ không phải giờ hiện tại
+      const timeToCheck = booking.checkInTime ? new Date(booking.checkInTime).getTime() : Date.now();
+      return (timeToCheck - appointmentStart) > 15 * 60 * 1000;
     } catch {
       return false;
     }
@@ -260,7 +275,7 @@ export default function QueueView({
           align-items: center;
           padding: 1rem 1.25rem;
           border-radius: 12px;
-          background: #ffffff;
+          background: var(--bg-card);
           border: 1px solid var(--border-color);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
           transition: all 0.25s ease;
@@ -337,7 +352,7 @@ export default function QueueView({
           align-items: center;
           padding: 1rem;
           border-radius: 12px;
-          background: #ffffff;
+          background: var(--bg-card);
           border: 1px solid var(--border-color);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
           transition: all 0.2s ease;
@@ -443,6 +458,15 @@ export default function QueueView({
           color: #0369a1;
           font-weight: 500;
         }
+        body.dark .coordinator-tip-card {
+          background: rgba(14, 165, 233, 0.08);
+          border-color: rgba(14, 165, 233, 0.2);
+          color: var(--secondary);
+        }
+        body.dark .q-badge-time {
+          background: var(--bg-secondary);
+          color: var(--text-muted);
+        }
       `}</style>
 
       <div className="coordinator-grid">
@@ -489,7 +513,7 @@ export default function QueueView({
                   >
                     {/* Bay number label block */}
                     <div className={`bay-num-container ${numClass}`}>
-                      {idx + 1}
+                      {getBayDisplayNum(bay.name, idx)}
                     </div>
 
                     {/* Bay details content */}
@@ -498,7 +522,7 @@ export default function QueueView({
                         <>
                           <div className="bay-status-dot-row">
                             <span style={{ color: '#ef4444', fontSize: '0.9rem' }}>🔴</span>
-                            <span className="status-text-maintenance">BẢO TRÌ</span>
+                            <span className="status-text-maintenance">{bay.name.toUpperCase()} - BẢO TRÌ</span>
                           </div>
                           <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Không khả dụng</div>
                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -511,7 +535,7 @@ export default function QueueView({
                             <div className="bay-status-dot-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                 <span style={{ color: '#3b82f6', fontSize: '0.9rem' }}>🔵</span>
-                                <span className="status-text-washing">ĐANG RỬA</span>
+                                <span className="status-text-washing">{bay.name.toUpperCase()} - ĐANG RỬA</span>
                               </div>
                               <span className="bay-countdown" style={{ color: isOvertime(occupyingBooking) ? '#ef4444' : '#f59e0b' }}>
                                 ⏳ {getElapsedWashTimeStr(occupyingBooking)}
@@ -525,7 +549,22 @@ export default function QueueView({
                               >
                                 {occupyingBooking.customerTier}
                               </span>
-                              <span className="text-xs" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
+                              {occupyingBooking.paymentMethod === 'Online' ? (
+                                occupyingBooking.paymentStatus === 'Paid' ? (
+                                  <span style={{ fontSize: '0.65rem', background: '#d1fae5', color: '#065f46', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
+                                    💳 Đã thanh toán (VNPay)
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: '0.65rem', background: '#ffedd5', color: '#9a3412', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
+                                    💳 Chờ thanh toán (VNPay)
+                                  </span>
+                                )
+                              ) : (
+                                <span style={{ fontSize: '0.65rem', background: '#dbeafe', color: '#1e40af', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
+                                  💵 Tiền mặt
+                                </span>
+                              )}
+                              <span className="text-xs" style={{ color: 'var(--text-muted)', fontWeight: 500, marginLeft: '0.3rem' }}>
                                 ({occupyingBooking.licensePlate})
                               </span>
                             </div>
@@ -548,7 +587,7 @@ export default function QueueView({
                           <>
                             <div className="bay-status-dot-row">
                               <span style={{ color: '#eab308', fontSize: '0.9rem' }}>🟡</span>
-                              <span className="status-text-waiting">CHỜ RỬA (ĐÃ GÁN)</span>
+                              <span className="status-text-waiting">{bay.name.toUpperCase()} - CHỜ RỬA (ĐÃ GÁN)</span>
                             </div>
                             <div className="bay-customer-name">
                               👤 {occupyingBooking.customerName}
@@ -558,7 +597,22 @@ export default function QueueView({
                               >
                                 {occupyingBooking.customerTier}
                               </span>
-                              <span className="text-xs" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
+                              {occupyingBooking.paymentMethod === 'Online' ? (
+                                occupyingBooking.paymentStatus === 'Paid' ? (
+                                  <span style={{ fontSize: '0.65rem', background: '#d1fae5', color: '#065f46', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
+                                    💳 Đã thanh toán (VNPay)
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: '0.65rem', background: '#ffedd5', color: '#9a3412', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
+                                    💳 Chờ thanh toán (VNPay)
+                                  </span>
+                                )
+                              ) : (
+                                <span style={{ fontSize: '0.65rem', background: '#dbeafe', color: '#1e40af', fontWeight: 'bold', padding: '0.1rem 0.35rem', borderRadius: '4px', marginLeft: '0.3rem' }}>
+                                  💵 Tiền mặt
+                                </span>
+                              )}
+                              <span className="text-xs" style={{ color: 'var(--text-muted)', fontWeight: 500, marginLeft: '0.3rem' }}>
                                 ({occupyingBooking.licensePlate})
                               </span>
                             </div>
@@ -571,7 +625,7 @@ export default function QueueView({
                         <>
                           <div className="bay-status-dot-row">
                             <span style={{ color: '#10b981', fontSize: '0.9rem' }}>🟢</span>
-                            <span className="status-text-ready">SẴN SÀNG</span>
+                            <span className="status-text-ready">{bay.name.toUpperCase()} - SẴN SÀNG</span>
                           </div>
                           <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Chờ phân công</div>
                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -629,7 +683,7 @@ export default function QueueView({
                               onClick={() => handleUndoCheckin(occupyingBooking.id)}
                               title="Hủy xếp khoang"
                             >
-                              ↩ Hủy
+                              ↩ Hoàn tác
                             </button>
                           </>
                         )
@@ -685,7 +739,7 @@ export default function QueueView({
             <div style={{
               textAlign: 'center',
               padding: '4rem 2rem',
-              background: '#ffffff',
+              background: 'var(--bg-card)',
               borderRadius: '12px',
               border: '1px dashed var(--border-color)',
               color: 'var(--text-muted)'
@@ -753,6 +807,21 @@ export default function QueueView({
                         >
                           {b.customerTier}
                         </span>
+                        {b.paymentMethod === 'Online' ? (
+                          b.paymentStatus === 'Paid' ? (
+                            <span className="q-badge-tier" style={{ background: '#10b981', fontWeight: 'bold' }}>
+                              💳 Đã thanh toán (VNPay)
+                            </span>
+                          ) : (
+                            <span className="q-badge-tier" style={{ background: '#f97316', fontWeight: 'bold' }}>
+                              💳 Chờ thanh toán (VNPay)
+                            </span>
+                          )
+                        ) : (
+                          <span className="q-badge-tier" style={{ background: '#3b82f6', fontWeight: 'bold' }}>
+                            💵 Tiền mặt
+                          </span>
+                        )}
                         <span className="q-badge-time">
                           ⏱️ {getWaitingTime(b)}
                         </span>

@@ -78,6 +78,9 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
 
   useEffect(() => {
     const socket = io(API_BASE_URL);
+    socket.on('connect', () => {
+      socket.emit('join_staff_admin_room');
+    });
     socket.on('booking_updated', () => {
       fetchData(true);
     });
@@ -85,6 +88,20 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
       socket.disconnect();
     };
   }, []);
+
+  const handleConfirmBooking = async (bookingId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/confirm`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Thao tác thất bại.");
+      toast.success(data.message || "Xác nhận lịch đặt thành công.");
+      fetchData(true);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   const handleCompleteWash = async (bookingId) => {
     try {
@@ -98,13 +115,50 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
     }
   };
 
-  const handleCancelWash = async (bookingId) => {
-    if (!window.confirm("Xác nhận hủy đặt lịch này?")) return;
+  const handleCancelWash = async (bookingId, isRefundable = false) => {
+    let reason = '';
+    if (isRefundable) {
+      reason = window.prompt("Đây là đơn đặt lịch đã thanh toán online. Vui lòng nhập lý do hủy & hoàn tiền:");
+      if (reason === null) return;
+      if (!reason.trim()) {
+        toast.error("Lý do hủy không được để trống.");
+        return;
+      }
+    } else {
+      if (!window.confirm("Xác nhận hủy đặt lịch này?")) return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/bookings/cancel/${bookingId}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
       });
-      if (!response.ok) throw new Error("Thao tác thất bại.");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Thao tác thất bại.");
+      toast.success(data.message || "Đã hủy lịch đặt thành công.");
+      fetchData(true);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleRefundBooking = async (bookingId) => {
+    if (!window.confirm("Xác nhận duyệt hoàn tiền cho đơn đặt lịch này? Hệ thống sẽ gửi yêu cầu hoàn tiền qua VNPay Sandbox.")) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/refund`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Duyệt hoàn tiền thất bại.");
+
+      toast.success(data.message || "Hoàn tiền thành công!");
       fetchData(true);
     } catch (err) {
       toast.error(err.message);
@@ -240,14 +294,16 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
   if (error) return <div style={{ textAlign: 'center', padding: '4rem' }} className="alert alert-danger">{error}</div>;
 
   return (
-    <div className="container">
+    <div className="container" style={{ maxWidth: '1400px' }}>
       <div className="flex-between" style={{ marginBottom: '2rem' }}>
         <div>
           <h2 style={{ fontFamily: 'var(--font-heading)' }}>BẢNG QUẢN TRỊ VIÊN (ADMIN)</h2>
         </div>
-        <button className="btn btn-secondary" onClick={handleRunMonthlyReview}>
-          🔄 Rà Soát Hạng Tháng
-        </button>
+        {activeTab === 'customers' && (
+          <button className="btn btn-secondary" onClick={handleRunMonthlyReview}>
+            🔄 Rà Soát Hạng Tháng
+          </button>
+        )}
       </div>
 
       {/* Analytics Card Component */}
@@ -260,8 +316,10 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
         <AdminBookings 
           bookings={bookings} 
           user={user} 
+          handleConfirmBooking={handleConfirmBooking}
           handleCompleteWash={handleCompleteWash} 
           handleCancelWash={handleCancelWash} 
+          handleRefundBooking={handleRefundBooking}
         />
       )}
 

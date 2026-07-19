@@ -11,6 +11,31 @@ export default function AdminCustomers({ customers, onPointsAdjusted, API_BASE_U
   const [adjustReason, setAdjustReason] = useState('Admin điều chỉnh điểm thủ công');
   const [adjustingPoints, setAdjustingPoints] = useState(false);
 
+  // States and fetch functions for points history
+  const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState(null);
+  const [pointsHistoryList, setPointsHistoryList] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const handleOpenHistoryModal = async (customer) => {
+    setSelectedCustomerForHistory(customer);
+    setLoadingHistory(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/customers/${customer.id}/points-history`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Tải lịch sử điểm thất bại.');
+      setPointsHistoryList(data);
+    } catch (err) {
+      toast.error(err.message);
+      setSelectedCustomerForHistory(null);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
@@ -148,6 +173,13 @@ export default function AdminCustomers({ customers, onPointsAdjusted, API_BASE_U
                           Sửa Điểm
                         </button>
                         <button 
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: 'rgba(2, 132, 199, 0.05)', color: 'var(--primary)', borderColor: 'rgba(2, 132, 199, 0.2)' }}
+                          onClick={() => handleOpenHistoryModal(c)}
+                        >
+                          Lịch sử điểm
+                        </button>
+                        <button 
                           className="btn btn-danger btn-sm"
                           style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
                           onClick={() => handleDeleteCustomer(c)}
@@ -227,6 +259,91 @@ export default function AdminCustomers({ customers, onPointsAdjusted, API_BASE_U
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xem lịch sử điểm */}
+      {selectedCustomerForHistory && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div className="glass-panel" style={{
+            background: '#ffffff',
+            padding: '2rem',
+            width: '600px',
+            maxWidth: '95%',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+            borderRadius: '12px',
+            position: 'relative'
+          }}>
+            <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', color: 'var(--text-main)' }}>
+              📜 Lịch Sử Giao Dịch Điểm
+            </h3>
+            <p className="text-sm" style={{ marginBottom: '1.25rem', color: 'var(--text-muted)' }}>
+              Khách hàng: <strong style={{ color: 'var(--text-main)' }}>{selectedCustomerForHistory.fullName}</strong> ({selectedCustomerForHistory.phone})<br/>
+              Số dư hiện tại: <strong style={{ color: 'var(--primary)' }}>{selectedCustomerForHistory.pointsBalance}</strong> điểm
+            </p>
+
+            {loadingHistory ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Đang tải lịch sử giao dịch...</p>
+            ) : pointsHistoryList.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Chưa có biến động điểm thưởng trong tài khoản.</p>
+            ) : (
+              <div className="table-container" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '0.5rem' }}>Thời Gian</th>
+                      <th style={{ textAlign: 'left', padding: '0.5rem' }}>Nội Dung</th>
+                      <th style={{ textAlign: 'right', padding: '0.5rem' }}>Số Điểm</th>
+                      <th style={{ textAlign: 'center', padding: '0.5rem' }}>Loại</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pointsHistoryList.map(ph => (
+                      <tr key={ph.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td className="text-xs" style={{ padding: '0.5rem' }}>
+                          {new Date(ph.createdAt).toLocaleString('vi-VN')}
+                        </td>
+                        <td className="text-sm" style={{ padding: '0.5rem' }}>{ph.reason}</td>
+                        <td style={{ 
+                          textAlign: 'right', 
+                          padding: '0.5rem', 
+                          fontWeight: 700, 
+                          color: ph.type === 'Earned' ? 'var(--status-completed)' : 'var(--status-cancelled)' 
+                        }}>
+                          {ph.type === 'Earned' ? `+${ph.points}` : `-${ph.points}`}
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '0.5rem' }}>
+                          <span className={`status-badge ${ph.type === 'Earned' ? 'status-Completed' : 'status-Cancelled'}`} style={{ fontSize: '0.65rem' }}>
+                            {ph.type === 'Earned' ? 'Tích lũy' : 'Khấu trừ'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => {
+                setSelectedCustomerForHistory(null);
+                setPointsHistoryList([]);
+              }}>
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

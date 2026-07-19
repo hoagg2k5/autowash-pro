@@ -7,6 +7,11 @@ export default function AdminRules({ rules, onUpdateRules }) {
   const [pointsPerVnd, setPointsPerVnd] = useState(rules?.pointsPerVndRate || 25000);
   const [vndPerPoint, setVndPerPoint] = useState(rules?.vndPerPointRedeemed || 1250);
 
+  const [memberWindow, setMemberWindow] = useState(rules?.tierSettings.Member.bookingWindowDays || 7);
+  const [silverWindow, setSilverWindow] = useState(rules?.tierSettings.Silver.bookingWindowDays || 14);
+  const [goldWindow, setGoldWindow] = useState(rules?.tierSettings.Gold.bookingWindowDays || 30);
+  const [platinumWindow, setPlatinumWindow] = useState(rules?.tierSettings.Platinum.bookingWindowDays || 60);
+
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
@@ -15,10 +20,10 @@ export default function AdminRules({ rules, onUpdateRules }) {
     e.preventDefault();
     onUpdateRules({
       tierSettings: {
-        Member: { ...rules.tierSettings.Member, spendThreshold: 0 },
-        Silver: { ...rules.tierSettings.Silver, spendThreshold: Number(silverSpend) },
-        Gold: { ...rules.tierSettings.Gold, spendThreshold: Number(goldSpend) },
-        Platinum: { ...rules.tierSettings.Platinum, spendThreshold: Number(platinumSpend) }
+        Member: { ...rules.tierSettings.Member, spendThreshold: 0, bookingWindowDays: Number(memberWindow) },
+        Silver: { ...rules.tierSettings.Silver, spendThreshold: Number(silverSpend), bookingWindowDays: Number(silverWindow) },
+        Gold: { ...rules.tierSettings.Gold, spendThreshold: Number(goldSpend), bookingWindowDays: Number(goldWindow) },
+        Platinum: { ...rules.tierSettings.Platinum, spendThreshold: Number(platinumSpend), bookingWindowDays: Number(platinumWindow) }
       },
       pointsPerVndRate: Number(pointsPerVnd),
       vndPerPointRedeemed: Number(vndPerPoint)
@@ -115,7 +120,30 @@ export default function AdminRules({ rules, onUpdateRules }) {
                   <tr key={tier}>
                     <td><span className={`tier-indicator tier-${tier}`}>{tier}</span></td>
                     <td style={{ fontWeight: 600 }}>{formatVnd(tRules.spendThreshold)}</td>
-                    <td><strong>{tRules.bookingWindowDays} ngày</strong></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <input
+                          type="number"
+                          className="form-input"
+                          style={{ width: '80px', padding: '0.25rem 0.5rem', display: 'inline-block', margin: 0 }}
+                          value={
+                            tier === 'Member' ? memberWindow :
+                            tier === 'Silver' ? silverWindow :
+                            tier === 'Gold' ? goldWindow : platinumWindow
+                          }
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            if (tier === 'Member') setMemberWindow(val);
+                            else if (tier === 'Silver') setSilverWindow(val);
+                            else if (tier === 'Gold') setGoldWindow(val);
+                            else setPlatinumWindow(val);
+                          }}
+                          min="1"
+                          required
+                        />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>ngày</span>
+                      </div>
+                    </td>
                     <td style={{ color: 'var(--primary)', fontWeight: 700 }}>x{tRules.pointMultiplier}</td>
                     <td className="text-xs" style={{ color: 'var(--text-muted)' }}>{tRules.perks.join(', ')}</td>
                   </tr>

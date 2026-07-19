@@ -20,15 +20,18 @@ export const getDashboard = async (req, res) => {
       return res.status(403).json({ error: "Bạn không có quyền truy cập thông tin này." });
     }
 
-    const user = await User.findOne({ id: userId });
+    const [user, vehicles, bookings, pointsHistory, rules] = await Promise.all([
+      User.findOne({ id: userId }),
+      Vehicle.find({ userId }),
+      Booking.find({ userId }).sort({ createdAt: -1 }),
+      PointHistory.find({ userId }).sort({ createdAt: -1 }),
+      LoyaltyRules.findOne({})
+    ]);
     
     if (!user) {
       return res.status(404).json({ error: "Không tìm thấy người dùng" });
     }
 
-    const vehicles = await Vehicle.find({ userId });
-    const bookings = await Booking.find({ userId }).sort({ createdAt: -1 });
-    
     // Create lookup map of vehicles by id
     const vehicleMap = {};
     vehicles.forEach(v => {
@@ -43,9 +46,6 @@ export const getDashboard = async (req, res) => {
         carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : 'N/A'
       };
     });
-
-    const pointsHistory = await PointHistory.find({ userId }).sort({ createdAt: -1 });
-    const rules = await LoyaltyRules.findOne({});
     
     const currentTier = user.loyaltyTier || 'Member';
     
@@ -123,6 +123,35 @@ export const createVehicle = async (req, res) => {
   }
 };
 
+export const deleteVehicle = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const vehicleId = req.params.vehicleId;
+
+    if (req.user.role !== 'admin' && req.user.role !== 'staff' && req.user.id !== userId) {
+      return res.status(403).json({ error: "Bạn không có quyền thao tác trên tài khoản này." });
+    }
+
+    const vehicle = await Vehicle.findOne({ id: vehicleId, userId });
+    if (!vehicle) {
+      return res.status(404).json({ error: "Không tìm thấy xe hoặc xe này không thuộc về bạn." });
+    }
+
+    const pendingBooking = await Booking.findOne({ 
+      licensePlate: vehicle.licensePlate, 
+      status: { $in: ['Pending', 'Confirmed', 'Waiting', 'In Progress'] } 
+    });
+    if (pendingBooking) {
+      return res.status(400).json({ error: "Không thể xóa xe này vì đang có lịch đặt sắp diễn ra hoặc đang thực hiện." });
+    }
+
+    await Vehicle.deleteOne({ id: vehicleId, userId });
+    res.json({ message: "Xóa xe thành công!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const changePassword = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -165,6 +194,56 @@ export const changePassword = async (req, res) => {
   }
 };
 
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { fullName, email, phone, gender, dateOfBirth, avatar } = req.body;
+
+    // Phân quyền: Người dùng chỉ được sửa thông tin của chính mình (hoặc admin)
+    if (req.user.role !== 'admin' && req.user.id !== userId) {
+      return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này." });
+    }
+
+    const user = await User.findOne({ id: userId });
+    if (!user) {
+      return res.status(404).json({ error: "Không tìm thấy thông tin người dùng." });
+    }
+
+    if (fullName !== undefined) user.fullName = fullName;
+    if (email !== undefined) user.email = email;
+    if (phone !== undefined) {
+      const existingUser = await User.findOne({ phone, id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ error: "Số điện thoại này đã được sử dụng bởi tài khoản khác." });
+      }
+      user.phone = phone;
+    }
+    if (gender !== undefined) user.gender = gender;
+    if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
+    if (avatar !== undefined) user.avatar = avatar;
+
+    await user.save();
+
+    res.json({
+      message: "Cập nhật thông tin cá nhân thành công!",
+      user: {
+        id: user.id,
+        phone: user.phone,
+        fullName: user.fullName,
+        role: user.role,
+        loyaltyTier: user.loyaltyTier,
+        pointsBalance: user.pointsBalance,
+        email: user.email,
+        gender: user.gender,
+        dateOfBirth: user.dateOfBirth,
+        avatar: user.avatar
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const getMyVouchers = async (req, res) => {
   try {
     const user = await User.findOne({ id: req.user.id });
@@ -174,30 +253,38 @@ export const getMyVouchers = async (req, res) => {
     const loyaltyTier = user.loyaltyTier || 'Member';
     const today = new Date().toLocaleDateString('sv-SE');
 
-    // Lấy các UserVoucher đang khả dụng của khách hàng
-    const userVouchers = await UserVoucher.find({ userId: user.id, status: 'Available' });
-    const ownedVoucherIds = userVouchers.map(uv => uv.voucherId.toString());
+    // Lấy các UserVoucher đang khả dụng (chưa sử dụng) của khách hàng
+    const userVouchers = await UserVoucher.find({ userId: user.id, isUsed: false });
+    const ownedVoucherCodes = userVouchers.map(uv => uv.voucherCode);
 
     const vouchers = await Voucher.find({
       isActive: true,
       expiryDate: { $gte: today },
       targetTiers: loyaltyTier,
       $or: [
-        { pointsRequired: { $exists: false } },
-        { pointsRequired: 0 },
-        { _id: { $in: ownedVoucherIds } }
+        // 1. Voucher hệ thống: không bắt đầu bằng 'RW-' (không phải đổi điểm) và pointsRequired là 0 hoặc không có
+        {
+          code: { $not: /^RW-/i },
+          $or: [
+            { pointsRequired: { $exists: false } },
+            { pointsRequired: 0 }
+          ]
+        },
+        // 2. Voucher đổi điểm: mã nằm trong danh sách voucher người dùng đang sở hữu
+        {
+          code: { $in: ownedVoucherCodes }
+        }
       ]
     });
 
     const vouchersWithCount = vouchers.map(v => {
       const vObj = v.toObject();
-      const isRedeemed = vObj.pointsRequired > 0;
+      const isRedeemed = vObj.code.toUpperCase().startsWith('RW-') || (vObj.pointsRequired > 0);
       if (isRedeemed) {
-        vObj.ownedCount = userVouchers.filter(uv => uv.voucherId.toString() === vObj._id.toString()).length;
-        // Gắn danh sách mã coupon chi tiết (uniqueCode) để khách hàng xem
-        vObj.uniqueCodes = userVouchers
-          .filter(uv => uv.voucherId.toString() === vObj._id.toString())
-          .map(uv => uv.uniqueCode);
+        vObj.pointsRequired = vObj.pointsRequired || 1; // Đảm bảo pointsRequired > 0 để frontend hiển thị nhãn "Đổi bằng điểm"
+        const matchingUVs = userVouchers.filter(uv => uv.voucherCode === vObj.code);
+        vObj.ownedCount = matchingUVs.length;
+        vObj.uniqueCodes = matchingUVs.map(uv => uv.voucherCode);
       } else {
         vObj.ownedCount = 1;
         vObj.uniqueCodes = [vObj.code];
@@ -227,6 +314,11 @@ export const redeemVoucher = async (req, res) => {
     const { userId, voucherId } = req.body;
     if (!userId || !voucherId) {
       return res.status(400).json({ error: "Vui lòng cung cấp đầy đủ userId và voucherId." });
+    }
+
+    // Bảo mật: Chỉ người dùng hoặc Admin mới được phép đổi voucher
+    if (req.user.role !== 'admin' && req.user.id !== userId) {
+      return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này cho tài khoản khác." });
     }
 
     // Find User

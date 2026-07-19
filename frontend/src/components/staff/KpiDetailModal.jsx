@@ -181,7 +181,7 @@ export default function KpiDetailModal({
                             style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#6366f1' }}
                             onClick={() => { handleCheckin(b.id); }}
                           >
-                            ➔ Check-in
+                            Check in
                           </button>
                           <button
                             type="button"

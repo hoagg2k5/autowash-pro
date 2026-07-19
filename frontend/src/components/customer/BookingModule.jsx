@@ -18,8 +18,8 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
   const [currentStep, setCurrentStep] = useState(1); // 1, 2, 3
 
   // Form selections state
-  const [selectedVehicle, setSelectedVehicle] = useState(vehicles[0]?.id || '');
-  const [selectedBranch, setSelectedBranch] = useState('AutoWash Pro - Quận 1');
+  const [selectedVehicle, setSelectedVehicle] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
   const [branches, setBranches] = useState([]);
   const [bookingDate, setBookingDate] = useState('');
   const [selectedSlot, setSelectedSlot] = useState('');
@@ -33,11 +33,6 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         if (response.ok) {
           const data = await response.json();
           setBranches(data);
-          if (data.length > 0) {
-            if (!data.some(b => b.name === selectedBranch)) {
-              setSelectedBranch(data[0].name);
-            }
-          }
         }
       } catch (err) {
         console.error("Error loading branches:", err);
@@ -50,7 +45,6 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
   const [paymentMethod, setPaymentMethod] = useState('Cash'); // 'Cash' or 'Online'
   const [createdBookingForPayment, setCreatedBookingForPayment] = useState(null);
   const [paymentTimeLeft, setPaymentTimeLeft] = useState(300);
-  const [paymentActiveTab, setPaymentActiveTab] = useState('vietqr'); // 'vietqr' or 'momo'
   const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
 
   // Payment countdown timer logic
@@ -142,11 +136,8 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         if (response.ok) {
           const data = await response.json();
           setBays(data);
-          const currentIsOccupied = data.find(b => b.name === selectedBay)?.occupied;
-          if (!selectedBay || currentIsOccupied) {
-            const firstAvailable = data.find(b => !b.occupied);
-            setSelectedBay(firstAvailable ? firstAvailable.name : '');
-          }
+          // Không tự động chọn khoang rửa cho Customer. Sẽ do staff điều phối sau.
+          setSelectedBay('');
         } else {
           throw new Error('Không thể tải thông tin trạng thái khoang rửa.');
         }
@@ -344,12 +335,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
     setVoucherError('');
   };
 
-  // Sync selected vehicle
-  useEffect(() => {
-    if (vehicles.length > 0 && !selectedVehicle) {
-      setSelectedVehicle(vehicles[0].id);
-    }
-  }, [vehicles, selectedVehicle]);
+  
 
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -416,6 +402,10 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
       }
       setCurrentStep(2);
     } else if (currentStep === 2) {
+      if (!selectedBranch) {
+        setError("Vui lòng chọn chi nhánh rửa xe.");
+        return;
+      }
       if (!bookingDate) {
         setError("Vui lòng chọn ngày rửa xe.");
         return;
@@ -454,10 +444,6 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
         return;
       }
 
-      if (bays.length > 0 && bays.every(b => b.occupied)) {
-        setError("Tất cả các khoang rửa ở khung giờ này đã được đặt hết. Vui lòng chọn giờ khác.");
-        return;
-      }
       setCurrentStep(3);
     }
   };
@@ -591,7 +577,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
                 width: '36px',
                 height: '36px',
                 borderRadius: '50%',
-                background: isCurrent ? 'var(--primary)' : isActive ? 'var(--secondary)' : '#ffffff',
+                background: isCurrent ? 'var(--primary)' : isActive ? 'var(--secondary)' : 'var(--bg-card)',
                 color: isActive ? '#ffffff' : 'var(--text-muted)',
                 border: `2px solid ${isActive ? 'transparent' : 'var(--border-color)'}`,
                 display: 'flex',
@@ -609,7 +595,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
                 fontWeight: isActive ? 600 : 400,
                 color: isActive ? 'var(--text-main)' : 'var(--text-muted)',
                 marginTop: '0.4rem',
-                background: '#ffffff',
+                background: 'var(--bg-card)',
                 padding: '0 4px'
               }}>
                 {step.num === 1 ? 'Xe & Gói' : step.num === 2 ? 'Lịch & Chi Nhánh' : 'Xác nhận & Ưu đãi'}
@@ -698,13 +684,24 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
       <OnlinePaymentModal
         booking={createdBookingForPayment}
         paymentTimeLeft={paymentTimeLeft}
-        paymentActiveTab={paymentActiveTab}
-        setPaymentActiveTab={setPaymentActiveTab}
         isSimulatingPayment={isSimulatingPayment}
         handleSimulatePaymentSuccess={handleSimulatePaymentSuccess}
         onClose={() => {
           setCreatedBookingForPayment(null);
-          toast.warning("Đã đóng trang thanh toán. Quý khách vui lòng thanh toán trong lịch sử đặt chỗ.");
+          toast.warning("Đã đóng trang thanh toán. Lịch đặt của bạn đã được lưu ở trạng thái 'Chờ thanh toán'. Bạn có thể thực hiện thanh toán sau trong mục Lịch sử đặt lịch.");
+          // Reset form states
+          setRedeemPoints(0);
+          setPromoCode('');
+          setAppliedVoucherId(null);
+          setVoucherDiscount(0);
+          setVoucherError('');
+          setVoucherSuccess('');
+          setSelectedSlot('');
+          setBookingDate('');
+          setSelectedBay('');
+          setPaymentMethod('Cash');
+          setCurrentStep(1);
+          if (onBookingSuccess) onBookingSuccess();
         }}
         formatVnd={formatVnd}
       />
