@@ -20,7 +20,7 @@ export default function VoucherExchange({ dbUser, onRedeemSuccess }) {
         setVouchers(data);
       }
     } catch (err) {
-      console.error("Lỗi khi tải danh sách voucher đổi điểm:", err);
+      console.error("[Customer VoucherExchange] Failed to load redeemable vouchers:", err);
     } finally {
       setLoading(false);
     }
