@@ -51,8 +51,11 @@ if (!MONGODB_URI) {
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: (origin, callback) => {
+      callback(null, true);
+    },
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -69,13 +72,23 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('join_staff_admin_room', () => {
+    socket.join('staff-admin');
+    console.log(`Socket ${socket.id} joined staff-admin room`);
+  });
+
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
   });
 });
 
 // Standard Middlewares
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes Mount

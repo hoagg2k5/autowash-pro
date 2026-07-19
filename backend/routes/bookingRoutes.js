@@ -21,12 +21,21 @@ import {
   assignBay,
   redeemVoucher,
   listMyVouchers,
+  listMyUsedVouchers,
   assignStaff,
-  listStaffForAssignment
+  listStaffForAssignment,
+  vnpayIpn,
+  vnpayVerify,
+  refundBooking,
+  getPaymentUrlForExistingBooking
 } from '../controllers/bookingController.js';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Public endpoints for VNPay (do not require authenticateToken)
+router.get('/vnpay-ipn', vnpayIpn);
+router.get('/vnpay-verify', vnpayVerify);
 
 // All booking routes require JWT authentication
 router.use(authenticateToken);
@@ -35,6 +44,7 @@ router.get('/', listBookings);
 router.get('/validate-voucher', validateVoucherEndpoint);
 router.get('/vouchers/active', listActiveVouchers);
 router.get('/vouchers/my', listMyVouchers);
+router.get('/vouchers/my-used', listMyUsedVouchers);
 router.get('/occupancy', getOccupancy);
 router.get('/by-plate', requireRole(['admin', 'staff']), getByPlate);
 router.get('/:id', getBookingDetail);
@@ -55,6 +65,8 @@ router.post('/:id/feedback', submitFeedback);
 router.post('/vouchers/redeem', redeemVoucher);
 router.get('/staffs/list', listStaffForAssignment);
 router.post('/:id/assign-staff', requireRole(['admin', 'staff']), assignStaff);
+router.post('/:id/refund', requireRole(['admin']), refundBooking);
+router.get('/:id/pay-url', getPaymentUrlForExistingBooking);
 
 export default router;
 

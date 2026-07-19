@@ -15,8 +15,8 @@ export const register = async (req, res) => {
   try {
     const { phone, fullName, password, licensePlate, brand, model, color, email, otp } = req.body;
     
-    if (!phone || !fullName || !password || !licensePlate || !email || !otp) {
-      return res.status(400).json({ error: "Vui lòng nhập đầy đủ Số điện thoại, Họ tên, Mật khẩu, Biển số xe, Email và Mã OTP xác thực." });
+    if (!phone || !fullName || !password || !email || !otp) {
+      return res.status(400).json({ error: "Vui lòng nhập đầy đủ Số điện thoại, Họ tên, Mật khẩu, Email và Mã OTP xác thực." });
     }
 
     // 1. Kiểm tra số điện thoại định dạng VN
@@ -31,10 +31,12 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: "Email không đúng định dạng." });
     }
 
-    // 3. Kiểm tra định dạng biển số xe VN
-    const plateRegex = /^[0-9]{2}[A-Z0-9][- -]?[0-9]{4,5}$/;
-    if (!plateRegex.test(licensePlate)) {
-      return res.status(400).json({ error: "Biển số xe không đúng định dạng Việt Nam." });
+    // 3. Kiểm tra định dạng biển số xe VN (nếu có)
+    if (licensePlate) {
+      const plateRegex = /^[0-9]{2}[A-Z0-9][- -]?[0-9]{4,5}$/;
+      if (!plateRegex.test(licensePlate)) {
+        return res.status(400).json({ error: "Biển số xe không đúng định dạng Việt Nam." });
+      }
     }
 
     // 4. Độ dài mật khẩu tối thiểu
@@ -56,12 +58,16 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: "Email này đã được sử dụng." });
     }
 
-    // Kiểm tra biển số xe trùng lặp
-    const cleanedPlate = licensePlate.toUpperCase().trim();
-    const existingPlate = await Vehicle.findOne({ licensePlate: cleanedPlate });
-    if (existingPlate) {
-      if (!isWalkInUpgrade || existingPlate.userId !== existingUser.id) {
-        return res.status(400).json({ error: "Biển số xe này đã tồn tại trên hệ thống." });
+    // Kiểm tra biển số xe trùng lặp (nếu có)
+    let cleanedPlate = '';
+    let existingPlate = null;
+    if (licensePlate) {
+      cleanedPlate = licensePlate.toUpperCase().trim();
+      existingPlate = await Vehicle.findOne({ licensePlate: cleanedPlate });
+      if (existingPlate) {
+        if (!isWalkInUpgrade || existingPlate.userId !== existingUser.id) {
+          return res.status(400).json({ error: "Biển số xe này đã tồn tại trên hệ thống." });
+        }
       }
     }
 
@@ -86,28 +92,31 @@ export const register = async (req, res) => {
       existingUser.fullName = fullName;
       existingUser.email = email;
       existingUser.password = bcrypt.hashSync(password, 10);
+      existingUser.isWalkInOnly = false; // Reset flag để cho phép tích lũy điểm và thăng hạng
       existingUser.sessionSalt = sessionSalt;
       existingUser.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       await existingUser.save();
       targetUser = existingUser;
 
       // Cập nhật hoặc tạo xe tương ứng
-      if (existingPlate) {
-        existingPlate.brand = brand || 'Khác';
-        existingPlate.model = model || 'Khác';
-        existingPlate.color = color || 'Khác';
-        await existingPlate.save();
-        targetVehicle = existingPlate;
-      } else {
-        targetVehicle = new Vehicle({
-          id: 'v-' + Math.random().toString(36).substr(2, 9),
-          userId: existingUser.id,
-          licensePlate: cleanedPlate,
-          brand: brand || 'Khác',
-          model: model || 'Khác',
-          color: color || 'Khác'
-        });
-        await targetVehicle.save();
+      if (licensePlate) {
+        if (existingPlate) {
+          existingPlate.brand = brand || 'Khác';
+          existingPlate.model = model || 'Khác';
+          existingPlate.color = color || 'Khác';
+          await existingPlate.save();
+          targetVehicle = existingPlate;
+        } else {
+          targetVehicle = new Vehicle({
+            id: 'v-' + Math.random().toString(36).substr(2, 9),
+            userId: existingUser.id,
+            licensePlate: cleanedPlate,
+            brand: brand || 'Khác',
+            model: model || 'Khác',
+            color: color || 'Khác'
+          });
+          await targetVehicle.save();
+        }
       }
     } else {
       // Tạo tài khoản khách hàng mới hoàn toàn
@@ -128,15 +137,17 @@ export const register = async (req, res) => {
       });
       await targetUser.save();
 
-      targetVehicle = new Vehicle({
-        id: 'v-' + Math.random().toString(36).substr(2, 9),
-        userId: targetUser.id,
-        licensePlate: cleanedPlate,
-        brand: brand || 'Khác',
-        model: model || 'Khác',
-        color: color || 'Khác'
-      });
-      await targetVehicle.save();
+      if (licensePlate) {
+        targetVehicle = new Vehicle({
+          id: 'v-' + Math.random().toString(36).substr(2, 9),
+          userId: targetUser.id,
+          licensePlate: cleanedPlate,
+          brand: brand || 'Khác',
+          model: model || 'Khác',
+          color: color || 'Khác'
+        });
+        await targetVehicle.save();
+      }
     }
 
     // Xóa OTP sau khi đăng ký thành công
@@ -144,6 +155,14 @@ export const register = async (req, res) => {
 
     // Sinh mã JWT Token
     const token = jwt.sign({ id: targetUser.id, role: targetUser.role, branch: targetUser.branch, sessionSalt }, JWT_SECRET, { expiresIn: '24h' });
+
+    // Ghi token vào cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
 
     res.status(201).json({ 
       message: "Đăng ký thành công", 
@@ -191,6 +210,14 @@ export const login = async (req, res) => {
 
     // Sinh mã JWT Token
     const token = jwt.sign({ id: user.id, role: user.role, branch: user.branch, sessionSalt }, JWT_SECRET, { expiresIn: '24h' });
+
+    // Ghi token vào cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
 
     // Phát sự kiện qua Socket.io để đá phiên đăng nhập cũ
     const io = req.app.get('io');
@@ -313,6 +340,43 @@ export const resetPasswordEndpoint = async (req, res) => {
     await Otp.deleteOne({ _id: otpRecord._id });
 
     res.json({ message: "Mật khẩu đã được cập nhật thành công." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findOne({ id: req.user.id });
+    if (!user) {
+      return res.status(404).json({ error: "Không tìm thấy người dùng." });
+    }
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    if (req.user) {
+      const user = await User.findOne({ id: req.user.id });
+      if (user) {
+        // Cập nhật sessionSalt để vô hiệu hóa tất cả JWT tokens cũ của user này
+        user.sessionSalt = 'logged-out-' + Date.now() + Math.random().toString(36).substring(2);
+        await user.save();
+      }
+    }
+    
+    // Xóa cookie token
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/'
+    });
+    
+    res.json({ message: "Đăng xuất thành công." });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

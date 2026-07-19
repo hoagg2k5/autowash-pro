@@ -473,7 +473,7 @@ tr:hover td {
   cursor: pointer;
   transition: all 0.25s ease;
   position: relative;
-  background: #ffffff;
+  background: var(--bg-card);
 }
 
 .package-card.selected {
@@ -618,7 +618,7 @@ tr:hover td {
 .time-slot-option {
   padding: 0.75rem;
   text-align: center;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.85rem;
@@ -972,5 +972,21 @@ body.dark input, body.dark select, body.dark textarea {
 
   .glass-panel {
     padding: 1.25rem !important;
+  }
+}
+
+/* Tier Perks and Membership Progress combined styling */
+.tier-perks-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 768px) {
+  .tier-perks-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .tier-perks-left {
+    border-right: 1px solid var(--border-color);
+    padding-right: 2rem;
   }
 }

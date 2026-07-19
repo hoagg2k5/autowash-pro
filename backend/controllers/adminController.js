@@ -434,3 +434,13 @@ export const removeCustomer = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getCustomerPointsHistory = async (req, res) => {
+  try {
+    const history = await PointHistory.find({ userId: req.params.id }).sort({ createdAt: -1 });
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+

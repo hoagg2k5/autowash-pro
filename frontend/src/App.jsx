@@ -10,6 +10,8 @@ import { io } from 'socket.io-client';
 import { API_BASE_URL } from './config.js';
 import { toast } from './components/shared/toast.js';
 import AiChatBubble from './components/shared/AiChatBubble.jsx';
+import PaymentResult from './components/customer/PaymentResult.jsx';
+import CustomerProfile from './components/customer/CustomerProfile.jsx';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -133,6 +135,7 @@ export default function App() {
       if (token) {
         sessionStorage.setItem('autowash_token', token);
       }
+      localStorage.setItem('autowash_active_user_id', user.id);
     } catch (e) {
       console.error(e);
     }
@@ -146,7 +149,14 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async (shouldNotifyServer = true) => {
+    if (shouldNotifyServer) {
+      try {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST' });
+      } catch (err) {
+        console.error("Lỗi gọi API đăng xuất:", err);
+      }
+    }
     setCurrentUser(null);
     setVehicles([]);
     setQueueCount(0);
@@ -164,14 +174,84 @@ export default function App() {
 
   useEffect(() => {
     const handleForcedLogoutEvent = (e) => {
-      handleLogout();
-      toast.error(e.detail || 'Tài khoản đã đăng nhập ở thiết bị khác.');
+      handleLogout(false);
+      toast.error(e.detail || 'Tài khoản đã đăng nhập ở thiết bị khác.', 7000);
     };
     window.addEventListener('autowash_logout_forced', handleForcedLogoutEvent);
     return () => {
       window.removeEventListener('autowash_logout_forced', handleForcedLogoutEvent);
     };
   }, []);
+
+  // Xác thực phiên làm việc mỗi khi khởi chạy ứng dụng (F5 / tải trang)
+  useEffect(() => {
+    const validateSession = async () => {
+      const token = sessionStorage.getItem('autowash_token');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`);
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUser(data.user);
+          sessionStorage.setItem('autowash_user', JSON.stringify(data.user));
+          localStorage.setItem('autowash_active_user_id', data.user.id);
+        } else {
+          // Lỗi xác thực hoặc hết hạn sẽ được fetch interceptor xử lý, 
+          // nếu không ta tự động dọn dẹp và logout tại đây
+          handleLogout(false);
+        }
+      } catch (err) {
+        console.error("Lỗi kết nối xác thực phiên:", err);
+      }
+    };
+
+    validateSession();
+  }, []);
+
+  // Lắng nghe sự kiện đổi Tab và thay đổi localStorage để phát hiện đăng nhập chồng chéo lập tức (0ms)
+  useEffect(() => {
+    const checkTabSessionConflict = () => {
+      const activeUserId = localStorage.getItem('autowash_active_user_id');
+      const currentSavedUser = sessionStorage.getItem('autowash_user');
+      if (currentSavedUser && activeUserId) {
+        try {
+          const userObj = JSON.parse(currentSavedUser);
+          if (userObj && userObj.id && userObj.id !== activeUserId) {
+            handleLogout(false);
+            toast.error('Phiên làm việc đã hết hạn do có tài khoản khác đăng nhập trên trình duyệt này.', 7000);
+          }
+        } catch (e) {
+          // Bỏ qua
+        }
+      }
+    };
+
+    const handleStorage = (e) => {
+      if (e.key === 'autowash_active_user_id' && e.newValue) {
+        checkTabSessionConflict();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkTabSessionConflict();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', checkTabSessionConflict);
+
+    // Kiểm tra ngay lập tức khi component mount hoặc currentUser thay đổi
+    checkTabSessionConflict();
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', checkTabSessionConflict);
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -180,11 +260,14 @@ export default function App() {
     
     socket.on('connect', () => {
       socket.emit('join_user_room', currentUser.id);
+      if (currentUser.role === 'staff' || currentUser.role === 'admin') {
+        socket.emit('join_staff_admin_room');
+      }
     });
     
     socket.on('force_logout', (data) => {
-      handleLogout();
-      toast.error(data.message || 'Tài khoản đã đăng nhập ở thiết bị khác.');
+      handleLogout(false);
+      toast.error(data.message || 'Tài khoản đã đăng nhập ở thiết bị khác.', 7000);
     });
     
     return () => {
@@ -254,6 +337,22 @@ export default function App() {
               <Navigate to="/" replace />
             )
           } />
+          <Route path="/customer/profile" element={
+            currentUser && currentUser.role === 'customer' ? (
+              <CustomerProfile 
+                user={currentUser} 
+                onLogout={handleLogout} 
+                onUpdateUser={(updatedData) => {
+                  const newUser = { ...currentUser, ...updatedData };
+                  setCurrentUser(newUser);
+                  sessionStorage.setItem('autowash_user', JSON.stringify(newUser));
+                }} 
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+          <Route path="/payment-result" element={<PaymentResult user={currentUser} />} />
           <Route path="/staff/dashboard/:view" element={
             currentUser && currentUser.role === 'staff' ? (
               <StaffDashboard 

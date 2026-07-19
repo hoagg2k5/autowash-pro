@@ -112,57 +112,7 @@ export default function RegisterForm({
         />
       </div>
 
-      <div className="border-t border-slate-200 mt-6 pt-5">
-        <h4 className="text-xs font-extrabold text-sky-600 font-heading tracking-wider uppercase mb-4 flex items-center gap-2">
-          <Car className="w-4 h-4" /> THÔNG TIN XE Ô TÔ KHỞI TẠO
-        </h4>
-        
-        <div className="form-group flex flex-col gap-1.5 mb-4">
-          <label htmlFor="reg-plate" className="text-xs font-bold text-slate-400 font-heading">BIỂN SỐ XE *</label>
-          <Input
-            id="reg-plate"
-            type="text"
-            value={licensePlate}
-            onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
-            placeholder="Ví dụ: 30A-12345"
-            required
-          />
-        </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="form-group flex flex-col gap-1.5">
-            <label htmlFor="reg-brand" className="text-xs font-bold text-slate-400 font-heading">HÃNG XE</label>
-            <Input
-              id="reg-brand"
-              type="text"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              placeholder="Toyota, Mazda..."
-            />
-          </div>
-          <div className="form-group flex flex-col gap-1.5">
-            <label htmlFor="reg-model" className="text-xs font-bold text-slate-400 font-heading">DÒNG XE</label>
-            <Input
-              id="reg-model"
-              type="text"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="Camry, CX-5..."
-            />
-          </div>
-        </div>
-
-        <div className="form-group flex flex-col gap-1.5">
-          <label htmlFor="reg-color" className="text-xs font-bold text-slate-400 font-heading">MÀU XE</label>
-          <Input
-            id="reg-color"
-            type="text"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            placeholder="Đen, Trắng, Đỏ..."
-          />
-        </div>
-      </div>
 
       <Button type="submit" className="w-full font-bold shadow-lg shadow-sky-600/10 mt-6 h-11" disabled={loading}>
         {loading ? 'Đang Xử Lý...' : 'Đăng Ký & Đăng Nhập'}

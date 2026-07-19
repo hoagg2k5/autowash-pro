@@ -24,12 +24,16 @@ const bookingSchema = new mongoose.Schema({
   promoCode: { type: String, default: '' },
   voucherDiscount: { type: Number, default: 0 },
   paymentMethod: { type: String, enum: ['Cash', 'Online'], default: 'Cash' },
-  paymentStatus: { type: String, enum: ['Unpaid', 'Paid'], default: 'Unpaid' },
+  paymentStatus: { type: String, enum: ['Unpaid', 'Paid', 'Refund Pending', 'Refunded'], default: 'Unpaid' },
+  vnpTransactionNo: { type: String, default: null },
+  vnpPayDate: { type: String, default: null },
+
   notes: { type: String, default: '' }, // Ý kiến nhân viên
   rating: { type: Number }, // Điểm đánh giá (1-5)
   comment: { type: String }, // Lời bình luận của khách
   feedbackCreatedAt: { type: Date },
   cancelReason: { type: String, default: '' },
+  completedAt: { type: Date },
   createdAt: { type: Date, default: Date.now }
 }, { id: false });
 

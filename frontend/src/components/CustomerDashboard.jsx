@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../config.js';
-import LoyaltyStatus from './customer/LoyaltyStatus.jsx';
+import { TierPerks } from './customer/LoyaltyStatus.jsx';
 import BookingModule from './customer/BookingModule.jsx';
-import VehicleManager from './customer/VehicleManager.jsx';
-import HistoryList from './customer/HistoryList.jsx';
-import RewardsShop from './customer/RewardsShop.jsx';
 import { toast } from './shared/toast.js';
 
 
@@ -15,7 +12,7 @@ export default function CustomerDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [recentlyUpdatedBookingId, setRecentlyUpdatedBookingId] = useState(null);
-  const [activeTab, setActiveTab] = useState('booking'); // 'booking' | 'rewards'
+  
 
   
   // Show / hide add vehicle triggers across components
@@ -42,6 +39,10 @@ export default function CustomerDashboard({ user, onLogout }) {
 
   useEffect(() => {
     const socket = io(API_BASE_URL);
+
+    socket.on('connect', () => {
+      socket.emit('join_user_room', user.id);
+    });
 
     socket.on('booking_updated', (data) => {
       if (data.userId === user.id) {
@@ -94,6 +95,7 @@ export default function CustomerDashboard({ user, onLogout }) {
     }
   };
 
+
   if (loading) return <div style={{ textAlign: 'center', padding: '4rem' }}>Đang tải dữ liệu khách hàng...</div>;
   if (error) return <div style={{ textAlign: 'center', padding: '4rem' }} className="alert alert-danger">{error}</div>;
 
@@ -115,7 +117,7 @@ export default function CustomerDashboard({ user, onLogout }) {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          background: '#ffffff', 
+          background: 'var(--bg-card)', 
           borderRadius: '20px', 
           border: '1px solid var(--border-color)', 
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)',
@@ -169,102 +171,20 @@ export default function CustomerDashboard({ user, onLogout }) {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '1rem', 
-        marginBottom: '1.5rem', 
-        borderBottom: '2px solid var(--border-color)',
-        paddingBottom: '0.5rem'
-      }}>
-        <button
-          type="button"
-          onClick={() => setActiveTab('booking')}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '1.05rem',
-            fontWeight: 700,
-            padding: '0.5rem 1rem',
-            cursor: 'pointer',
-            color: activeTab === 'booking' ? 'var(--primary)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'booking' ? '3px solid var(--primary)' : '3px solid transparent',
-            marginBottom: '-0.7rem',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          📅 Đặt Lịch & Hoạt Động
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('rewards')}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '1.05rem',
-            fontWeight: 700,
-            padding: '0.5rem 1rem',
-            cursor: 'pointer',
-            color: activeTab === 'rewards' ? 'var(--primary)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'rewards' ? '3px solid var(--primary)' : '3px solid transparent',
-            marginBottom: '-0.7rem',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          🎁 Kho Đổi Thưởng
-        </button>
-      </div>
+      <div style={{ marginTop: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        {/* Combined Membership Progress & Tier Perks Panel */}
+        <TierPerks dbUser={dbUser} tp={tp} rules={rules} />
 
-      <div className="dashboard-grid">
-        {/* Main Section: Booking Panel & History list / Rewards Shop */}
-        <div>
-          {activeTab === 'booking' ? (
-            <>
-              {/* Booking Component */}
-              <BookingModule 
-                dbUser={dbUser} 
-                vehicles={vehicles} 
-                rules={rules} 
-                onBookingSuccess={fetchDashboardData}
-                onOpenAddVehicle={() => setShowAddVehicleForm(true)}
-              />
+        {/* Booking Component */}
+        <BookingModule 
+          dbUser={dbUser} 
+          vehicles={vehicles} 
+          rules={rules} 
+          onBookingSuccess={fetchDashboardData}
+          onOpenAddVehicle={() => setShowAddVehicleForm(true)}
+        />
 
-              {/* History Component */}
-              <HistoryList 
-                bookings={bookings} 
-                pointsHistory={pointsHistory} 
-                onCancelBooking={handleCancelBooking}
-                recentlyUpdatedBookingId={recentlyUpdatedBookingId}
-                onRefresh={fetchDashboardData}
-                dbUser={dbUser}
-              />
-            </>
-          ) : (
-            <RewardsShop 
-              dbUser={dbUser} 
-              onRedeemSuccess={fetchDashboardData} 
-            />
-          )}
-        </div>
 
-        {/* Sidebar Section: Loyalty status & Vehicles list */}
-        <div className="sidebar-grid">
-          {/* Loyalty status bar progress */}
-          <LoyaltyStatus 
-            dbUser={dbUser} 
-            tp={tp} 
-            rules={rules} 
-          />
-
-          {/* Vehicle manager */}
-          <VehicleManager 
-            userId={dbUser.id} 
-            vehicles={vehicles} 
-            onVehicleAdded={fetchDashboardData}
-            showAddFormDefault={showAddVehicleForm}
-            onCloseForm={() => setShowAddVehicleForm(false)}
-          />
-        </div>
       </div>
 
 

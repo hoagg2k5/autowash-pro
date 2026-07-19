@@ -1,9 +1,9 @@
 {
-  "userId": "u-4840chfbr",
+  "userId": "cust-gold-id",
   "vouchers": [
     {
-      "code": "AUTOWASH50",
-      "id": "6a3eb2109f97d085d083cfb5",
+      "code": "MEMBER_GIAM10",
+      "id": "6a593af8e9f9521df4d067e2",
       "ownedCount": 1
     }
   ]

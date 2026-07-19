@@ -64,6 +64,7 @@ export default function BookingStep2({
           onChange={(e) => setSelectedBranch(e.target.value)}
           required
         >
+          <option value="" disabled>-- Chọn chi nhánh --</option>
           {BRANCHES.map(b => (
             <option key={b} value={b}>{b}</option>
           ))}
@@ -94,7 +95,7 @@ export default function BookingStep2({
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: isSelected ? 'var(--primary)' : '#ffffff',
+                  background: isSelected ? 'var(--primary)' : 'var(--bg-card)',
                   color: isSelected ? '#ffffff' : 'var(--text-main)',
                   border: `1.5px solid ${isSelected ? 'transparent' : 'var(--border-color)'}`,
                   borderRadius: '10px',

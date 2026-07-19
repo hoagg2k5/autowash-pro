@@ -76,7 +76,7 @@ export default function BookingStep3({
           </div>
           <div>
             <span style={{ color: 'var(--text-muted)' }}>Khoang rửa:</span><br />
-            <strong style={{ color: 'var(--primary)' }}>{selectedBay || 'Chờ xếp khoang (Nhân viên điều phối)'}</strong>
+            <strong style={{ color: 'var(--primary)' }}>Đang chờ xếp</strong>
           </div>
           <div style={{ gridColumn: 'span 2' }}>
             <span style={{ color: 'var(--text-muted)' }}>Gói dịch vụ:</span><br />
@@ -126,7 +126,7 @@ export default function BookingStep3({
                     borderRadius: '10px',
                     border: `1.5px dashed ${isApplied ? '#10b981' : 'var(--border-color)'}`,
                     borderLeft: `5px solid ${isApplied ? '#10b981' : meetsMinSpent ? 'var(--primary)' : '#ef4444'}`,
-                    background: isApplied ? 'rgba(16, 185, 129, 0.05)' : meetsMinSpent ? '#ffffff' : 'var(--bg-secondary)',
+                    background: isApplied ? 'rgba(16, 185, 129, 0.05)' : meetsMinSpent ? 'var(--bg-card)' : 'var(--bg-secondary)',
                     cursor: meetsMinSpent ? 'pointer' : 'not-allowed',
                     opacity: meetsMinSpent ? 1 : 0.65,
                     display: 'flex',
@@ -207,7 +207,7 @@ export default function BookingStep3({
               padding: '1rem',
               borderRadius: '10px',
               border: `1.5px solid ${paymentMethod === 'Cash' ? 'var(--primary)' : 'var(--border-color)'}`,
-              background: paymentMethod === 'Cash' ? 'var(--secondary-glow)' : '#ffffff',
+              background: paymentMethod === 'Cash' ? 'var(--secondary-glow)' : 'var(--bg-card)',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
@@ -229,7 +229,7 @@ export default function BookingStep3({
               padding: '1rem',
               borderRadius: '10px',
               border: `1.5px solid ${paymentMethod === 'Online' ? 'var(--primary)' : 'var(--border-color)'}`,
-              background: paymentMethod === 'Online' ? 'var(--secondary-glow)' : '#ffffff',
+              background: paymentMethod === 'Online' ? 'var(--secondary-glow)' : 'var(--bg-card)',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',

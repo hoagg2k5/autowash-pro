@@ -83,7 +83,7 @@ export default function QuickCheckout({ bookings = [], onSuccess }) {
           placeholder="Nhập mã đặt lịch (ví dụ: b-xxxxxx)"
           value={checkoutCode}
           onChange={(e) => setCheckoutCode(e.target.value)}
-          style={{ background: '#ffffff' }}
+          style={{ background: 'var(--bg-card)' }}
           required
         />
         <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem', whiteSpace: 'nowrap' }} disabled={checkoutLoading}>
@@ -100,7 +100,7 @@ export default function QuickCheckout({ bookings = [], onSuccess }) {
             <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
               ⏳ ĐƠN CHỜ THANH TOÁN ({unpaidBookings.length}):
             </span>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', maxHeight: '110px', overflowY: 'auto', padding: '0.25rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255,255,255,0.5)' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', maxHeight: '110px', overflowY: 'auto', padding: '0.25rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-secondary)' }}>
               {unpaidBookings.map(b => (
                 <button
                   key={b.id}
@@ -115,7 +115,7 @@ export default function QuickCheckout({ bookings = [], onSuccess }) {
                     fontSize: '0.7rem',
                     padding: '0.25rem 0.5rem',
                     border: '1px solid var(--border-color)',
-                    background: checkoutBooking?.id === b.id ? 'var(--secondary-glow)' : '#ffffff',
+                    background: checkoutBooking?.id === b.id ? 'var(--secondary-glow)' : 'var(--bg-card)',
                     color: checkoutBooking?.id === b.id ? 'var(--primary)' : 'var(--text-main)',
                     fontWeight: checkoutBooking?.id === b.id ? 'bold' : 'normal',
                     borderRadius: '6px',
@@ -144,7 +144,7 @@ export default function QuickCheckout({ bookings = [], onSuccess }) {
       {checkoutError && <div className="alert alert-danger" style={{ padding: '0.5rem 1rem', margin: '0 0 1rem 0', fontSize: '0.8rem' }}>⚠️ {checkoutError}</div>}
 
       {checkoutBooking && (
-        <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
+        <div style={{ background: 'var(--bg-card)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
             <span>Mã đơn:</span>
             <strong>{checkoutBooking.id}</strong>
@@ -181,18 +181,32 @@ export default function QuickCheckout({ bookings = [], onSuccess }) {
             <span style={{ color: 'var(--status-completed)' }}>{formatVnd(checkoutBooking.totalPaid)}</span>
           </div>
 
+
+
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
             <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setCheckoutBooking(null)}>Hủy</button>
             {checkoutBooking.paymentStatus === 'Unpaid' && checkoutBooking.status !== 'Cancelled' ? (
-              <button 
-                type="button" 
-                className="btn btn-primary btn-sm" 
-                style={{ flex: 2, background: 'var(--status-completed)', color: '#fff', fontWeight: 'bold' }} 
-                onClick={handleConfirmCheckoutPayment}
-                disabled={checkoutCompleting}
-              >
-                {checkoutCompleting ? 'Đang xử lý...' : '✓ Xác Nhận & Thanh Toán'}
-              </button>
+              checkoutBooking.status === 'Completed' ? (
+                <button 
+                  type="button" 
+                  className="btn btn-primary btn-sm" 
+                  style={{ flex: 2, background: 'var(--status-completed)', color: '#fff', fontWeight: 'bold' }} 
+                  onClick={handleConfirmCheckoutPayment}
+                  disabled={checkoutCompleting}
+                >
+                  {checkoutCompleting ? 'Đang xử lý...' : '✓ Xác Nhận & Thanh Toán'}
+                </button>
+              ) : (
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm" 
+                  style={{ flex: 2, cursor: 'not-allowed', background: '#cbd5e1', color: '#64748b', fontWeight: 'bold' }} 
+                  disabled
+                  title="Chỉ có thể thanh toán sau khi xe đã được rửa xong"
+                >
+                  Chờ Rửa Xong
+                </button>
+              )
             ) : (
               <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 2 }} disabled>
                 {checkoutBooking.status === 'Cancelled' ? 'Đã hủy' : 'Đã thanh toán'}
