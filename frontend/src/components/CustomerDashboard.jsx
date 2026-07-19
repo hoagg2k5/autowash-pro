@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../config.js';
 import LoyaltyStatus from './customer/LoyaltyStatus.jsx';
@@ -24,7 +24,7 @@ export default function CustomerDashboard({ user, onLogout }) {
 
   // Change Password states and logic are now handled in the header dropdown menu.
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/customers/${user.id}/dashboard`);
       if (!response.ok) throw new Error("Không thể tải thông tin tài khoản.");
@@ -35,7 +35,7 @@ export default function CustomerDashboard({ user, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
 
   useEffect(() => {
     fetchDashboardData();
