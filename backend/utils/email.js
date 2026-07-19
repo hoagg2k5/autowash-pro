@@ -236,3 +236,43 @@ export function getBookingStatusUpdateTemplate(booking, user, vehicle, type) {
     </div>
   `;
 }
+
+export function getTierExpiryWarningTemplate(user, remainingDays) {
+  return `
+    <div style="font-family: 'Inter', sans-serif; background-color: #f8fafc; padding: 40px 20px; border-radius: 12px; max-width: 600px; margin: 0 auto; color: #0f172a; border: 1px solid #e2e8f0;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #0284c7; font-family: 'Outfit', sans-serif; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em;">AutoWash Pro</h1>
+        <p style="color: #64748b; font-size: 14px; margin-top: 5px;">Hệ thống quản lý dịch vụ rửa xe thông minh</p>
+      </div>
+      
+      <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <h2 style="font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 15px; color: #d97706;">⚠️ Cảnh báo sắp hết hạn hạng thành viên</h2>
+        <p style="font-size: 15px; line-height: 24px; color: #334155; margin-bottom: 20px;">
+          Xin chào <strong>${user.fullName}</strong>,<br/><br/>
+          Hệ thống ghi nhận bạn đã lâu chưa sử dụng dịch vụ tại AutoWash Pro. Hiện tại, hạng thành viên <strong>${user.loyaltyTier}</strong> của bạn sắp hết hạn duy trì.
+        </p>
+        
+        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 15px; margin-bottom: 25px;">
+          <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #78350f; line-height: 22px;">
+            <li>Hạng hiện tại: <strong>${user.loyaltyTier}</strong></li>
+            <li>Hạn duy trì hạng: <strong>${new Date(user.tierExpiryDate).toLocaleDateString('vi-VN')}</strong></li>
+            <li>Thời gian còn lại: <strong>${remainingDays} ngày</strong></li>
+          </ul>
+        </div>
+        
+        <p style="font-size: 14px; line-height: 22px; color: #475569; margin-bottom: 25px;">
+          Hãy đặt lịch hẹn rửa xe tiếp theo ngay hôm nay để được tích điểm, giữ vững thứ hạng thành viên và tiếp tục hưởng trọn vẹn các đặc quyền ưu đãi dành riêng cho bạn!
+        </p>
+        
+        <div style="text-align: center;">
+          <a href="#" style="background-color: #0284c7; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.2);">Đặt Lịch Ngay</a>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px; color: #94a3b8; font-size: 12px;">
+        <p>Cảm ơn bạn đã lựa chọn AutoWash Pro!</p>
+        <p>© 2026 AutoWash Pro. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+}

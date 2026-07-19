@@ -452,7 +452,9 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                       Khách hàng: {scanResult.booking.customerName} ({scanResult.booking.customerPhone})
                     </p>
                     <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>
-                      Gói dịch vụ: <strong>{scanResult.booking.servicePackage}</strong> | Khoang: <strong style={{ color: '#38bdf8' }}>{scanResult.booking.bay || 'Chưa xếp'}</strong>
+                      Gói dịch vụ: <strong>{scanResult.booking.servicePackage}</strong> | Khoang: <strong style={{ color: '#38bdf8' }}>
+                        {['Confirmed', 'Pending'].includes(scanResult.booking.status) ? 'Chưa xếp' : (scanResult.booking.bay || 'Chưa xếp')}
+                      </strong>
                     </p>
                     <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>
                       Khung giờ: <strong>{scanResult.booking.timeSlot}</strong> | Trạng thái: <strong style={{ 
@@ -497,7 +499,7 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                         style={{ background: '#6366f1', color: '#fff', padding: '0.5rem 1.2rem', fontWeight: 'bold' }}
                         onClick={() => handleAction(scanResult.booking.id, 'checkin')}
                       >
-                        ➔ Check-in (Xe đã đến)
+                        Check in
                       </button>
                     )}
                     {scanResult.booking.status === 'Waiting' && (

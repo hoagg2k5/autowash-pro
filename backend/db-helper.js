@@ -8,6 +8,8 @@ import PointHistory from './models/PointHistory.js';
 import Service from './models/Service.js';
 import Voucher from './models/Voucher.js';
 import UserVoucher from './models/UserVoucher.js';
+import Bay from './models/Bay.js';
+import { sendEmail, getTierExpiryWarningTemplate } from './utils/email.js';
 
 // Dành cho khả năng tương thích ngược của controller
 export async function getDb() {
@@ -37,10 +39,17 @@ export async function saveDb() {
   return true;
 }
 
-// Hàm tính toán hạng hội viên (Vẫn đồng bộ)
 export function calculateTier(totalSpent, tierSettings) {
   let highestTier = "Member";
-  const sortedTiers = Object.entries(tierSettings).sort((a, b) => a[1].spendThreshold - b[1].spendThreshold);
+  
+  const plainSettings = tierSettings && typeof tierSettings.toObject === 'function' 
+    ? tierSettings.toObject() 
+    : tierSettings;
+
+  const sortedTiers = Object.entries(plainSettings || {})
+    .filter(([tier, settings]) => settings && typeof settings.spendThreshold === 'number')
+    .sort((a, b) => a[1].spendThreshold - b[1].spendThreshold);
+
   for (const [tier, settings] of sortedTiers) {
     if (totalSpent >= settings.spendThreshold) {
       highestTier = tier;
@@ -188,7 +197,8 @@ export async function createBooking(userId, bookingData) {
     status: { $nin: ['Cancelled', 'Completed'] }
   });
 
-  const BAYS = ["Khoang 1", "Khoang 2", "Khoang 3"];
+  const dbBays = await Bay.find({ branch: targetBranch, status: 'Active' });
+  const BAYS = dbBays.length > 0 ? dbBays.map(b => b.name) : ["Khoang 1", "Khoang 2", "Khoang 3"];
   let assignedBay = "";
 
   if (bookingData.bay && BAYS.includes(bookingData.bay)) {
@@ -198,10 +208,7 @@ export async function createBooking(userId, bookingData) {
     }
     assignedBay = bookingData.bay;
   } else {
-    // Không tự động xếp vào khoang rửa trống, chỉ kiểm tra giới hạn số lượng đơn tối đa trong khung giờ (3 đơn/khung giờ)
-    if (activeBookings.length >= BAYS.length) {
-      throw new Error("Khung giờ này tại chi nhánh đã đầy hết tất cả các khoang rửa. Vui lòng chọn khung giờ khác.");
-    }
+    // Không tự động xếp vào khoang rửa trống, không giới hạn số lượng đơn đặt lịch của khách hàng
     assignedBay = "";
   }
 
@@ -259,20 +266,15 @@ export async function createBooking(userId, bookingData) {
       voucher.targetTiers.includes(userTier) &&
       (price - actualDiscount) >= voucher.minSpent
     ) {
-      if (voucher.pointsRequired > 0) {
+      if (voucher.pointsRequired > 0 || voucher.code.toUpperCase().startsWith('RW-')) {
         const userVoucher = await UserVoucher.findOne({
           userId: user.id,
-          voucherId: voucher._id,
-          status: 'Available'
+          voucherCode: voucher.code,
+          isUsed: false
         });
         if (!userVoucher) {
           throw new Error("Bạn chưa sở hữu mã giảm giá này. Vui lòng đổi bằng điểm tích lũy trước.");
         }
-        // Tiêu thụ voucher bằng cách chuyển trạng thái sang Used
-        userVoucher.status = 'Used';
-        userVoucher.usedAt = new Date();
-        userVoucher.bookingId = newBookingId;
-        await userVoucher.save();
       }
 
       if (voucher.discountVnd) {
@@ -339,6 +341,7 @@ export async function checkInBooking(bookingId) {
   if (!booking) throw new Error("Không tìm thấy lịch đặt");
   booking.status = 'Waiting';
   booking.checkInTime = new Date();
+  booking.bay = '';
 
   await booking.save();
   return booking;
@@ -395,6 +398,10 @@ export async function checkoutBooking(bookingId) {
     throw new Error("Không thể thanh toán cho lịch đặt đã bị hủy.");
   }
 
+  if (booking.status !== 'Completed') {
+    throw new Error("Lịch đặt chưa được hoàn tất rửa xe. Vui lòng hoàn tất dịch vụ trước khi thanh toán.");
+  }
+
   // Nếu đã thanh toán và đã hoàn thành, chỉ cần trả về booking
   if (booking.paymentStatus === 'Paid' && booking.status === 'Completed') {
     return booking;
@@ -418,6 +425,9 @@ export async function checkoutBooking(bookingId) {
 }
 
 async function processPointsForBooking(booking) {
+  booking.completedAt = new Date();
+  await booking.save();
+
   const user = await User.findOne({ id: booking.userId });
   if (user && user.id !== 'customer-id') {
     user.totalSpent += booking.totalPaid;
@@ -449,15 +459,16 @@ async function processPointsForBooking(booking) {
         await historyRedeem.save();
       }
 
-      // Tự động thăng hạng (Self-healing Tier)
+      // Tự động thăng hạng (Self-healing Tier) và gia hạn chu kỳ hoạt động 90 ngày (3 tháng)
       const oldTier = user.loyaltyTier;
       const rules = await LoyaltyRules.findOne({});
       if (rules) {
         const newTier = calculateTier(user.totalSpent, rules.tierSettings);
         if (newTier !== oldTier) {
           user.loyaltyTier = newTier;
-          user.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         }
+        user.tierExpiryDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+        user.tierExpiryWarningSent = false; // Reset cờ cảnh báo hết hạn
       }
     }
     await user.save();
@@ -588,7 +599,8 @@ export async function cancelBooking(bookingId, reason, wasNoShow) {
           const newTier = calculateTier(user.totalSpent, rules.tierSettings);
           if (newTier !== oldTier) {
             user.loyaltyTier = newTier;
-            user.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            user.tierExpiryDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+            user.tierExpiryWarningSent = false;
           }
         }
       }
@@ -631,14 +643,49 @@ export async function runMonthlyReview() {
   if (!rules) return 0;
 
   let updatedCount = 0;
+  const tierProgression = ['Member', 'Silver', 'Gold', 'Platinum'];
+  const now = new Date();
 
   for (const user of users) {
-    const calculated = calculateTier(user.totalSpent, rules.tierSettings);
-    if (user.loyaltyTier !== calculated) {
-      user.loyaltyTier = calculated;
-      user.tierExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const isExpired = user.loyaltyTier !== 'Member' && user.tierExpiryDate && now > new Date(user.tierExpiryDate);
+
+    if (isExpired) {
+      const currentIndex = tierProgression.indexOf(user.loyaltyTier);
+      const newTier = currentIndex <= 0 ? 'Member' : tierProgression[currentIndex - 1];
+
+      user.loyaltyTier = newTier;
+      user.totalSpent = rules.tierSettings[newTier]?.spendThreshold || 0;
+      // Hạ hạng do quá hạn hoạt động: gia hạn 60 ngày (2 tháng) tiếp theo
+      user.tierExpiryDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+      user.tierExpiryWarningSent = false; // Reset cờ để gửi cảnh báo ở chu kỳ hạng mới
+
       await user.save();
       updatedCount++;
+    } else {
+      const calculated = calculateTier(user.totalSpent, rules.tierSettings);
+      if (user.loyaltyTier !== calculated) {
+        user.loyaltyTier = calculated;
+        // Thăng hạng / đổi hạng thông thường: gia hạn 90 ngày (3 tháng)
+        user.tierExpiryDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+        user.tierExpiryWarningSent = false; // Reset cờ cảnh báo
+        await user.save();
+        updatedCount++;
+      } else {
+        // Gửi cảnh báo nếu sắp hết hạn (còn <= 16 ngày, chưa gửi cảnh báo, có email và không phải hạng Member)
+        if (user.loyaltyTier !== 'Member' && user.tierExpiryDate && !user.tierExpiryWarningSent && user.email) {
+          const remainingDays = Math.ceil((new Date(user.tierExpiryDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+          if (remainingDays <= 16 && remainingDays > 0) {
+            const emailHtml = getTierExpiryWarningTemplate(user, remainingDays);
+            await sendEmail({
+              to: user.email,
+              subject: `[AutoWash Pro] Cảnh báo: Hạng thành viên ${user.loyaltyTier} sắp hết hạn`,
+              html: emailHtml
+            });
+            user.tierExpiryWarningSent = true;
+            await user.save();
+          }
+        }
+      }
     }
   }
 

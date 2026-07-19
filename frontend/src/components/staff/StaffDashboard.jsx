@@ -117,6 +117,9 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
 
   useEffect(() => {
     const socket = io(API_BASE_URL);
+    socket.on('connect', () => {
+      socket.emit('join_staff_admin_room');
+    });
     socket.on('booking_updated', (data) => {
       fetchBookings(true);
       if (data && data.id) {
@@ -324,6 +327,29 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
     return timeB - timeA;
   });
 
+  // Compute counts for each status based on current date & search filters (excluding status filter itself)
+  const baseFilteredBookings = bookings.filter(b => {
+    if (dateFilter === 'today' && b.bookingDate !== dashboardDate) return false;
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      const phoneMatch = b.customerPhone && b.customerPhone.toLowerCase().includes(q);
+      const plateMatch = b.licensePlate && b.licensePlate.toLowerCase().includes(q);
+      const nameMatch = b.customerName && b.customerName.toLowerCase().includes(q);
+      return phoneMatch || plateMatch || nameMatch;
+    }
+    return true;
+  });
+
+  const statusCounts = {
+    All: baseFilteredBookings.length,
+    Pending: baseFilteredBookings.filter(b => b.status === 'Pending').length,
+    Confirmed: baseFilteredBookings.filter(b => b.status === 'Confirmed').length,
+    Waiting: baseFilteredBookings.filter(b => b.status === 'Waiting').length,
+    'In Progress': baseFilteredBookings.filter(b => b.status === 'In Progress').length,
+    Completed: baseFilteredBookings.filter(b => b.status === 'Completed').length,
+    Cancelled: baseFilteredBookings.filter(b => b.status === 'Cancelled').length
+  };
+
   // KPI calculations
   const todayBookings = bookings.filter(b => b.bookingDate === dashboardDate);
   const pendingCount = todayBookings.filter(b => b.status === 'Pending').length;
@@ -370,7 +396,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
                   padding: '0.4rem 0.6rem',
                   fontSize: '0.85rem',
                   borderRadius: '8px',
-                  background: '#ffffff',
+                  background: 'var(--bg-card)',
                   border: '1px solid var(--border-color)',
                   outline: 'none'
                 }}
@@ -517,6 +543,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
             setDateFilter={setDateFilter}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
+            statusCounts={statusCounts}
             todayStr={dashboardDate}
             editingNotes={editingNotes}
             handleNotesChange={handleNotesChange}
@@ -551,6 +578,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
             handleStartWash={handleStartWash}
             handleCompleteWash={handleCompleteWash}
             handleCancelWash={handleCancelWash}
+            handleUndoCheckin={handleUndoCheckin}
             handleQuickBook={handleQuickBook}
             bays={bays}
           />

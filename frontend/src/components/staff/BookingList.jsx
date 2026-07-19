@@ -1,5 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from '../shared/toast.js';
+
+const formatDateStr = (dateStr) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return dateStr;
+};
 
 export default function BookingList({
   sortedBookings,
@@ -10,6 +19,7 @@ export default function BookingList({
   setDateFilter,
   statusFilter,
   setStatusFilter,
+  statusCounts = {},
   todayStr,
   editingNotes,
   handleNotesChange,
@@ -24,6 +34,18 @@ export default function BookingList({
   staffs = [],
   handleAssignStaff
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expandedBookingId, setExpandedBookingId] = useState(null);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, dateFilter, statusFilter, sortedBookings.length]);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedBookings.length / itemsPerPage);
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
@@ -40,8 +62,102 @@ export default function BookingList({
     }
   };
 
+  const STATUS_TABS = [
+    { key: 'All', label: 'Tất cả', color: 'var(--text-main)' },
+    { key: 'Pending', label: 'Chờ xác nhận', color: '#f59e0b' },
+    { key: 'Confirmed', label: 'Đã xác nhận', color: 'var(--primary)' },
+    { key: 'Waiting', label: 'Chờ rửa', color: '#6366f1' },
+    { key: 'In Progress', label: 'Đang rửa', color: '#3b82f6' },
+    { key: 'Completed', label: 'Hoàn thành', color: '#10b981' },
+    { key: 'Cancelled', label: 'Đã hủy', color: '#ef4444' }
+  ];
+
   return (
     <>
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
+      {/* Shopee-style Horizontal Status Tabs */}
+      <div 
+        style={{
+          display: 'flex',
+          overflowX: 'auto',
+          background: 'var(--bg-card)',
+          borderRadius: '12px',
+          border: '1px solid var(--border-color)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          marginBottom: '1.5rem',
+          padding: '0 0.5rem',
+          scrollbarWidth: 'none', // For Firefox
+          msOverflowStyle: 'none', // For IE
+        }}
+        className="no-scrollbar"
+      >
+        {STATUS_TABS.map(tab => {
+          const isActive = statusFilter === tab.key;
+          const count = statusCounts ? (statusCounts[tab.key] || 0) : 0;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              style={{
+                flex: '1 0 auto',
+                minWidth: '120px',
+                textAlign: 'center',
+                background: 'transparent',
+                border: 'none',
+                padding: '1.1rem 0.5rem',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'all 0.25s ease',
+                color: isActive ? tab.color : 'var(--text-muted)',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem',
+                outline: 'none'
+              }}
+              onClick={() => setStatusFilter(tab.key)}
+            >
+              <span>{tab.label}</span>
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  padding: '0.1rem 0.45rem',
+                  borderRadius: '10px',
+                  background: isActive ? tab.color : '#f1f5f9',
+                  color: isActive ? '#ffffff' : '#64748b',
+                  fontWeight: 'bold',
+                  transition: 'all 0.25s ease',
+                  opacity: count === 0 && !isActive ? 0.5 : 1
+                }}
+              >
+                {count}
+              </span>
+              
+              {isActive && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '10%',
+                    right: '10%',
+                    height: '3px',
+                    background: tab.color,
+                    borderRadius: '3px 3px 0 0',
+                  }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Search & Filters Controls */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center' }}>
         {/* Search input */}
@@ -63,7 +179,7 @@ export default function BookingList({
             style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem' }}
             onClick={() => setDateFilter('today')}
           >
-            Hôm nay ({todayStr})
+            Hôm nay ({formatDateStr(todayStr)})
           </button>
           <button
             type="button"
@@ -74,24 +190,6 @@ export default function BookingList({
             Tất cả lịch đặt
           </button>
         </div>
-
-        {/* Status filter dropdown */}
-        <div>
-          <select
-            className="form-input"
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem', width: '180px' }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="All">Tất cả trạng thái</option>
-            <option value="Pending">Chờ xác nhận (Pending)</option>
-            <option value="Confirmed">Đã xác nhận (Confirmed)</option>
-            <option value="Waiting">Chờ rửa (Waiting)</option>
-            <option value="In Progress">Đang rửa (In Progress)</option>
-            <option value="Completed">Hoàn tất (Completed)</option>
-            <option value="Cancelled">Đã hủy (Cancelled)</option>
-          </select>
-        </div>
       </div>
 
       {/* Grid List of Booking Cards */}
@@ -100,8 +198,9 @@ export default function BookingList({
           Không tìm thấy lịch đặt xe nào khớp với bộ lọc.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {sortedBookings.map(b => (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {currentItems.map(b => (
             <div
               key={b.id}
               className={`glass-panel ${recentlyUpdatedBookingId === b.id ? 'booking-updated-highlight' : ''}`}
@@ -113,59 +212,56 @@ export default function BookingList({
                       b.status === 'In Progress' ? '#3b82f6' :
                         b.status === 'Completed' ? '#10b981' : '#ef4444'
                   }`,
-                background: '#ffffff',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                background: 'var(--bg-card)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
               }}
+              onClick={() => setExpandedBookingId(prev => prev === b.id ? null : b.id)}
             >
               <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'start', gap: '1rem', marginBottom: '0.75rem' }}>
                 {/* Customer info & Car */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span className={`status-badge ${getStatusClass(b.status)}`} style={{ fontSize: '0.75rem' }}>
+                <div style={{ flex: '1 1 500px' }}>
+                  {/* Row 1: Biển số xe & Dòng xe & Tag Ưu tiên */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                    <span className={`status-badge ${getStatusClass(b.status)}`} style={{ fontSize: '0.75rem' }} onClick={(e) => e.stopPropagation()}>
                       {b.status === 'Pending' ? 'Chờ xác nhận' :
                         b.status === 'Confirmed' ? 'Đã xác nhận' :
                           b.status === 'Waiting' ? 'Chờ rửa' :
                             b.status === 'In Progress' ? 'Đang rửa' :
                               b.status === 'Completed' ? 'Hoàn tất' : 'Đã hủy'}
                     </span>
+                    
+                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)', fontFamily: 'monospace' }}>
+                      {b.licensePlate}
+                    </span>
+
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                      ({b.carDetails || 'Chưa rõ dòng xe'})
+                    </span>
+
+                    {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
+                      <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`} onClick={(e) => e.stopPropagation()}>
+                        💎 Ưu Tiên {b.customerTier}
+                      </span>
+                    )}
+
                     {b.status === 'Cancelled' && b.cancelReason && (
                       <span className="text-xs" style={{ color: 'var(--status-cancelled)', fontWeight: 500, fontStyle: 'italic' }}>
                         Lý do hủy: {b.cancelReason}
                       </span>
                     )}
-                    <span className="badge-info" style={{ fontSize: '0.75rem' }}>{b.branch}</span>
                   </div>
 
-                  <h4 style={{ marginTop: '0.5rem', marginBottom: '0.25rem', fontSize: '1.1rem' }}>
-                    {b.customerName} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({b.customerPhone})</span>
+                  {/* Row 2: Tên khách hàng & Số điện thoại */}
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-main)' }}>
+                    <span>👤 {b.customerName}</span>
+                    <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>- {b.customerPhone}</span>
                   </h4>
 
-                  <p style={{ margin: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
-                    Xe: <code style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.95rem' }}>{b.licensePlate}</code>
-                    <span style={{ color: '#cbd5e1' }}>|</span>
-                    <span style={{ fontSize: '0.85rem', color: '#475569', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      Mã đặt: <code style={{ background: '#f1f5f9', padding: '0.15rem 0.4rem', borderRadius: '6px', fontWeight: 'bold', color: '#0ea5e9', fontFamily: 'monospace' }}>{b.id}</code>
-                      <button
-                        type="button"
-                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8rem', padding: 0 }}
-                        onClick={() => {
-                          navigator.clipboard.writeText(b.id);
-                          toast.success("Đã sao chép mã đặt lịch!");
-                        }}
-                        title="Sao chép mã"
-                      >
-                        📋
-                      </button>
-                    </span>
-                    {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
-                      <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`}>
-                        💎 Ưu Tiên {b.customerTier}
-                      </span>
-                    )}
-                    <span style={{ color: 'var(--text-muted)' }}> - {b.carDetails}</span>
-                  </p>
-                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span>Khoang rửa: <span style={{ color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</span></span>
+                  {/* Row 3: Khoang rửa & Nhân viên phụ trách */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '0.4rem' }} onClick={(e) => e.stopPropagation()}>
+                    <span>Khoang rửa: <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{b.bay || 'Chưa xếp'}</span></span>
                     <span style={{ color: 'var(--text-muted)' }}>|</span>
                     <span>Nhân viên phụ trách:</span>
                     {(b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress') ? (
@@ -187,25 +283,88 @@ export default function BookingList({
                         {staffs.find(s => s.id === b.assignedStaffId)?.fullName || b.assignedStaffId || 'Chưa gán'}
                       </span>
                     )}
-                  </p>
+                  </div>
                 </div>
 
-                {/* Booking Time & Price */}
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                    📅 {b.bookingDate} | 🕒 {b.timeSlot}
+                {/* Right side: Khung giờ hẹn & Gói dịch vụ */}
+                <div style={{ textAlign: 'right', minWidth: '200px' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>
+                    📅 {formatDateStr(b.bookingDate)}
                   </div>
-                  <div style={{ marginTop: '0.25rem', fontSize: '0.9rem', fontWeight: 600 }}>
-                    Gói: <span style={{ textDecoration: 'underline' }}>{b.servicePackage}</span>
+                  <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem', marginTop: '0.15rem' }}>
+                    🕒 {b.timeSlot}
                   </div>
-                  <div style={{ marginTop: '0.25rem', fontWeight: 700 }}>
-                    Phải thu: <span style={{ color: 'var(--status-completed)', fontSize: '1.05rem' }}>{formatVnd(b.totalPaid)}</span>
+                  <div style={{ marginTop: '0.4rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                    Gói: <span className="status-badge status-Confirmed" style={{ textDecoration: 'none', background: 'var(--bg-secondary)', color: 'var(--primary)', border: '1px solid var(--border-color)' }}>{b.servicePackage}</span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', textDecoration: 'underline' }}>
+                    {expandedBookingId === b.id ? 'Ẩn bớt chi tiết ▲' : 'Xem chi tiết ▼'}
                   </div>
                 </div>
               </div>
 
+              {/* Collapsible details block (hidden by default) */}
+              {expandedBookingId === b.id && (
+                <div 
+                  style={{
+                    marginTop: '1rem',
+                    marginBottom: '1rem',
+                    padding: '0.85rem 1rem',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '0.85rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '0.75rem',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Mã lịch đặt:</span>{' '}
+                    <strong style={{ fontFamily: 'monospace' }}>{b.id}</strong>
+                    <button
+                      type="button"
+                      style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.85rem', marginLeft: '0.3rem', padding: 0 }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(b.id);
+                        toast.success("Đã sao chép mã đặt lịch!");
+                      }}
+                      title="Sao chép mã"
+                    >
+                      📋
+                    </button>
+                  </div>
+
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Chi nhánh:</span>{' '}
+                    <strong>{b.branch}</strong>
+                  </div>
+
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Số tiền thu:</span>{' '}
+                    <strong style={{ color: 'var(--status-completed)', fontSize: '0.95rem' }}>{formatVnd(b.totalPaid)}</strong>
+                  </div>
+
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Thanh toán:</span>{' '}
+                    <span className="status-badge" style={{
+                      fontSize: '0.75rem',
+                      background: b.paymentStatus === 'Paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: b.paymentStatus === 'Paid' ? 'var(--status-completed)' : 'var(--status-cancelled)',
+                      border: 'none',
+                      fontWeight: 600
+                    }}>
+                      {b.paymentMethod === 'Online' ? '💳 Online' : '💵 Tiền mặt'} - {b.paymentStatus === 'Paid' ? 'Đã thu' : 'Chưa thu'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Operations & Staff Notes Controls Row */}
-              <div style={{
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                style={{
                 display: 'flex',
                 flexWrap: 'wrap',
                 justifyContent: 'space-between',
@@ -263,7 +422,7 @@ export default function BookingList({
                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', background: '#6366f1' }}
                         onClick={() => handleCheckin(b.id)}
                       >
-                        ➔ Check-in
+                        Check in
                       </button>
                       <button
                         className="btn btn-danger"
@@ -334,6 +493,64 @@ export default function BookingList({
             </div>
           ))}
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginTop: '1.5rem',
+            flexWrap: 'wrap'
+          }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.85rem',
+                opacity: currentPage === 1 ? 0.5 : 1,
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+              }}
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            >
+              ◀ Trước
+            </button>
+            
+            {[...Array(totalPages)].map((_, i) => {
+              const pageNum = i + 1;
+              return (
+                <button
+                  key={pageNum}
+                  type="button"
+                  className={`btn ${currentPage === pageNum ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', minWidth: '35px' }}
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.85rem',
+                opacity: currentPage === totalPages ? 0.5 : 1,
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+              }}
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            >
+              Sau ▶
+            </button>
+          </div>
+        )}
+        </>
       )}
     </>
   );

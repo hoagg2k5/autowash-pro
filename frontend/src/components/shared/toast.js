@@ -2,7 +2,7 @@
 // Pure DOM-based for compatibility and zero dependencies in React 19
 
 export const toast = {
-  show: (message, type = 'info') => {
+  show: (message, type = 'info', duration = 4000) => {
     // 1. Ensure the toast container exists in the document body
     let container = document.getElementById('toast-container');
     if (!container) {
@@ -99,22 +99,22 @@ export const toast = {
 
     container.appendChild(toastEl);
 
-    // 4. Auto-remove after 4 seconds
+    // 4. Auto-remove after duration
     const timer = setTimeout(() => {
       toastEl.style.opacity = '0';
       toastEl.style.transform = 'translateY(12px) scale(0.95)';
       setTimeout(() => {
         toastEl.remove();
       }, 350);
-    }, 4000);
+    }, duration);
 
     // Let manual click cancel the auto-remove timer
     toastEl.querySelector('button').addEventListener('click', () => {
       clearTimeout(timer);
     });
   },
-  success: (msg) => toast.show(msg, 'success'),
-  error: (msg) => toast.show(msg, 'error'),
-  warning: (msg) => toast.show(msg, 'warning'),
-  info: (msg) => toast.show(msg, 'info')
+  success: (msg, duration) => toast.show(msg, 'success', duration),
+  error: (msg, duration) => toast.show(msg, 'error', duration),
+  warning: (msg, duration) => toast.show(msg, 'warning', duration),
+  info: (msg, duration) => toast.show(msg, 'info', duration)
 };
