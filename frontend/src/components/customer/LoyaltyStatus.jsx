@@ -1,92 +1,112 @@
 import React from 'react';
 
-export function TierPerks({ dbUser, tp, rules }) {
-  const windowDays = rules?.tierSettings[dbUser.loyaltyTier]?.bookingWindowDays || 7;
+export default function LoyaltyStatus({ dbUser, tp, rules }) {
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
+  const windowDays = rules?.tierSettings[dbUser?.loyaltyTier]?.bookingWindowDays || 7;
+
+  // Tier theme colors & gradients
+  const getTierGradient = (tier) => {
+    switch (tier?.toLowerCase()) {
+      case 'platinum':
+        return 'from-slate-700 via-slate-800 to-zinc-900 border-cyan-400/40 text-cyan-200';
+      case 'gold':
+        return 'from-amber-600 via-amber-700 to-amber-900 border-amber-400/40 text-amber-200';
+      case 'silver':
+        return 'from-slate-400 via-slate-500 to-slate-700 border-slate-300/40 text-slate-100';
+      default:
+        return 'from-bronze-600 via-amber-800 to-slate-900 border-amber-600/30 text-amber-100';
+    }
+  };
+
   return (
-    <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '20px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)' }}>
-      <div className="tier-perks-grid">
+    <div className="space-y-6">
+      
+      {/* Metallic Loyalty Card */}
+      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${getTierGradient(dbUser?.loyaltyTier)} p-6 border shadow-2xl backdrop-blur-xl transition-all duration-300 hover:scale-[1.01]`}>
         
-        {/* Left Column: Loyalty Status / Progress */}
-        <div className="tier-perks-left" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontWeight: 800 }}>
-            📈 TIẾN TRÌNH THÀNH VIÊN
-          </h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem' }}>
-            <span className="text-xs" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>TỔNG CHI TIÊU TÍCH LŨY:</span>
-            <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '1.5rem' }}>{formatVnd(dbUser.totalSpent)}</span>
-          </div>
+        {/* Background Decorative Circles */}
+        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute -left-10 -top-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-xl pointer-events-none"></div>
 
-          {tp && (
-            <>
-              <div className="progress-bar-container" style={{ margin: '0.5rem 0' }}>
-                <div 
-                  className="progress-bar-fill" 
-                  style={{ width: `${tp.progressPercent}%` }}
-                ></div>
-              </div>
-
-              {tp.nextTier ? (
-                <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0, leading: '1.4' }}>
-                  Chi tiêu thêm <strong>{formatVnd(tp.nextThreshold - dbUser.totalSpent)}</strong> để nâng hạng lên <strong style={{ color: 'var(--primary)' }}>{tp.nextTier}</strong>.
-                </p>
-              ) : (
-                <p className="text-xs" style={{ color: 'var(--tier-platinum)', fontWeight: 700, margin: 0 }}>
-                  🎉 Bạn đang ở cấp bậc cao nhất ({dbUser.loyaltyTier.toUpperCase()}). Xin cảm ơn sự đồng hành của bạn!
-                </p>
-              )}
-            </>
-          )}
-
-          {dbUser.loyaltyTier !== 'Member' && dbUser.tierExpiryDate && (
-            <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0, fontStyle: 'italic' }}>
-              📅 Duy trì hạng đến: <strong>{new Date(dbUser.tierExpiryDate).toLocaleDateString('vi-VN')}</strong>
-            </p>
-          )}
-
-          {dbUser.pointsExpiredSoon > 0 && (
-            <div style={{ padding: '0.5rem 0.75rem', background: 'rgba(220, 38, 38, 0.05)', border: '1px solid rgba(220, 38, 38, 0.15)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--status-cancelled)' }}>
-              ⚠️ Lưu ý: {dbUser.pointsExpiredSoon} điểm sẽ hết hạn vào cuối tháng này.
+        {/* Card Header */}
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
+                Thẻ Thành Viên
+              </span>
             </div>
-          )}
+            <h2 className="text-2xl font-black text-white tracking-wide">{dbUser?.fullName || 'Khách Hàng VIP'}</h2>
+          </div>
+          <div className="text-right">
+            <span className="text-xs text-slate-300 font-medium block">HẠNG THẺ</span>
+            <span className="text-xl font-extrabold uppercase tracking-wider text-amber-300 drop-shadow">
+              {dbUser?.loyaltyTier}
+            </span>
+          </div>
         </div>
 
-        {/* Right Column: Tier Perks */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 800 }}>
-            💎 ĐẶC QUYỀN HẠNG {dbUser.loyaltyTier.toUpperCase()}
-          </h3>
-          
-          <div style={{ marginTop: '0.25rem' }}>
-            <span className={`tier-indicator tier-${dbUser.loyaltyTier}`} style={{ display: 'inline-block', marginBottom: '1rem' }}>
-              Hạng {dbUser.loyaltyTier}
-            </span>
-            
-            <ul style={{ paddingLeft: '1.25rem', fontSize: '0.9rem', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '0.5rem', margin: 0 }}>
-              {rules?.tierSettings[dbUser.loyaltyTier]?.perks.map((perk, idx) => (
-                <li key={idx} style={{ color: 'var(--text-muted)' }}>
-                  <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>{perk}</span>
-                </li>
-              ))}
-              <li style={{ color: 'var(--text-muted)' }}>
-                Khung thời gian đặt lịch: <strong style={{ color: 'var(--text-main)' }}>{windowDays} ngày trước</strong>
-              </li>
-              <li style={{ color: 'var(--text-muted)' }}>
-                Hệ số tích điểm: <strong style={{ color: 'var(--text-main)' }}>x{rules?.tierSettings[dbUser.loyaltyTier]?.pointMultiplier}</strong>
-              </li>
-            </ul>
+        {/* Card Stats Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-6 bg-black/20 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
+          <div>
+            <span className="text-xs text-slate-300 block mb-0.5">TỔNG CHI TIÊU</span>
+            <span className="text-lg font-bold text-white">{formatVnd(dbUser?.totalSpent || 0)}</span>
           </div>
+          <div className="text-right">
+            <span className="text-xs text-slate-300 block mb-0.5">ĐIỂM TÍCH LŨY</span>
+            <span className="text-xl font-black text-cyan-400">{dbUser?.pointsBalance || 0} pts</span>
+          </div>
+        </div>
+
+        {/* Progress to Next Tier */}
+        <div>
+          <div className="flex justify-between items-center text-xs text-slate-200 mb-2">
+            <span>Tiến trình nâng hạng ({tp?.progressPercent || 0}%)</span>
+            {tp?.nextTier && (
+              <span>Còn thiếu: <strong className="text-amber-300">{formatVnd((tp?.nextThreshold || 0) - (dbUser?.totalSpent || 0))}</strong></span>
+            )}
+          </div>
+          <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden p-0.5 border border-white/10">
+            <div 
+              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-500 shadow-md shadow-cyan-500/50"
+              style={{ width: `${Math.min(100, Math.max(0, tp?.progressPercent || 0))}%` }}
+            ></div>
+          </div>
+          {!tp?.nextTier && (
+            <p className="text-xs text-amber-300 mt-2 font-semibold flex items-center gap-1">
+              ✨ Bạn đã đạt cấp bậc cao nhất (Platinum). Xin chân thành cảm ơn sự tin tưởng!
+            </p>
+          )}
         </div>
 
       </div>
+
+      {/* Perks List Card */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 backdrop-blur-md">
+        <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+          <span>💎</span> Đặc quyền dành cho hạng <span className="text-cyan-400 uppercase">{dbUser?.loyaltyTier}</span>
+        </h3>
+        <ul className="space-y-2.5 text-sm text-slate-300">
+          {rules?.tierSettings?.[dbUser?.loyaltyTier]?.perks?.map((perk, idx) => (
+            <li key={idx} className="flex items-center gap-2">
+              <span className="text-cyan-400 text-xs">✔</span>
+              <span>{perk}</span>
+            </li>
+          ))}
+          <li className="flex items-center gap-2">
+            <span className="text-cyan-400 text-xs">✔</span>
+            <span>Đặt lịch trước tối đa: <strong className="text-white">{windowDays} ngày</strong></span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="text-cyan-400 text-xs">✔</span>
+            <span>Hệ số nhân điểm thưởng: <strong className="text-white">x{rules?.tierSettings?.[dbUser?.loyaltyTier]?.pointMultiplier || 1}</strong></span>
+          </li>
+        </ul>
+      </div>
+
     </div>
   );
-}
-
-export default function LoyaltyStatus({ dbUser, tp, rules }) {
-  return <TierPerks dbUser={dbUser} tp={tp} rules={rules} />;
 }
