@@ -1,0 +1,10 @@
+{
+  "userId": "cust-gold-id",
+  "vouchers": [
+    {
+      "code": "MEMBER_GIAM10",
+      "id": "6a593af8e9f9521df4d067e2",
+      "ownedCount": 1
+    }
+  ]
+}
