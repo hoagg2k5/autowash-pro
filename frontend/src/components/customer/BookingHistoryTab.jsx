@@ -1,23 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
-import OnlinePaymentModal from './OnlinePaymentModal.jsx';
 
-const formatDateStr = (dateStr) => {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-  }
-  return dateStr;
-};
-
-export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBooking, recentlyUpdatedBookingId, onRefresh }) {
+export default function BookingHistoryTab({ bookings = [], pointsHistory, onCancelBooking, recentlyUpdatedBookingId, onRefresh }) {
   const [feedbackBooking, setFeedbackBooking] = useState(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [selectedBookingForQr, setSelectedBookingForQr] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('All');
 
   // Cancellation states
   const [cancellingBooking, setCancellingBooking] = useState(null);
@@ -28,75 +19,8 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
   // Payment states
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState(null);
   const [paymentTimeLeft, setPaymentTimeLeft] = useState(300);
+  const [paymentActiveTab, setPaymentActiveTab] = useState('vietqr'); // 'vietqr' or 'momo'
   const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
-  const [expandedBookingId, setExpandedBookingId] = useState(null);
-
-  const toggleCard = (id) => {
-    setExpandedBookingId(prev => prev === id ? null : id);
-  };
-
-  // Filter & Search states
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState('all');
-
-  const STATUS_TABS = [
-    { key: 'All', label: 'Tất cả', color: 'var(--text-main)' },
-    { key: 'Upcoming', label: 'Lịch sắp tới', color: 'var(--primary)' },
-    { key: 'Completed', label: 'Hoàn thành', color: '#10b981' },
-    { key: 'Cancelled', label: 'Đã hủy', color: '#ef4444' }
-  ];
-
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  const todayStr = `${year}-${month}-${day}`;
-
-  // Filter logic
-  let filtered = bookings;
-  if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase().trim();
-    filtered = filtered.filter(b => 
-      (b.licensePlate && b.licensePlate.toLowerCase().includes(q)) ||
-      (b.servicePackage && b.servicePackage.toLowerCase().includes(q)) ||
-      (b.branch && b.branch.toLowerCase().includes(q))
-    );
-  }
-
-  if (dateFilter === 'today') {
-    filtered = filtered.filter(b => b.bookingDate === todayStr);
-  }
-
-  // Count status before status filter is applied
-  const statusCounts = {
-    All: filtered.length,
-    Upcoming: filtered.filter(b => ['Pending', 'Confirmed', 'Waiting', 'In Progress', 'In_Progress'].includes(b.status)).length,
-    Completed: filtered.filter(b => b.status === 'Completed').length,
-    Cancelled: filtered.filter(b => b.status === 'Cancelled').length
-  };
-
-  if (statusFilter !== 'All') {
-    filtered = filtered.filter(b => {
-      if (statusFilter === 'Upcoming') {
-        return ['Pending', 'Confirmed', 'Waiting', 'In Progress', 'In_Progress'].includes(b.status);
-      }
-      return b.status === statusFilter;
-    });
-  }
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, dateFilter, statusFilter, bookings.length]);
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentBookings = filtered.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   // Countdown timer logic
   useEffect(() => {
@@ -117,38 +41,6 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [selectedBookingForPayment]);
-
-  // Fetch payment URL for existing bookings from history
-  useEffect(() => {
-    if (!selectedBookingForPayment) return;
-    if (selectedBookingForPayment.paymentUrl) return;
-
-    const fetchPayUrl = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/bookings/${selectedBookingForPayment.id}/pay-url`, {
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
-          }
-        });
-        const data = await response.json();
-        if (response.ok && data.paymentUrl) {
-          setSelectedBookingForPayment(prev => {
-            if (prev && prev.id === selectedBookingForPayment.id) {
-              return { ...prev, paymentUrl: data.paymentUrl };
-            }
-            return prev;
-          });
-        } else {
-          toast.error(data.error || "Không thể khởi tạo cổng VNPay cho lịch đặt này.");
-        }
-      } catch (err) {
-        console.error("Error fetching payment URL:", err);
-        toast.error("Lỗi khi kết nối hệ thống tạo liên kết thanh toán.");
-      }
-    };
-
-    fetchPayUrl();
   }, [selectedBookingForPayment]);
 
   const handleSimulatePaymentSuccess = async () => {
@@ -304,426 +196,199 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
     }
   };
 
+  const filteredBookings = bookings.filter(b => {
+    if (statusFilter === 'All') return true;
+    if (statusFilter === 'In Progress') return b.status === 'In Progress' || b.status === 'In_Progress';
+    return b.status === statusFilter;
+  });
+
   return (
-    <div>
-      {bookings.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>
-          Bạn chưa có yêu cầu đặt lịch nào.
-        </p>
+    <div className="space-y-6">
+      
+      {/* Filter Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1.5 border-b border-slate-900 scrollbar-none">
+        {[
+          { key: 'All', label: 'Tất cả' },
+          { key: 'Pending', label: 'Chờ xác nhận' },
+          { key: 'Confirmed', label: 'Đã xác nhận' },
+          { key: 'In Progress', label: 'Đang rửa' },
+          { key: 'Completed', label: 'Hoàn tất' },
+          { key: 'Cancelled', label: 'Đã hủy' }
+        ].map(tab => {
+          const count = tab.key === 'All' 
+            ? bookings.length 
+            : bookings.filter(b => b.status === tab.key || (tab.key === 'In Progress' && b.status === 'In_Progress')).length;
+          
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                statusFilter === tab.key
+                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent hover:bg-slate-900/50'
+              }`}
+              onClick={() => setStatusFilter(tab.key)}
+            >
+              {tab.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {filteredBookings.length === 0 ? (
+        <div className="text-center py-12 text-slate-400 bg-slate-900/40 border border-slate-850 rounded-2xl">
+          <p className="text-sm">Không tìm thấy yêu cầu đặt lịch nào phù hợp.</p>
+        </div>
       ) : (
-        <>
-          <style>{`
-            .no-scrollbar::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-
-          {/* Shopee-style Horizontal Status Tabs */}
-          <div 
-            style={{
-              display: 'flex',
-              overflowX: 'auto',
-              background: 'var(--bg-card)',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-              marginBottom: '1.5rem',
-              padding: '0 0.5rem',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-            }}
-            className="no-scrollbar"
-          >
-            {STATUS_TABS.map(tab => {
-              const isActive = statusFilter === tab.key;
-              const count = statusCounts ? (statusCounts[tab.key] || 0) : 0;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  style={{
-                    flex: '1 0 auto',
-                    minWidth: '120px',
-                    textAlign: 'center',
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '1.1rem 0.5rem',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    transition: 'all 0.25s ease',
-                    color: isActive ? tab.color : 'var(--text-muted)',
-                    fontWeight: isActive ? 700 : 500,
-                    fontSize: '0.85rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                    outline: 'none'
-                  }}
-                  onClick={() => setStatusFilter(tab.key)}
-                >
-                  <span>{tab.label}</span>
-                  <span
-                    style={{
-                      fontSize: '0.72rem',
-                      padding: '0.1rem 0.45rem',
-                      borderRadius: '10px',
-                      background: isActive ? tab.color : '#f1f5f9',
-                      color: isActive ? '#ffffff' : '#64748b',
-                      fontWeight: 'bold',
-                      transition: 'all 0.25s ease',
-                      opacity: count === 0 && !isActive ? 0.5 : 1
-                    }}
-                  >
-                    {count}
-                  </span>
-                  
-                  {isActive && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: '10%',
-                        right: '10%',
-                        height: '3px',
-                        background: tab.color,
-                        borderRadius: '3px 3px 0 0',
-                      }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Date quick filter */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
-            <div style={{ display: 'flex', background: 'var(--bg-secondary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-              <button
-                type="button"
-                className={`btn btn-sm ${dateFilter === 'today' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem' }}
-                onClick={() => setDateFilter('today')}
-              >
-                Hôm nay ({formatDateStr(todayStr)})
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${dateFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none', boxShadow: 'none', padding: '0.4rem 1rem' }}
-                onClick={() => setDateFilter('all')}
-              >
-                Tất cả lịch đặt
-              </button>
-            </div>
-          </div>
-
-          {/* Bookings cards list */}
-          {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>
-              Không tìm thấy lịch đặt xe nào khớp với bộ lọc.
-            </div>
-          ) : (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {currentBookings.map(b => {
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-md">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-300 border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase tracking-wider bg-slate-950/20">
+                  <th className="py-3.5 px-4 font-bold">Ngày Hẹn</th>
+                  <th className="py-3.5 px-4 font-bold">Giờ Hẹn</th>
+                  <th className="py-3.5 px-4 font-bold">Chi Nhánh</th>
+                  <th className="py-3.5 px-4 font-bold">Xe Của Bạn</th>
+                  <th className="py-3.5 px-4 font-bold">Khoang</th>
+                  <th className="py-3.5 px-4 font-bold">Gói Rửa</th>
+                  <th className="py-3.5 px-4 font-bold">Đã Thanh Toán</th>
+                  <th className="py-3.5 px-4 font-bold text-center">Điểm Tích/Đổi</th>
+                  <th className="py-3.5 px-4 font-bold text-center">Trạng Thái</th>
+                  <th className="py-3.5 px-4 font-bold text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {filteredBookings.map(b => {
                   const cancellable = (b.status === 'Pending' || b.status === 'Confirmed') && 
                                       isCancellableBooking(b.bookingDate, b.timeSlot);
                   const showFeedback = b.status === 'Completed' && !b.rating;
                   const hasFeedback = b.status === 'Completed' && b.rating;
                   const isRecentlyUpdated = recentlyUpdatedBookingId === b.id;
-                  const isExpanded = expandedBookingId === b.id;
+
+                  // Define badge classes based on status
+                  const getStatusBadgeStyle = (status) => {
+                    switch (status) {
+                      case 'Pending':
+                        return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+                      case 'Confirmed':
+                        return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+                      case 'Waiting':
+                        return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                      case 'In Progress':
+                      case 'In_Progress':
+                        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                      case 'Completed':
+                        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                      case 'Cancelled':
+                        return 'bg-red-500/10 text-red-400 border-red-500/20';
+                      default:
+                        return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+                    }
+                  };
 
                   return (
-                    <div
-                      key={b.id}
-                      className={`glass-panel ${isRecentlyUpdated ? 'booking-updated-highlight' : ''} cursor-pointer hover:border-slate-300 transition-all`}
-                      onClick={() => toggleCard(b.id)}
-                      style={{
-                        padding: '1.25rem',
-                        borderLeft: `5px solid ${b.status === 'Pending' ? '#f59e0b' :
-                          b.status === 'Confirmed' ? 'var(--primary)' :
-                            b.status === 'Waiting' ? '#6366f1' :
-                              b.status === 'In Progress' || b.status === 'In_Progress' ? '#3b82f6' :
-                                b.status === 'Completed' ? '#10b981' : '#ef4444'
-                          }`,
-                        background: 'var(--bg-card)',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                        borderRadius: '12px'
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-                        {/* Left: General info */}
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <span className={`status-badge ${getStatusClass(b.status)}`} style={{ fontSize: '0.75rem' }}>
-                              {getStatusLabel(b.status)}
-                            </span>
-                            <span className="badge-info" style={{ fontSize: '0.75rem' }}>{b.branch}</span>
-                          </div>
-
-                          <div style={{ marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>
-                            📅 {formatDateStr(b.bookingDate)} | 🕒 {b.timeSlot}
-                          </div>
-
-                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                            Xe cần rửa: <code style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.95rem' }}>{b.licensePlate}</code>
-                            {b.carDetails && b.carDetails !== 'N/A' && <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem' }}>({b.carDetails})</span>}
-                          </p>
+                    <tr key={b.id} className={`hover:bg-slate-800/40 transition-colors ${isRecentlyUpdated ? 'bg-cyan-500/5' : ''}`}>
+                      <td className="py-4 px-4 font-semibold text-white">{b.bookingDate}</td>
+                      <td className="py-4 px-4 font-bold text-cyan-400">{b.timeSlot}</td>
+                      <td className="py-4 px-4 text-xs text-slate-400">{b.branch || "Chi Nhánh 1"}</td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-col">
+                          <code className="text-xs font-mono font-extrabold text-slate-200">{b.licensePlate || 'N/A'}</code>
+                          {b.carDetails && b.carDetails !== 'N/A' && (
+                            <span className="text-[10px] text-slate-500 mt-0.5">{b.carDetails}</span>
+                          )}
                         </div>
-
-                        {/* Right: Date, Time & Pricing */}
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                            Gói dịch vụ: <span style={{ textDecoration: 'underline' }}>{b.servicePackage}</span>
+                      </td>
+                      <td className="py-4 px-4 font-bold text-cyan-500">{b.bay || 'Chờ xếp'}</td>
+                      <td className="py-4 px-4 font-medium text-slate-200">{b.servicePackage}</td>
+                      <td className="py-4 px-4 font-bold text-white">{formatVnd(b.totalPaid)}</td>
+                      <td className="py-4 px-4 text-center">
+                        {b.status === 'Cancelled' ? (
+                          (() => {
+                            const penalty = pointsHistory?.find(
+                              ph => ph.bookingId === b.id && 
+                              ph.type === 'Redeemed' && 
+                              ph.reason.toLowerCase().includes('phạt')
+                            );
+                            return penalty 
+                              ? <span className="font-bold text-red-400">-{penalty.points} pts</span>
+                              : <span className="text-slate-500 font-bold">0 pts</span>;
+                          })()
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-xs font-bold gap-0.5">
+                            {b.pointsEarned > 0 && <span className="text-emerald-400">+{b.pointsEarned} pts</span>}
+                            {b.pointsRedeemed > 0 && <span className="text-amber-400">-{b.pointsRedeemed} pts</span>}
+                            {b.pointsEarned === 0 && b.pointsRedeemed === 0 && <span className="text-slate-500">0 pts</span>}
                           </div>
-                          <div style={{ marginTop: '0.25rem', fontWeight: 700 }}>
-                            Tổng chi phí: <span style={{ color: 'var(--status-completed)', fontSize: '1.15rem' }}>{formatVnd(b.totalPaid)}</span>
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                            {isExpanded ? '▲ Thu gọn chi tiết' : '▼ Xem thêm chi tiết'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Collapsible Expanded Details */}
-                      {isExpanded && (
-                        <div 
-                          style={{
-                            borderTop: '1px solid var(--border-color)',
-                            paddingTop: '0.75rem',
-                            marginTop: '0.75rem',
-                            fontSize: '0.9rem'
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.75rem' }}>
-                            <div>
-                              <p style={{ margin: '0.25rem 0' }}>
-                                <strong>Mã đặt lịch:</strong> <code style={{ background: '#f1f5f9', padding: '0.15rem 0.4rem', borderRadius: '6px', fontWeight: 'bold', color: '#0ea5e9', fontFamily: 'monospace' }}>{b.id}</code>
-                                <button
-                                  type="button"
-                                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8rem', marginLeft: '0.4rem', color: 'var(--primary)', fontWeight: 'bold' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigator.clipboard.writeText(b.id);
-                                    toast.success("Đã sao chép mã đặt lịch!");
-                                  }}
-                                  title="Sao chép mã"
-                                >
-                                  📋 Sao chép
-                                </button>
-                              </p>
-
-                              <p style={{ margin: '0.25rem 0' }}>
-                                <strong>Điểm thưởng:</strong>{' '}
-                                {b.status === 'Cancelled' ? (
-                                  (() => {
-                                    const penalty = pointsHistory?.find(
-                                      ph => ph.bookingId === b.id && 
-                                      ph.type === 'Redeemed' && 
-                                      ph.reason.toLowerCase().includes('phạt')
-                                    );
-                                    if (penalty) {
-                                      return <span style={{ color: 'var(--status-cancelled)', fontWeight: 700 }}>-{penalty.points}đ (Phạt hủy sát giờ)</span>;
-                                    }
-                                    return <span style={{ color: 'var(--text-muted)' }}>0đ</span>;
-                                  })()
-                                ) : (
-                                  <span style={{ fontWeight: 700 }}>
-                                    {b.pointsEarned > 0 && <span style={{ color: 'var(--status-completed)' }}>+{b.pointsEarned}đ (Tích lũy) </span>}
-                                    {b.pointsRedeemed > 0 && <span style={{ color: 'var(--status-cancelled)' }}>-{b.pointsRedeemed}đ (Khấu trừ)</span>}
-                                    {b.pointsEarned === 0 && b.pointsRedeemed === 0 && <span style={{ color: 'var(--text-muted)' }}>0đ</span>}
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-
-                            <div style={{ textAlign: 'right' }}>
-                              <p style={{ margin: '0.25rem 0' }}>
-                                <strong>Phương thức thanh toán:</strong>{' '}
-                                {b.paymentMethod === 'Online' ? (
-                                  <span style={{ 
-                                    fontWeight: 700,
-                                    color: b.paymentStatus === 'Paid' ? '#10b981' :
-                                           b.paymentStatus === 'Refund Pending' ? '#f97316' : 
-                                           b.paymentStatus === 'Refunded' ? '#64748b' : '#ef4444'
-                                  }}>
-                                    Thanh toán online (VNPay) - {b.paymentStatus === 'Paid' ? 'Đã thanh toán' :
-                                     b.paymentStatus === 'Refund Pending' ? 'Chờ hoàn tiền' :
-                                     b.paymentStatus === 'Refunded' ? 'Đã hoàn tiền' : 'Chưa thanh toán'}
-                                  </span>
-                                ) : (
-                                  <span style={{ color: '#64748b', fontWeight: 600 }}>
-                                    Tiền mặt tại quầy
-                                  </span>
-                                )}
-                              </p>
-                              {b.status === 'Cancelled' && b.cancelReason && (
-                                <p style={{ margin: '0.25rem 0', color: 'var(--status-cancelled)', fontWeight: 500 }}>
-                                  <strong>Lý do hủy:</strong> {b.cancelReason}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Actions & Feedback Row */}
-                          <div style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: '1rem',
-                            borderTop: '1px dashed var(--border-color)',
-                            paddingTop: '0.75rem',
-                            marginTop: '0.75rem'
-                          }}>
-                            {/* Feedback status */}
-                            <div>
-                              {hasFeedback ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#eab308' }}>
-                                    {'★'.repeat(b.rating)}{'☆'.repeat(5 - b.rating)}
-                                  </span>
-                                  {b.comment && (
-                                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                      - "{b.comment}"
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-xs" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                                  {b.status === 'Completed' ? 'Chưa gửi đánh giá dịch vụ' : 'Đơn đặt của bạn đang xử lý'}
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusBadgeStyle(b.status)}`}>
+                          {getStatusLabel(b.status)}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex gap-2 items-center justify-end flex-wrap">
+                          {cancellable && (
+                            <button 
+                              className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/20 text-red-400 rounded-lg text-xs font-bold transition-all"
+                              onClick={() => handleOpenCancelModal(b)}
+                            >
+                              Hủy
+                            </button>
+                          )}
+                          {(b.status === 'Pending' || b.status === 'Confirmed') && !cancellable && (
+                            <span className="text-[10px] text-slate-500 italic">Khóa hủy</span>
+                          )}
+                          {(b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress' || b.status === 'In_Progress') && (
+                            <button
+                              type="button"
+                              className="px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500 hover:text-white border border-cyan-500/20 text-cyan-400 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-md shadow-cyan-500/5"
+                              onClick={() => setSelectedBookingForQr(b)}
+                            >
+                              🎫 Vé QR
+                            </button>
+                          )}
+                          {b.paymentMethod === 'Online' && b.paymentStatus === 'Unpaid' && b.status !== 'Cancelled' && (
+                            <button
+                              type="button"
+                              className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-md shadow-emerald-500/5 animate-pulse"
+                              onClick={() => setSelectedBookingForPayment(b)}
+                            >
+                              💳 Thanh toán
+                            </button>
+                          )}
+                          {showFeedback && (
+                            <button 
+                              type="button"
+                              className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/20 text-amber-400 rounded-lg text-xs font-bold transition-all"
+                              onClick={() => setFeedbackBooking(b)}
+                            >
+                              ⭐ Đánh giá
+                            </button>
+                          )}
+                          {hasFeedback && (
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs font-bold text-amber-400" title={`Đã đánh giá: ${b.rating} sao`}>
+                                {'★'.repeat(b.rating)}{'☆'.repeat(5 - b.rating)}
+                              </span>
+                              {b.comment && (
+                                <span className="text-[10px] text-slate-500 max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap block" title={b.comment}>
+                                  {b.comment}
                                 </span>
                               )}
                             </div>
-
-                            {/* Action Buttons */}
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              {cancellable && (
-                                <button 
-                                  className="btn btn-danger btn-secondary" 
-                                  style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenCancelModal(b);
-                                  }}
-                                >
-                                  ✕ Hủy Lịch
-                                </button>
-                              )}
-                              {(b.status === 'Pending' || b.status === 'Confirmed') && !cancellable && (
-                                <span className="text-xs" style={{ color: 'var(--text-muted)', fontStyle: 'italic', display: 'flex', alignItems: 'center' }}>
-                                  Không thể hủy (&lt;30m)
-                                </span>
-                              )}
-                              {(b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress' || b.status === 'In_Progress') && (
-                                <button
-                                  type="button"
-                                  className="btn btn-primary"
-                                  style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: '#0ea5e9', border: 'none', color: '#fff', fontWeight: 'bold' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedBookingForQr(b);
-                                  }}
-                                >
-                                  🎫 Vé QR
-                                </button>
-                              )}
-                              {b.paymentMethod === 'Online' && b.paymentStatus === 'Unpaid' && b.status !== 'Cancelled' && (
-                                <button
-                                  type="button"
-                                  className="btn btn-primary animate-pulse"
-                                  style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: '#10b981', border: 'none', color: '#fff', fontWeight: 'bold' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedBookingForPayment(b);
-                                  }}
-                                >
-                                  💳 Thanh toán online
-                                </button>
-                              )}
-                              {showFeedback && (
-                                <button 
-                                  type="button"
-                                  className="btn btn-primary" 
-                                  style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: '#eab308', color: '#0f172a', fontWeight: 'bold', border: 'none' }} 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFeedbackBooking(b);
-                                  }}
-                                >
-                                  ⭐ Gửi đánh giá
-                                </button>
-                              )}
-                            </div>
-                          </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
-
-              {/* Pagination controls */}
-              {totalPages > 1 && (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  marginTop: '1.5rem',
-                  flexWrap: 'wrap'
-                }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{
-                      padding: '0.4rem 0.8rem',
-                      fontSize: '0.85rem',
-                      opacity: currentPage === 1 ? 0.5 : 1,
-                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-                    }}
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  >
-                    ◀ Trước
-                  </button>
-
-                  {[...Array(totalPages)].map((_, i) => {
-                    const pageNum = i + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        type="button"
-                        className={`btn ${currentPage === pageNum ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', minWidth: '35px' }}
-                        onClick={() => setCurrentPage(pageNum)}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{
-                      padding: '0.4rem 0.8rem',
-                      fontSize: '0.85rem',
-                      opacity: currentPage === totalPages ? 0.5 : 1,
-                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-                    }}
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  >
-                    Sau ▶
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </>
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Giao diện Modal Đánh Giá */}
@@ -741,7 +406,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
           zIndex: 10000
         }}>
           <div className="glass-panel" style={{
-            background: 'var(--bg-card)',
+            background: '#ffffff',
             padding: '2rem',
             width: '450px',
             maxWidth: '95%',
@@ -750,7 +415,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
           }}>
             <h3 style={{ marginBottom: '0.5rem', fontFamily: 'var(--font-heading)' }}>⭐ Đánh Giá Dịch Vụ</h3>
             <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              Lịch rửa xe ngày {formatDateStr(feedbackBooking.bookingDate)} ({feedbackBooking.timeSlot}) - Gói: {feedbackBooking.servicePackage}
+              Lịch rửa xe ngày {feedbackBooking.bookingDate} ({feedbackBooking.timeSlot}) - Gói: {feedbackBooking.servicePackage}
             </p>
 
             <form onSubmit={handleFeedbackSubmit}>
@@ -831,7 +496,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
           zIndex: 10000
         }}>
           <div className="glass-panel" style={{
-            background: 'var(--bg-card)',
+            background: '#ffffff',
             padding: '2rem',
             width: '450px',
             maxWidth: '95%',
@@ -840,7 +505,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
           }}>
             <h3 style={{ marginBottom: '0.5rem', fontFamily: 'var(--font-heading)', color: 'var(--status-cancelled)' }}>🛑 Xác Nhận Hủy Lịch Hẹn</h3>
             <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              Lịch rửa xe ngày {formatDateStr(cancellingBooking.bookingDate)} ({cancellingBooking.timeSlot})
+              Lịch rửa xe ngày {cancellingBooking.bookingDate} ({cancellingBooking.timeSlot})
             </p>
 
             {isLateCancellation && (
@@ -931,7 +596,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
             onClick={(e) => e.stopPropagation()}
             className="glass-panel print-area" 
             style={{
-              background: 'var(--bg-card)',
+              background: '#ffffff',
               padding: '2rem',
               width: '400px',
               maxWidth: '95%',
@@ -978,7 +643,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                 Giờ hẹn: <span style={{ fontWeight: 600, float: 'right', color: 'var(--primary)' }}>🕒 {selectedBookingForQr.timeSlot}</span>
               </div>
               <div style={{ marginBottom: '0.4rem' }}>
-                Ngày hẹn: <span style={{ fontWeight: 600, float: 'right' }}>📅 {formatDateStr(selectedBookingForQr.bookingDate)}</span>
+                Ngày hẹn: <span style={{ fontWeight: 600, float: 'right' }}>📅 {selectedBookingForQr.bookingDate}</span>
               </div>
               <div style={{ marginBottom: '0.4rem' }}>
                 Gói dịch vụ: <span style={{ fontWeight: 600, float: 'right' }}>{selectedBookingForQr.servicePackage}</span>
@@ -1026,18 +691,105 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
 
       {/* QR Code Payment Modal Overlay */}
       {selectedBookingForPayment && (
-        <OnlinePaymentModal
-          booking={selectedBookingForPayment}
-          paymentTimeLeft={paymentTimeLeft}
-          isSimulatingPayment={isSimulatingPayment}
-          handleSimulatePaymentSuccess={handleSimulatePaymentSuccess}
-          onClose={() => {
-            setSelectedBookingForPayment(null);
-            toast.warning("Đã đóng trang thanh toán.");
-            if (onRefresh) onRefresh();
-          }}
-          formatVnd={formatVnd}
-        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 flex flex-col text-slate-800">
+            
+            {/* Header */}
+            <div className="bg-gradient-to-r from-sky-600 to-indigo-600 text-white p-5 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold font-heading text-white">Thanh Toán Lịch Hẹn</h3>
+                <p className="text-white/80 text-xs mt-0.5">Mã đơn: {selectedBookingForPayment.id}</p>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold text-white">
+                ⏱️ {Math.floor(paymentTimeLeft / 60)}:{"0" + (paymentTimeLeft % 60).toString().slice(-2)}
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-slate-100 bg-slate-50">
+              <button
+                type="button"
+                className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 font-heading transition-all ${paymentActiveTab === 'vietqr' ? 'border-sky-600 text-sky-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                onClick={() => setPaymentActiveTab('vietqr')}
+              >
+                🏦 Chuyển khoản VietQR
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 font-heading transition-all ${paymentActiveTab === 'momo' ? 'border-sky-600 text-sky-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                onClick={() => setPaymentActiveTab('momo')}
+              >
+                📱 Ví MoMo
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 flex flex-col items-center">
+              
+              {/* QR Image */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-4">
+                <img
+                  src={
+                    paymentActiveTab === 'vietqr'
+                      ? `https://img.vietqr.io/image/bidv-6353935463-compact2.png?amount=${selectedBookingForPayment.totalPaid}&addInfo=AUTOWASH%20${selectedBookingForPayment.id}&accountName=CONG%20TY%20AUTOWASH%20PRO`
+                      : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`2.1|02|08|AUTOWASH_PRO|${selectedBookingForPayment.id}|${selectedBookingForPayment.totalPaid}`)}`
+                  }
+                  alt="QR Code Thanh Toán"
+                  className="w-48 h-48 object-contain"
+                />
+              </div>
+
+              {/* Booking Info Detail List */}
+              <div className="w-full bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm mb-4">
+                {paymentActiveTab === 'vietqr' ? (
+                  <div className="space-y-1.5" style={{ width: '100%' }}>
+                    <div className="flex justify-between"><span className="text-slate-500">Ngân hàng:</span><span className="font-semibold text-slate-800">BIDV</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Số TK:</span><span className="font-semibold text-slate-800">6353935463</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Chủ TK:</span><span className="font-semibold text-slate-800">CONG TY AUTOWASH PRO</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Số tiền:</span><span className="font-bold text-sky-600">{formatVnd(selectedBookingForPayment.totalPaid)}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Nội dung:</span><span className="font-bold text-indigo-600">AUTOWASH {selectedBookingForPayment.id}</span></div>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5" style={{ width: '100%' }}>
+                    <div className="flex justify-between"><span className="text-slate-500">Ví điện tử:</span><span className="font-semibold text-slate-800">MoMo</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Số ĐT nhận:</span><span className="font-semibold text-slate-800">0999999999</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Tên nhận:</span><span className="font-semibold text-slate-800">AUTOWASH PRO VIETNAM</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Số tiền:</span><span className="font-bold text-sky-600">{formatVnd(selectedBookingForPayment.totalPaid)}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Lời nhắn:</span><span className="font-bold text-indigo-600">AUTOWASH_{selectedBookingForPayment.id}</span></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Warning Alert */}
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 rounded-lg w-full mb-5 flex gap-2">
+                <span>⚠️</span>
+                <span>Vui lòng quét đúng mã QR và chuyển khoản chính xác nội dung ghi trên để hệ thống tự động duyệt lịch.</span>
+              </div>
+
+              {/* Actions */}
+              <button
+                type="button"
+                onClick={handleSimulatePaymentSuccess}
+                disabled={isSimulatingPayment}
+                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mb-2"
+              >
+                {isSimulatingPayment ? 'Đang xác nhận...' : '⚡ Giả Lập Thanh Toán Thành Công (Test)'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBookingForPayment(null);
+                  toast.warning("Đã đóng trang thanh toán.");
+                }}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm transition-all"
+              >
+                Đóng / Thanh toán sau
+              </button>
+
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

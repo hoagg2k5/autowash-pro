@@ -20,7 +20,7 @@ export default function VoucherExchange({ dbUser, onRedeemSuccess }) {
         setVouchers(data);
       }
     } catch (err) {
-      console.error("Lỗi khi tải danh sách voucher đổi điểm:", err);
+      console.error("[Customer VoucherExchange] Failed to load redeemable vouchers:", err);
     } finally {
       setLoading(false);
     }
@@ -75,37 +75,27 @@ export default function VoucherExchange({ dbUser, onRedeemSuccess }) {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
-
-
   if (loading) {
     return (
-      <div style={{ padding: '1.5rem', textAlign: 'center' }}>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Đang tải danh sách voucher đổi điểm...</p>
+      <div className="py-8 text-center">
+        <p className="text-sm text-slate-400 animate-pulse">Đang tải danh sách voucher đổi điểm...</p>
       </div>
     );
   }
 
   if (vouchers.length === 0) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-muted)' }}>Hiện không có mã giảm giá đổi điểm nào khả dụng cho hạng thành viên của bạn.</p>
+      <div className="py-8 text-center text-slate-400 border border-slate-800 rounded-xl bg-slate-900/30">
+        <p className="text-sm">Hiện không có mã giảm giá đổi điểm nào khả dụng cho hạng thành viên của bạn.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ marginTop: '1rem' }}>
-      <div 
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '1.25rem',
-          marginTop: '1rem'
-        }}
-      >
+    <div className="mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {vouchers.map(v => {
-
-          const hasEnoughPoints = dbUser.pointsBalance >= v.pointsRequired;
+          const hasEnoughPoints = dbUser?.pointsBalance >= v.pointsRequired;
           const isRedeemingThis = redeemingId === v._id;
 
           let valText = "";
@@ -115,68 +105,49 @@ export default function VoucherExchange({ dbUser, onRedeemSuccess }) {
           return (
             <div 
               key={v._id} 
-              className="voucher-exchange-item"
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.85rem 1rem',
-                background: '#ffffff',
-                border: '1px solid var(--border-color)',
-                borderRadius: '12px',
-                gap: '1rem',
-                transition: 'all 0.2s ease'
-              }}
+              className="bg-slate-900/60 border border-slate-850 hover:border-cyan-500/40 rounded-xl p-4 flex justify-between items-center transition-all duration-300 hover:scale-[1.01]"
             >
               {/* Left Info Column */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <code style={{ fontSize: '0.95rem', color: 'var(--primary)', fontWeight: 'bold' }}>{v.code}</code>
-
+              <div className="flex flex-col gap-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <code className="text-xs font-mono font-extrabold text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/10">
+                    {v.code}
+                  </code>
                 </div>
                 
-                <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                  Trị giá: <span style={{ color: '#10b981' }}>{valText}</span>
+                <span className="text-sm font-extrabold text-white">
+                  Trị giá: <span className="text-emerald-400">{valText}</span>
                 </span>
                 
                 {v.minSpent > 0 && (
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-[11px] text-slate-400">
                     Đơn tối thiểu: {formatVnd(v.minSpent)}
                   </span>
                 )}
                 
-                <span className="text-xs" style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                  HSD: {v.expiryDate}
+                <span className="text-[10px] text-slate-500">
+                  Hạn dùng: {v.expiryDate}
                 </span>
               </div>
 
               {/* Right Action Column */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
-                <span 
-                  style={{ 
-                    fontSize: '0.9rem', 
-                    fontWeight: 800, 
-                    color: hasEnoughPoints ? 'var(--primary)' : 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.15rem'
-                  }}
-                >
-                  🪙 {v.pointsRequired}đ
+              <div className="flex flex-col items-end gap-2.5 ml-2">
+                <span className={`text-sm font-black flex items-center gap-1 ${hasEnoughPoints ? 'text-cyan-400' : 'text-slate-500'}`}>
+                  🪙 {v.pointsRequired} pts
                 </span>
                 <button
                   type="button"
-                  className={`btn btn-sm ${hasEnoughPoints ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ 
-                    padding: '0.35rem 0.75rem', 
-                    fontSize: '0.75rem', 
-                    borderRadius: '8px', 
-                    fontWeight: 700 
-                  }}
                   disabled={!hasEnoughPoints || isRedeemingThis}
                   onClick={() => handleRedeem(v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all duration-200 ${
+                    isRedeemingThis
+                      ? 'bg-slate-800 text-slate-400 cursor-wait'
+                      : hasEnoughPoints
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white shadow-md'
+                      : 'bg-slate-800/80 text-slate-500 border border-slate-850 cursor-not-allowed'
+                  }`}
                 >
-                  {isRedeemingThis ? 'Đang đổi...' : hasEnoughPoints ? 'Đổi ngay' : 'Không đủ điểm'}
+                  {isRedeemingThis ? 'Đang đổi...' : hasEnoughPoints ? 'Đổi ngay' : 'Thiếu điểm'}
                 </button>
               </div>
             </div>
