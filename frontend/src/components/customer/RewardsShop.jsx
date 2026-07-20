@@ -6,9 +6,6 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
   const [loading, setLoading] = useState(false);
   const [myVouchers, setMyVouchers] = useState([]);
   const [loadingMyVouchers, setLoadingMyVouchers] = useState(false);
-  const [activeTab, setActiveTab] = useState('available');
-  const [usedVouchers, setUsedVouchers] = useState([]);
-  const [loadingUsedVouchers, setLoadingUsedVouchers] = useState(false);
 
   const REWARD_TEMPLATES = [
     { id: 'rw-10k', label: 'Voucher Giảm 10k', points: 10, discountText: 'Giảm 10.000đ', icon: '🎫', detail: 'Áp dụng cho mọi hóa đơn' },
@@ -37,38 +34,15 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
     }
   };
 
-  const fetchUsedVouchers = async () => {
-    setLoadingUsedVouchers(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/bookings/vouchers/my-used`, {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUsedVouchers(data);
-      }
-    } catch (err) {
-      console.error("Error fetching used vouchers:", err);
-    } finally {
-      setLoadingUsedVouchers(false);
-    }
-  };
-
   useEffect(() => {
     fetchMyVouchers();
-    fetchUsedVouchers();
   }, []);
 
-  const handleRedeem = async (templateId, pointsRequired, label) => {
+  const handleRedeem = async (templateId, pointsRequired) => {
     if (dbUser.pointsBalance < pointsRequired) {
       toast.error("Điểm tích lũy không đủ!");
       return;
     }
-
-    const confirm = window.confirm(`Bạn có chắc chắn muốn dùng ${pointsRequired} điểm tích lũy để đổi ${label}?`);
-    if (!confirm) return;
 
     setLoading(true);
     try {
@@ -88,7 +62,6 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
 
       toast.success(`Đổi quà thành công! Đã nhận mã ${data.voucher.code}`);
       fetchMyVouchers();
-      fetchUsedVouchers();
       if (onRedeemSuccess) {
         onRedeemSuccess();
       }
@@ -104,218 +77,47 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="space-y-8">
       
-      {/* Owned Vouchers list */}
-      <div className="glass-panel" style={{ padding: '2rem' }}>
-        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-heading)' }}>🎟️ KHO VOUCHER CỦA BẠN</h3>
-          <p className="text-xs" style={{ color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            Danh sách các Voucher bạn đang sở hữu và chưa sử dụng. Các voucher này sẽ hiển thị ở màn hình đặt lịch.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', gap: '1.5rem' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('available')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'available' ? '3px solid var(--primary)' : '3px solid transparent',
-              color: activeTab === 'available' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: activeTab === 'available' ? 'bold' : 'normal',
-              padding: '0.75rem 0.5rem',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              transition: 'all 0.2s ease',
-              outline: 'none'
-            }}
-          >
-            Chưa sử dụng ({myVouchers.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('used')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'used' ? '3px solid var(--primary)' : '3px solid transparent',
-              color: activeTab === 'used' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: activeTab === 'used' ? 'bold' : 'normal',
-              padding: '0.75rem 0.5rem',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              transition: 'all 0.2s ease',
-              outline: 'none'
-            }}
-          >
-            Đã sử dụng ({usedVouchers.length})
-          </button>
-        </div>
-
-        {activeTab === 'available' ? (
-          loadingMyVouchers ? (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Đang tải kho quà tặng...</p>
-          ) : myVouchers.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '2.5rem', 
-              color: 'var(--text-muted)', 
-              fontSize: '0.85rem',
-              border: '2.5px dashed var(--border-color)',
-              borderRadius: '12px'
-            }}>
-              🌈 Kho voucher trống. Hãy rửa xe tích điểm hoặc đổi quà từ điểm số dư của bạn nhé!
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-              {myVouchers.map(uv => {
-                let valText = "";
-                if (uv.discountVnd) valText = `-${formatVnd(uv.discountVnd)}`;
-                else if (uv.discountPercent) valText = `-${uv.discountPercent}%`;
-
-                return (
-                  <div 
-                    key={uv.id}
-                    style={{
-                      background: 'linear-gradient(135deg, #ffffff 70%, rgba(2, 132, 199, 0.05))',
-                      border: '1.5px dashed var(--border-color)',
-                      borderLeft: '5px solid var(--primary)',
-                      borderRadius: '12px',
-                      padding: '1rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.01)'
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <code style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>{uv.voucherCode}</code>
-                        <span className="badge-info" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem' }}>{valText}</span>
-                      </div>
-                      <div className="text-xs" style={{ color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                        Hạn dùng: {uv.expiryDate} {uv.minSpent > 0 && `| HĐ tối thiểu: ${formatVnd(uv.minSpent)}`}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '1.5rem' }}>🎁</span>
-                  </div>
-                );
-              })}
-            </div>
-          )
-        ) : (
-          loadingUsedVouchers ? (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Đang tải lịch sử voucher...</p>
-          ) : usedVouchers.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '2.5rem', 
-              color: 'var(--text-muted)', 
-              fontSize: '0.85rem',
-              border: '2.5px dashed var(--border-color)',
-              borderRadius: '12px'
-            }}>
-              Chưa có voucher nào đã được sử dụng.
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-              {usedVouchers.map(uv => {
-                let valText = "";
-                if (uv.discountVnd) valText = `-${formatVnd(uv.discountVnd)}`;
-                else if (uv.discountPercent) valText = `-${uv.discountPercent}%`;
-
-                return (
-                  <div 
-                    key={uv.id}
-                    style={{
-                      background: 'linear-gradient(135deg, #f8fafc 70%, rgba(100, 116, 139, 0.05))',
-                      border: '1.5px dashed var(--border-color)',
-                      borderLeft: '5px solid #64748b',
-                      borderRadius: '12px',
-                      padding: '1rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.01)',
-                      opacity: 0.75
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <code style={{ fontSize: '1rem', color: '#64748b', fontWeight: 'bold', textDecoration: 'line-through' }}>{uv.voucherCode}</code>
-                        <span className="badge-info" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#cbd5e1', color: '#475569' }}>{valText}</span>
-                        <span style={{ fontSize: '0.7rem', color: '#e11d48', fontWeight: 'bold', background: '#ffe4e6', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>Đã dùng</span>
-                      </div>
-                      <div className="text-xs" style={{ color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                        Dùng lúc: {uv.usedAt ? new Date(uv.usedAt).toLocaleDateString('vi-VN') : 'N/A'} {uv.minSpent > 0 && `| HĐ tối thiểu: ${formatVnd(uv.minSpent)}`}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '1.5rem', filter: 'grayscale(1)' }}>🎟️</span>
-                  </div>
-                );
-              })}
-            </div>
-          )
-        )}
-      </div>
-
       {/* Rewards shop panel */}
-      <div className="glass-panel" style={{ padding: '2rem' }}>
-        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-heading)' }}>🎁 CỬA HÀNG ĐỔI THƯỞNG</h3>
-          <p className="text-xs" style={{ color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            Sử dụng điểm tích lũy tích lũy được từ những lần rửa xe trước để đổi lấy Voucher ưu đãi đặc quyền.
+      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 backdrop-blur-md">
+        <div className="border-b border-slate-850 pb-4 mb-6">
+          <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+            <span>🎁</span> CỬA HÀNG ĐỔI THƯỞNG
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">
+            Sử dụng số điểm tích lũy của bạn để đổi các Voucher ưu đãi rửa xe đặc quyền.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {REWARD_TEMPLATES.map(item => {
-            const canRedeem = dbUser.pointsBalance >= item.points;
+            const canRedeem = dbUser?.pointsBalance >= item.points;
             return (
               <div 
                 key={item.id}
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1.5px solid var(--border-color)',
-                  borderRadius: '16px',
-                  padding: '1.25rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  textAlign: 'center',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-                  gap: '0.75rem'
-                }}
+                className="bg-slate-950/60 border border-slate-850 hover:border-cyan-500/40 rounded-2xl p-5 flex flex-col items-center text-center justify-between transition-all duration-300 hover:scale-[1.02] gap-4"
               >
-                <div style={{ fontSize: '2.5rem', margin: '0.5rem 0' }}>{item.icon}</div>
-                <div>
-                  <h4 style={{ margin: 0, fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>{item.label}</h4>
-                  <span className="badge-info" style={{ display: 'inline-block', margin: '0.35rem 0', fontWeight: 'bold' }}>{item.discountText}</span>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0 }}>{item.detail}</p>
+                <div className="text-4xl filter drop-shadow">{item.icon}</div>
+                <div className="space-y-1 w-full">
+                  <h4 className="font-bold text-sm text-slate-100 line-clamp-1">{item.label}</h4>
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-black">
+                    {item.discountText}
+                  </span>
+                  <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">{item.detail}</p>
                 </div>
 
                 <button
                   type="button"
-                  className={`btn ${canRedeem ? 'btn-primary' : 'btn-secondary'}`}
                   disabled={loading || !canRedeem}
-                  onClick={() => handleRedeem(item.id, item.points, item.label)}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    marginTop: '0.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.25rem'
-                  }}
+                  onClick={() => handleRedeem(item.id, item.points)}
+                  className={`w-full py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all ${
+                    canRedeem 
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white shadow-md shadow-cyan-500/10' 
+                      : 'bg-slate-900 border border-slate-850 text-slate-500 cursor-not-allowed'
+                  }`}
                 >
-                  {item.points} điểm
+                  {canRedeem ? `⚡ Đổi (${item.points} pts)` : `Cần ${item.points} pts`}
                 </button>
               </div>
             );
@@ -323,6 +125,56 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
         </div>
       </div>
 
+      {/* Owned Vouchers list */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 backdrop-blur-md">
+        <div className="border-b border-slate-850 pb-4 mb-6">
+          <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+            <span>🎟️</span> KHO VOUCHER CỦA BẠN ({myVouchers.length})
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">
+            Danh sách các Voucher bạn đang sở hữu và chưa sử dụng.
+          </p>
+        </div>
+
+        {loadingMyVouchers ? (
+          <p className="text-xs text-slate-400 animate-pulse">Đang tải kho voucher...</p>
+        ) : myVouchers.length === 0 ? (
+          <div className="text-center py-10 text-slate-500 text-sm border-2 border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
+            🌈 Kho voucher trống. Hãy rửa xe tích điểm để đổi quà nhé!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {myVouchers.map(uv => {
+              let valText = "";
+              if (uv.discountVnd) valText = `-${formatVnd(uv.discountVnd)}`;
+              else if (uv.discountPercent) valText = `-${uv.discountPercent}%`;
+
+              return (
+                <div 
+                  key={uv.id}
+                  className="bg-gradient-to-r from-slate-950 to-slate-900/90 border border-slate-850 border-l-4 border-l-cyan-500 rounded-xl p-4 flex justify-between items-center shadow-lg hover:border-slate-700 transition-all duration-300"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs font-mono font-extrabold text-cyan-400 bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-500/10">
+                        {uv.voucherCode}
+                      </code>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
+                        {valText}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Hạn dùng: {uv.expiryDate} {uv.minSpent > 0 && `• Đơn tối thiểu: ${formatVnd(uv.minSpent)}`}
+                    </div>
+                  </div>
+                  <span className="text-2xl filter drop-shadow">🎁</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      
     </div>
   );
 }

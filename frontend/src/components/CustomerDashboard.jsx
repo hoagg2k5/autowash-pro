@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../config.js';
-import { TierPerks } from './customer/LoyaltyStatus.jsx';
+import LoyaltyStatus from './customer/LoyaltyStatus.jsx';
 import BookingModule from './customer/BookingModule.jsx';
+import VehicleManager from './customer/VehicleManager.jsx';
+import HistoryList from './customer/HistoryList.jsx';
+import RewardsShop from './customer/RewardsShop.jsx';
+import DashboardSkeleton from './customer/DashboardSkeleton.jsx';
 import { toast } from './shared/toast.js';
 
 
@@ -12,7 +16,7 @@ export default function CustomerDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [recentlyUpdatedBookingId, setRecentlyUpdatedBookingId] = useState(null);
-  
+  const [activeTab, setActiveTab] = useState('booking'); // 'booking' | 'rewards'
 
   
   // Show / hide add vehicle triggers across components
@@ -20,7 +24,7 @@ export default function CustomerDashboard({ user, onLogout }) {
 
   // Change Password states and logic are now handled in the header dropdown menu.
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/customers/${user.id}/dashboard`);
       if (!response.ok) throw new Error("Không thể tải thông tin tài khoản.");
@@ -31,7 +35,7 @@ export default function CustomerDashboard({ user, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -39,10 +43,6 @@ export default function CustomerDashboard({ user, onLogout }) {
 
   useEffect(() => {
     const socket = io(API_BASE_URL);
-
-    socket.on('connect', () => {
-      socket.emit('join_user_room', user.id);
-    });
 
     socket.on('booking_updated', (data) => {
       if (data.userId === user.id) {
@@ -95,8 +95,7 @@ export default function CustomerDashboard({ user, onLogout }) {
     }
   };
 
-
-  if (loading) return <div style={{ textAlign: 'center', padding: '4rem' }}>Đang tải dữ liệu khách hàng...</div>;
+  if (loading) return <DashboardSkeleton />;
   if (error) return <div style={{ textAlign: 'center', padding: '4rem' }} className="alert alert-danger">{error}</div>;
 
   const dbUser = dashboardData.user;
@@ -107,89 +106,121 @@ export default function CustomerDashboard({ user, onLogout }) {
   const rules = dashboardData.rules;
 
   return (
-    <div className="container">
-      {/* Account Management Panel */}
-      <div 
-        className="glass-panel" 
-        style={{ 
-          padding: '1.75rem 2.5rem', 
-          marginBottom: '2rem', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          background: 'var(--bg-card)', 
-          borderRadius: '20px', 
-          border: '1px solid var(--border-color)', 
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)',
-          flexWrap: 'wrap',
-          gap: '2rem'
-        }}
-      >
-        {/* Left column: Account Info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: '280px' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)', fontWeight: 500 }}>
-            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>Kính chào quý khách</span>{' '}
-            <span style={{ color: 'var(--text-main)', fontWeight: 800 }}>{dbUser.fullName}</span>!
-          </h2>
-        </div>
-
-        {/* Right column: Membership status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
-          {/* Membership Tier */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Hạng Hội Viên</span>
+    <div className="customer-dashboard min-h-screen bg-slate-950 text-slate-100">
+      {/* Top Header & Account Bar */}
+      <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 py-3 sm:px-6 mb-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
+          
+          {/* Brand & User Greeting */}
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 font-black text-white text-xl">
+              A
+            </div>
             <div>
-              <span 
-                className={`tier-indicator tier-${dbUser.loyaltyTier}`} 
-                style={{ 
-                  padding: '0.35rem 1rem', 
-                  borderRadius: '20px', 
-                  fontWeight: 800, 
-                  fontSize: '0.8rem', 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.5px',
-                  display: 'inline-block'
-                }}
-              >
-                {dbUser.loyaltyTier.toUpperCase()}
-              </span>
+              <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                Xin chào, <span className="text-cyan-400">{dbUser.fullName}</span> 👋
+              </h1>
+              <p className="text-xs text-slate-400">Hạng: <span className={`uppercase font-bold text-amber-400 tier-${dbUser.loyaltyTier}`}>{dbUser.loyaltyTier}</span> • Điểm: <span className="text-cyan-400 font-bold">{dbUser.pointsBalance} pts</span></p>
             </div>
           </div>
 
-          {/* Loyalty Points */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Điểm Tích Lũy</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-              <span style={{ color: 'var(--primary)', fontSize: '2.2rem', fontWeight: 900, lineHeight: 1 }}>
-                {dbUser.pointsBalance}
-              </span>
-              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                điểm
-              </span>
+          {/* Navigation Tabs */}
+          <nav className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
+            <button
+              type="button"
+              onClick={() => setActiveTab('booking')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
+                activeTab === 'booking'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>⚡</span> Đặt Lịch & Quản Lý Xe
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('rewards')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
+                activeTab === 'rewards'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>🎁</span> Đổi Ưu Đãi & Đã Tích
+            </button>
+          </nav>
+
+          {/* User Profile Avatar & Logout */}
+          <div className="flex items-center space-x-3">
+            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm ring-2 ring-cyan-500/30">
+              {dbUser.fullName ? dbUser.fullName.charAt(0).toUpperCase() : 'U'}
             </div>
+            <button
+              onClick={onLogout}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-slate-700/50 hover:border-red-500/30 transition-all"
+              title="Đăng xuất"
+            >
+              Đăng xuất
+            </button>
           </div>
+
         </div>
+      </header>
+
+      <div className="container mx-auto px-4">
+
+      <div className="dashboard-grid">
+        {/* Main Section: Booking Panel & History list / Rewards Shop */}
+        <div>
+          {activeTab === 'booking' ? (
+            <>
+              {/* Booking Component */}
+              <BookingModule 
+                dbUser={dbUser} 
+                vehicles={vehicles} 
+                rules={rules} 
+                onBookingSuccess={fetchDashboardData}
+                onOpenAddVehicle={() => setShowAddVehicleForm(true)}
+              />
+
+              {/* History Component */}
+              <HistoryList 
+                bookings={bookings} 
+                pointsHistory={pointsHistory} 
+                onCancelBooking={handleCancelBooking}
+                recentlyUpdatedBookingId={recentlyUpdatedBookingId}
+                onRefresh={fetchDashboardData}
+                dbUser={dbUser}
+              />
+            </>
+          ) : (
+            <RewardsShop 
+              dbUser={dbUser} 
+              onRedeemSuccess={fetchDashboardData} 
+            />
+          )}
+        </div>
+
+        {/* Sidebar Section: Loyalty status & Vehicles list */}
+        <div className="sidebar-grid">
+          {/* Loyalty status bar progress */}
+          <LoyaltyStatus 
+            dbUser={dbUser} 
+            tp={tp} 
+            rules={rules} 
+          />
+
+          {/* Vehicle manager */}
+          <VehicleManager 
+            userId={dbUser.id} 
+            vehicles={vehicles} 
+            onVehicleAdded={fetchDashboardData}
+            showAddFormDefault={showAddVehicleForm}
+            onCloseForm={() => setShowAddVehicleForm(false)}
+          />
       </div>
-
-      <div style={{ marginTop: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-        {/* Combined Membership Progress & Tier Perks Panel */}
-        <TierPerks dbUser={dbUser} tp={tp} rules={rules} />
-
-        {/* Booking Component */}
-        <BookingModule 
-          dbUser={dbUser} 
-          vehicles={vehicles} 
-          rules={rules} 
-          onBookingSuccess={fetchDashboardData}
-          onOpenAddVehicle={() => setShowAddVehicleForm(true)}
-        />
-
-
-      </div>
-
-
-
-
     </div>
+  </div>
+</div>
   );
 }

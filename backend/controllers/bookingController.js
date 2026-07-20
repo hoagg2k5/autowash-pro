@@ -1,10 +1,10 @@
-import {
-  createBooking,
-  confirmBooking,
+import { 
+  createBooking, 
+  confirmBooking, 
   checkInBooking,
-  startWashBooking,
-  updateBookingNotes,
-  completeBooking,
+  startWashBooking, 
+  updateBookingNotes, 
+  completeBooking, 
   checkoutBooking,
   cancelBooking,
   getSlotTimes,
@@ -19,12 +19,8 @@ import UserVoucher from '../models/UserVoucher.js';
 import Service from '../models/Service.js';
 import Bay from '../models/Bay.js';
 import bcrypt from 'bcryptjs';
-
 import { sendEmail, getBookingConfirmationTemplate, getBookingStatusUpdateTemplate } from '../utils/email.js';
 import PointHistory from '../models/PointHistory.js';
-import { logAdminAction } from '../utils/auditLogger.js';
-import { createPaymentUrl, verifyResponse, callRefundApi } from '../utils/vnpayHelper.js';
-
 
 
 // Tự động xác nhận các đơn đặt lịch chờ duyệt quá 30 phút
@@ -33,11 +29,11 @@ async function autoConfirmOldBookings(io) {
     const now = Date.now();
     const cutoffTime = new Date(now - 30 * 60 * 1000);
     const oldBookings = await Booking.find({ status: 'Pending', createdAt: { $lt: cutoffTime } });
-
+    
     if (oldBookings.length > 0) {
       const ids = oldBookings.map(b => b._id);
       await Booking.updateMany({ _id: { $in: ids } }, { $set: { status: 'Confirmed' } });
-
+      
       if (io) {
         const vehicleIds = oldBookings.map(b => b.vehicleId);
         const vehicles = await Vehicle.find({ id: { $in: vehicleIds } });
@@ -50,14 +46,10 @@ async function autoConfirmOldBookings(io) {
           b.status = 'Confirmed';
           const vehicle = vehicleMap[b.vehicleId];
           const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-          const data = {
+          io.emit('booking_updated', {
             ...b.toObject(),
             licensePlate
-          };
-          if (b.userId) {
-            io.to(`user-${b.userId}`).emit('booking_updated', data);
-          }
-          io.to('staff-admin').emit('booking_updated', data);
+          });
         });
       }
     }
@@ -70,11 +62,11 @@ async function autoConfirmOldBookings(io) {
 async function autoCancelNoShowBookings(io) {
   try {
     const now = Date.now();
-    const activeBookings = await Booking.find({
+    const activeBookings = await Booking.find({ 
       status: { $in: ['Pending', 'Confirmed'] },
       bookingType: { $ne: 'Walk-in' } // Không tự động hủy đơn vãng lai
     });
-
+    
     const bookingsToCancel = [];
     for (const b of activeBookings) {
       const { endTime } = getSlotTimes(b.bookingDate, b.timeSlot);
@@ -101,14 +93,10 @@ async function autoCancelNoShowBookings(io) {
         updatedBookings.forEach(b => {
           const vehicle = vehicleMap[b.vehicleId];
           const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-          const data = {
+          io.emit('booking_updated', {
             ...b.toObject(),
             licensePlate
-          };
-          if (b.userId) {
-            io.to(`user-${b.userId}`).emit('booking_updated', data);
-          }
-          io.to('staff-admin').emit('booking_updated', data);
+          });
         });
       }
     }
@@ -132,29 +120,11 @@ const checkBranchAccess = async (req, bookingId) => {
   return true;
 };
 
-// Gửi thông tin cập nhật đặt lịch riêng tư tới đúng khách hàng và nhóm staff/admin
-const emitBookingUpdated = (req, booking, licensePlate) => {
-  const io = req.app.get('io');
-  if (!io) return;
-
-  const data = booking.toObject ? booking.toObject() : booking;
-  if (licensePlate) {
-    data.licensePlate = licensePlate;
-  }
-
-  // Gửi tới khách hàng sở hữu đơn hàng
-  if (booking.userId) {
-    io.to(`user-${booking.userId}`).emit('booking_updated', data);
-  }
-  // Gửi tới tất cả staff/admin
-  io.to('staff-admin').emit('booking_updated', data);
-};
-
 export const listBookings = async (req, res) => {
   try {
     const io = req.app.get('io');
-    autoConfirmOldBookings(io).catch(err => console.error("Error in auto-confirm background job:", err));
-    autoCancelNoShowBookings(io).catch(err => console.error("Error in auto-cancel background job:", err));
+    await autoConfirmOldBookings(io);
+    await autoCancelNoShowBookings(io);
 
     const { role, branch, id: userId } = req.user;
 
@@ -204,7 +174,7 @@ export const listBookings = async (req, res) => {
 
     // Sắp xếp theo ngày đặt lịch và khung giờ (khung giờ lấy giờ bắt đầu đầu tiên)
     list.sort((a, b) => new Date(b.bookingDate + "T" + b.timeSlot.split(" ")[0]) - new Date(a.bookingDate + "T" + a.timeSlot.split(" ")[0]));
-
+    
     res.json(list);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -214,7 +184,7 @@ export const listBookings = async (req, res) => {
 export const book = async (req, res) => {
   try {
     const { userId, vehicleId, bookingDate, timeSlot, servicePackage, branch, bay, redeemPoints, promoCode, paymentMethod } = req.body;
-
+    
     if (!userId || !vehicleId || !bookingDate || !timeSlot || !servicePackage) {
       return res.status(400).json({ error: "Vui lòng điền đầy đủ thông tin đặt lịch." });
     }
@@ -224,11 +194,11 @@ export const book = async (req, res) => {
       return res.status(403).json({ error: "Bạn không có quyền tạo lịch đặt cho tài khoản của khách hàng khác." });
     }
 
-    const newBooking = await createBooking(userId, {
-      vehicleId,
-      bookingDate,
-      timeSlot,
-      servicePackage,
+    const newBooking = await createBooking(userId, { 
+      vehicleId, 
+      bookingDate, 
+      timeSlot, 
+      servicePackage, 
       branch,
       bay,
       redeemPoints: Number(redeemPoints) || 0,
@@ -238,8 +208,14 @@ export const book = async (req, res) => {
 
     const vehicle = await Vehicle.findOne({ id: newBooking.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, newBooking, licensePlate);
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...newBooking.toObject(),
+        licensePlate
+      });
+    }
 
     // Gửi email xác nhận đặt lịch
     const user = await User.findOne({ id: userId });
@@ -250,11 +226,6 @@ export const book = async (req, res) => {
         subject: `[AutoWash Pro] Hóa đơn xác nhận lịch hẹn ${newBooking.id}`,
         html: emailHtml
       }).catch(err => console.error("Error sending booking email:", err));
-    }
-
-    if (paymentMethod === 'Online') {
-      const paymentUrl = createPaymentUrl(newBooking.id, newBooking.totalPaid, req);
-      return res.status(201).json({ ...newBooking.toObject(), paymentUrl });
     }
 
     res.status(201).json(newBooking);
@@ -270,8 +241,14 @@ export const confirm = async (req, res) => {
 
     const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, booking, licensePlate);
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
 
     res.json({ message: "Xác nhận lịch đặt xe thành công.", booking });
   } catch (error) {
@@ -286,8 +263,14 @@ export const checkin = async (req, res) => {
 
     const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, booking, licensePlate);
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
 
     res.json({ message: "Check-in xe thành công. Đơn hàng đã được đưa vào hàng đợi.", booking });
   } catch (error) {
@@ -303,8 +286,14 @@ export const start = async (req, res) => {
 
     const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, booking, licensePlate);
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
 
     res.json({ message: "Đã bắt đầu quy trình rửa xe.", booking });
   } catch (error) {
@@ -330,8 +319,14 @@ export const complete = async (req, res) => {
 
     const vehicle = await Vehicle.findOne({ id: completed.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, completed, licensePlate);
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...completed.toObject(),
+        licensePlate
+      });
+    }
 
     // Gửi email hoàn thành dịch vụ
     const user = await User.findOne({ id: completed.userId });
@@ -358,8 +353,14 @@ export const checkout = async (req, res) => {
 
     const vehicle = await Vehicle.findOne({ id: checkedOut.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, checkedOut, licensePlate);
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...checkedOut.toObject(),
+        licensePlate
+      });
+    }
 
     // Gửi email hoàn thành dịch vụ / thanh toán
     const user = await User.findOne({ id: checkedOut.userId });
@@ -392,37 +393,20 @@ export const cancel = async (req, res) => {
       return res.status(403).json({ error: "Bạn không có quyền hủy lịch đặt của người khác." });
     }
 
-    // Không cho phép hủy nếu đơn hàng đã check-in, đang rửa hoặc đã hoàn thành
-    const cantCancelStatuses = ['Waiting', 'In Progress', 'Completed'];
-    if (cantCancelStatuses.includes(booking.status)) {
-      return res.status(400).json({ error: "Lịch đặt đã check-in hoặc đang/đã thực hiện dịch vụ. Không thể hủy và hoàn tiền." });
-    }
-
-    const isPaid = booking.paymentStatus === 'Paid';
-    const isOnline = booking.paymentMethod === 'Online';
-
     await checkBranchAccess(req, bookingId);
     const defaultReason = req.user.role === 'customer' ? 'Khách hàng chủ động hủy lịch.' : 'Nhân viên hủy lịch.';
     const cancelled = await cancelBooking(bookingId, reason || defaultReason, false);
 
-    if (isPaid && isOnline) {
-      cancelled.paymentStatus = 'Refund Pending';
-      await cancelled.save();
-    }
-
-    // Ghi Audit Log nếu đây là đơn đã thanh toán được Admin hủy
-    if (isPaid && req.user.role === 'admin') {
-      await logAdminAction(
-        req,
-        'CANCEL_PAID_BOOKING',
-        `Hủy và yêu cầu hoàn tiền đơn hàng đã thanh toán trước ${bookingId}. Lý do: ${reason || 'Không có lý do cụ thể'}`
-      );
-    }
-
     const vehicle = await Vehicle.findOne({ id: cancelled.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, cancelled, licensePlate);
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...cancelled.toObject(),
+        licensePlate
+      });
+    }
 
     // Gửi email hủy dịch vụ
     const user = await User.findOne({ id: cancelled.userId });
@@ -453,24 +437,24 @@ export const getOccupancy = async (req, res) => {
       timeSlot,
       status: { $nin: ['Cancelled', 'Completed'] }
     });
-
+    
     const dbBays = await Bay.find({ branch, status: 'Active' });
     const BAYS = dbBays.length > 0 ? dbBays.map(b => b.name) : ["Khoang 1", "Khoang 2", "Khoang 3"];
     const bays = [];
-
+    
     for (const bayName of BAYS) {
       const booking = activeBookings.find(b => b.bay === bayName);
       let customerName = 'Ẩn danh';
       let licensePlate = 'N/A';
-
+      
       if (booking) {
         const u = await User.findOne({ id: booking.userId });
         if (u) customerName = u.fullName;
-
+        
         const v = await Vehicle.findOne({ id: booking.vehicleId });
         if (v) licensePlate = v.licensePlate;
       }
-
+      
       bays.push({
         name: bayName,
         occupied: !!booking,
@@ -481,7 +465,7 @@ export const getOccupancy = async (req, res) => {
         } : null
       });
     }
-
+    
     res.json(bays);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -495,15 +479,15 @@ export const getByPlate = async (req, res) => {
       return res.status(400).json({ error: "Biển số xe là bắt buộc." });
     }
     const plateUpper = licensePlate.toUpperCase().trim();
-
+    
     const vehicle = await Vehicle.findOne({ licensePlate: plateUpper });
     if (!vehicle) {
       return res.status(404).json({ error: "Không tìm thấy xe với biển số này trên hệ thống." });
     }
-
+    
     const user = await User.findOne({ id: vehicle.userId });
     const rules = await LoyaltyRules.findOne({});
-
+    
     const todayStr = new Date().toLocaleDateString('sv-SE');
     const bookingQuery = {
       vehicleId: vehicle.id,
@@ -513,46 +497,9 @@ export const getByPlate = async (req, res) => {
     if (req.user.branch) {
       bookingQuery.branch = req.user.branch;
     }
-
-    const bookings = await Booking.find(bookingQuery);
     
-    // Sắp xếp thứ tự ưu tiên hiển thị trên Camera LPR quét biển số:
-    // 1. Confirmed / Pending (Cần check-in / chưa bắt đầu) -> Ưu tiên cao nhất
-    // 2. Waiting / In Progress (Đang chờ hoặc đang rửa) -> Ưu tiên nhì
-    // 3. Completed (Đã hoàn tất rửa xe) -> Ưu tiên thấp nhất
-    // Cùng nhóm trạng thái thì ưu tiên khung giờ sớm hơn
-    const getStatusPriority = (status) => {
-      if (status === 'Confirmed' || status === 'Pending') return 1;
-      if (status === 'Waiting' || status === 'In Progress' || status === 'In_Progress') return 2;
-      if (status === 'Completed') return 3;
-      return 4;
-    };
-
-    bookings.sort((a, b) => {
-      const priA = getStatusPriority(a.status);
-      const priB = getStatusPriority(b.status);
-      if (priA !== priB) return priA - priB;
-
-      const getStartHour = (slot) => {
-        try {
-          return parseInt(slot.split(":")[0], 10);
-        } catch {
-          return 0;
-        }
-      };
-      const hourA = getStartHour(a.timeSlot);
-      const hourB = getStartHour(b.timeSlot);
-
-      // Nếu cả hai đều đã hoàn tất, hiển thị đơn mới nhất trước (giờ muộn nhất)
-      if (priA === 3) {
-        return hourB - hourA;
-      }
-      // Nếu là các đơn sắp diễn ra/đang đợi, hiển thị đơn sớm nhất trước để tiếp đón
-      return hourA - hourB;
-    });
-
-    const booking = bookings[0] || null;
-
+    const booking = await Booking.findOne(bookingQuery);
+    
     res.json({
       booking: booking ? {
         ...booking.toObject(),
@@ -583,7 +530,7 @@ export const validateVoucherEndpoint = async (req, res) => {
     if (!code || !userId || !price) {
       return res.status(400).json({ error: "Thiếu mã voucher, userId hoặc số tiền hóa đơn." });
     }
-
+    
     const voucher = await Voucher.findOne({ code: code.toUpperCase() });
     if (!voucher) {
       return res.status(404).json({ error: "Mã giảm giá không tồn tại." });
@@ -594,16 +541,16 @@ export const validateVoucherEndpoint = async (req, res) => {
     if (new Date(voucher.expiryDate) < new Date()) {
       return res.status(400).json({ error: "Mã giảm giá đã hết hạn sử dụng." });
     }
-
+    
     const user = await User.findOne({ id: userId });
     if (!user) {
       return res.status(404).json({ error: "Không tìm thấy thông tin người dùng." });
     }
-    if (voucher.pointsRequired > 0 || voucher.code.toUpperCase().startsWith('RW-')) {
+    if (voucher.pointsRequired > 0) {
       const userVoucher = await UserVoucher.findOne({
         userId: user.id,
-        voucherCode: voucher.code,
-        isUsed: false
+        voucherId: voucher._id,
+        status: 'Available'
       });
       if (!userVoucher) {
         return res.status(400).json({ error: "Bạn chưa sở hữu mã giảm giá này. Vui lòng đổi bằng điểm tích lũy trước." });
@@ -612,12 +559,12 @@ export const validateVoucherEndpoint = async (req, res) => {
     if (!voucher.targetTiers.includes(user.loyaltyTier)) {
       return res.status(400).json({ error: `Mã này chỉ áp dụng cho các hạng thành viên: ${voucher.targetTiers.join(', ')}.` });
     }
-
+    
     const parsedPrice = Number(price);
     if (parsedPrice < voucher.minSpent) {
       return res.status(400).json({ error: `Giá trị hóa đơn tối thiểu để áp dụng mã này là ${voucher.minSpent.toLocaleString('vi-VN')} đ.` });
     }
-
+    
     // Tính số tiền giảm giá
     let discount = 0;
     if (voucher.discountVnd) {
@@ -625,7 +572,7 @@ export const validateVoucherEndpoint = async (req, res) => {
     } else if (voucher.discountPercent) {
       discount = Math.floor(parsedPrice * (voucher.discountPercent / 100));
     }
-
+    
     res.json({ valid: true, discount, voucher });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -654,9 +601,12 @@ export const submitFeedback = async (req, res) => {
     booking.feedbackCreatedAt = new Date();
 
     await booking.save();
-
+    
     // Gửi Socket
-    emitBookingUpdated(req, booking);
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', booking.toObject());
+    }
 
     res.json({ message: "Cảm ơn bạn đã gửi đánh giá phản hồi!", booking });
   } catch (err) {
@@ -667,7 +617,7 @@ export const submitFeedback = async (req, res) => {
 export const getBookingDetail = async (req, res) => {
   try {
     const bookingId = req.params.id;
-
+    
     // Tìm kiếm không phân biệt hoa thường
     const normalizedId = bookingId.toLowerCase().trim();
     const booking = await Booking.findOne({ id: normalizedId });
@@ -712,30 +662,21 @@ export const listActiveVouchers = async (req, res) => {
     }
     const loyaltyTier = user.loyaltyTier || 'Member';
     const today = new Date().toLocaleDateString('sv-SE');
-
-    const userVouchers = await UserVoucher.find({ userId: user.id, isUsed: false });
-    const ownedVoucherCodes = userVouchers.map(uv => uv.voucherCode);
-
+    
+    const userVouchers = await UserVoucher.find({ userId: user.id, status: 'Available' });
+    const ownedVoucherIds = userVouchers.map(uv => uv.voucherId);
+    
     const vouchers = await Voucher.find({
       isActive: true,
       expiryDate: { $gte: today },
       targetTiers: loyaltyTier,
       $or: [
-        // 1. Voucher hệ thống: không bắt đầu bằng 'RW-' và pointsRequired là 0 hoặc không có
-        {
-          code: { $not: /^RW-/i },
-          $or: [
-            { pointsRequired: { $exists: false } },
-            { pointsRequired: 0 }
-          ]
-        },
-        // 2. Voucher đổi điểm: mã nằm trong danh sách voucher người dùng đang sở hữu
-        {
-          code: { $in: ownedVoucherCodes }
-        }
+        { pointsRequired: { $exists: false } },
+        { pointsRequired: 0 },
+        { _id: { $in: ownedVoucherIds } }
       ]
     });
-
+    
     res.json(vouchers);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -768,11 +709,19 @@ export const payBooking = async (req, res) => {
     booking.status = 'Confirmed'; // Automatically confirm booking upon payment
     await booking.save();
 
-    const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
-    emitBookingUpdated(req, booking, vehicle ? vehicle.licensePlate : 'N/A');
+    // Notify updates via Socket.io
+    const io = req.app.get('io');
+    if (io) {
+      const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate: vehicle ? vehicle.licensePlate : 'N/A'
+      });
+    }
 
     // Gửi email xác nhận thanh toán
     const user = await User.findOne({ id: booking.userId });
+    const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
     if (user && user.email && vehicle) {
       const emailHtml = getBookingConfirmationTemplate(booking, user, vehicle);
       sendEmail({
@@ -795,23 +744,29 @@ export const assignBay = async (req, res) => {
     if (!bookingId) {
       return res.status(400).json({ error: "Thiếu thông tin bookingId." });
     }
-
+    
     await checkBranchAccess(req, bookingId);
-
+    
     const booking = await Booking.findOne({ id: bookingId });
     if (!booking) {
       return res.status(404).json({ error: "Không tìm thấy lịch đặt xe này." });
     }
-
+    
     booking.bay = bayId || '';
     booking.assignedBay = bayId || null;
     await booking.save();
-
+    
     const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, booking, licensePlate);
-
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
+    
     res.json({ message: "Gán khoang rửa xe thành công.", booking });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -894,7 +849,7 @@ export const createWalkInBooking = async (req, res) => {
     // 3. Tạo Booking với status 'Waiting' và bay = "" (đưa thẳng vào hàng đợi)
     const dbBays = await Bay.find({ branch: branchName, status: 'Active' });
     const BAYS = dbBays.length > 0 ? dbBays.map(b => b.name) : ["Khoang 1", "Khoang 2", "Khoang 3"];
-
+    
     // Lấy timeslot từ request hoặc tự động tính theo giờ hiện tại
     const getCurrentTimeSlot = () => {
       const hr = new Date().getHours();
@@ -962,7 +917,13 @@ export const createWalkInBooking = async (req, res) => {
 
     await newBooking.save();
 
-    emitBookingUpdated(req, newBooking, plateUpper);
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...newBooking.toObject(),
+        licensePlate: plateUpper
+      });
+    }
 
     res.status(201).json({ message: "Tạo lịch vãng lai thành công. Đơn hàng đã được đưa vào hàng đợi.", booking: newBooking });
   } catch (error) {
@@ -1014,7 +975,6 @@ export const redeemVoucher = async (req, res) => {
       minSpent: template.minSpent,
       targetTiers: ['Member', 'Silver', 'Gold', 'Platinum'],
       isActive: true,
-      pointsRequired: template.points,
       expiryDate
     });
     await newVoucher.save();
@@ -1062,7 +1022,7 @@ export const undoCheckin = async (req, res) => {
     if (booking.status !== 'Waiting') {
       return res.status(400).json({ error: "Chỉ có thể hoàn tác check-in cho đơn hàng đang chờ rửa." });
     }
-
+    
     booking.status = 'Confirmed';
     booking.checkInTime = null; // Xóa giờ check-in
     booking.bay = ""; // Xóa khoang
@@ -1070,8 +1030,14 @@ export const undoCheckin = async (req, res) => {
 
     const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-
-    emitBookingUpdated(req, booking, licensePlate);
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
 
     res.json({ message: "Hoàn tác check-in thành công. Đơn hàng đã quay lại trạng thái 'Đã xác nhận'.", booking });
   } catch (error) {
@@ -1106,34 +1072,6 @@ export const listMyVouchers = async (req, res) => {
   }
 };
 
-export const listMyUsedVouchers = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const userVouchers = await UserVoucher.find({ userId, isUsed: true });
-
-    const codes = userVouchers.map(uv => uv.voucherCode);
-    const vouchers = await Voucher.find({ code: { $in: codes } });
-
-    const result = userVouchers.map(uv => {
-      const v = vouchers.find(item => item.code === uv.voucherCode);
-      return {
-        id: uv.id,
-        voucherCode: uv.voucherCode,
-        redeemedAt: uv.redeemedAt,
-        usedAt: uv.usedAt,
-        expiryDate: uv.expiryDate,
-        discountVnd: v ? v.discountVnd : 0,
-        discountPercent: v ? v.discountPercent : 0,
-        minSpent: v ? v.minSpent : 0
-      };
-    });
-
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
 export const assignStaff = async (req, res) => {
   try {
     const { staffId } = req.body; // id nhân viên hoặc null/empty để hủy gán
@@ -1161,7 +1099,13 @@ export const assignStaff = async (req, res) => {
     const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
     const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
 
-    emitBookingUpdated(req, booking, licensePlate);
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('booking_updated', {
+        ...booking.toObject(),
+        licensePlate
+      });
+    }
 
     res.json({ message: "Gán nhân viên phụ trách thành công.", booking });
   } catch (error) {
@@ -1180,215 +1124,6 @@ export const listStaffForAssignment = async (req, res) => {
     res.json(staffs);
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-};
-
-// ==========================================
-// VNPAY INTEGRATION ENDPOINTS
-// ==========================================
-
-export const vnpayIpn = async (req, res) => {
-  try {
-    const queryParams = req.query;
-    const secretKey = process.env.VNP_HASH_SECRET || 'UZDGBNCOWVHUXWDVJPRWUXZFTJYZXMXP';
-
-    // 1. Verify response signature
-    const isValidSignature = verifyResponse(queryParams, secretKey);
-    if (!isValidSignature) {
-      return res.status(200).json({ RspCode: '97', Message: 'Invalid signature' });
-    }
-
-    const bookingId = queryParams['vnp_TxnRef'];
-    const vnpAmount = Number(queryParams['vnp_Amount']) / 100; // VNPay amount * 100
-    const vnpResponseCode = queryParams['vnp_ResponseCode'];
-    const vnpTransactionNo = queryParams['vnp_TransactionNo'];
-    const vnpPayDate = queryParams['vnp_PayDate'];
-
-    // 2. Check if booking exists
-    const booking = await Booking.findOne({ id: bookingId });
-    if (!booking) {
-      return res.status(200).json({ RspCode: '01', Message: 'Order not found' });
-    }
-
-    // 3. Check if amount matches
-    if (booking.totalPaid !== vnpAmount) {
-      return res.status(200).json({ RspCode: '04', Message: 'Amount mismatch' });
-    }
-
-    // 4. Check if order status is pending
-    if (booking.paymentStatus === 'Paid') {
-      return res.status(200).json({ RspCode: '02', Message: 'Order already confirmed' });
-    }
-
-    // 5. Update booking status
-    if (vnpResponseCode === '00') {
-      // Payment success
-      booking.paymentStatus = 'Paid';
-      booking.status = 'Confirmed';
-      booking.vnpTransactionNo = vnpTransactionNo;
-      booking.vnpPayDate = vnpPayDate;
-      await booking.save();
-
-      const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
-      const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-      emitBookingUpdated(req, booking, licensePlate);
-
-      // Send email confirmation
-      const user = await User.findOne({ id: booking.userId });
-      if (user && user.email && vehicle) {
-        const emailHtml = getBookingConfirmationTemplate(booking, user, vehicle);
-        sendEmail({
-          to: user.email,
-          subject: `[AutoWash Pro] Hóa đơn xác nhận thanh toán lịch hẹn ${booking.id}`,
-          html: emailHtml
-        }).catch(err => console.error("Error sending booking payment confirmation email from IPN:", err));
-      }
-    }
-
-    return res.status(200).json({ RspCode: '00', Message: 'Confirm success' });
-  } catch (error) {
-    console.error("Error processing VNPay IPN:", error);
-    return res.status(200).json({ RspCode: '99', Message: 'Unknown error: ' + error.message });
-  }
-};
-
-export const vnpayVerify = async (req, res) => {
-  try {
-    const queryParams = req.query;
-    const secretKey = process.env.VNP_HASH_SECRET || 'UZDGBNCOWVHUXWDVJPRWUXZFTJYZXMXP';
-
-    const isValidSignature = verifyResponse(queryParams, secretKey);
-    if (!isValidSignature) {
-      return res.status(400).json({ error: 'Chữ ký giao dịch không hợp lệ.' });
-    }
-
-    const bookingId = queryParams['vnp_TxnRef'];
-    const vnpResponseCode = queryParams['vnp_ResponseCode'];
-    const vnpTransactionNo = queryParams['vnp_TransactionNo'];
-    const vnpPayDate = queryParams['vnp_PayDate'];
-
-    const booking = await Booking.findOne({ id: bookingId });
-    if (!booking) {
-      return res.status(404).json({ error: 'Không tìm thấy lịch đặt xe này.' });
-    }
-
-    if (vnpResponseCode === '00') {
-      if (booking.paymentStatus !== 'Paid') {
-        booking.paymentStatus = 'Paid';
-        booking.status = 'Confirmed';
-        booking.vnpTransactionNo = vnpTransactionNo;
-        booking.vnpPayDate = vnpPayDate;
-        await booking.save();
-
-        const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
-        const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-        emitBookingUpdated(req, booking, licensePlate);
-
-        // Send email
-        const user = await User.findOne({ id: booking.userId });
-        if (user && user.email && vehicle) {
-          const emailHtml = getBookingConfirmationTemplate(booking, user, vehicle);
-          sendEmail({
-            to: user.email,
-            subject: `[AutoWash Pro] Hóa đơn xác nhận thanh toán lịch hẹn ${booking.id}`,
-            html: emailHtml
-          }).catch(err => console.error("Error sending booking email from Verify:", err));
-        }
-      }
-      return res.json({ message: 'Thanh toán thành công qua VNPay!', booking });
-    } else {
-      return res.status(400).json({ error: 'Giao dịch thanh toán không thành công hoặc đã bị hủy từ phía khách hàng.' });
-    }
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-};
-
-export const refundBooking = async (req, res) => {
-  try {
-    const bookingId = req.params.id;
-    const booking = await Booking.findOne({ id: bookingId });
-    if (!booking) {
-      return res.status(404).json({ error: "Không tìm thấy lịch đặt xe." });
-    }
-
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: "Bạn không có quyền thực hiện hoàn tiền." });
-    }
-
-    if (booking.paymentStatus !== 'Refund Pending') {
-      return res.status(400).json({ error: "Đơn hàng này không ở trạng thái Chờ hoàn tiền." });
-    }
-
-    // Call VNPay Refund API
-    let refundResult;
-    let isFallback = false;
-    
-    try {
-      refundResult = await callRefundApi(booking, req.user, req);
-      console.log("VNPay Refund API response:", refundResult);
-      
-      if (refundResult && refundResult.vnp_ResponseCode !== '00') {
-        console.warn(`VNPay Refund API failed with ResponseCode ${refundResult.vnp_ResponseCode}. Triggering fallback...`);
-        isFallback = true;
-      }
-    } catch (err) {
-      console.error("VNPAY Refund API call threw error. Triggering fallback...", err);
-      isFallback = true;
-    }
-
-    // Update payment status to Refunded
-    booking.paymentStatus = 'Refunded';
-    await booking.save();
-
-    // Log the refund action
-    await logAdminAction(
-      req,
-      'APPROVE_REFUND',
-      `Duyệt hoàn tiền cho lịch đặt ${bookingId}.${isFallback ? ' (Bằng cơ chế giả lập/Fallback)' : ' (Qua cổng VNPay thành công)'}`
-    );
-
-    const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
-    const licensePlate = vehicle ? vehicle.licensePlate : 'N/A';
-    emitBookingUpdated(req, booking, licensePlate);
-
-    // Send status update email to customer
-    const user = await User.findOne({ id: booking.userId });
-    if (user && user.email && vehicle) {
-      const emailHtml = getBookingStatusUpdateTemplate(booking, user, vehicle, 'cancelled');
-      sendEmail({
-        to: user.email,
-        subject: `[AutoWash Pro] Lịch hẹn rửa xe ${booking.id} đã hoàn tất thủ tục hoàn tiền`,
-        html: emailHtml
-      }).catch(err => console.error("Error sending refund email:", err));
-    }
-
-    res.json({
-      message: isFallback
-        ? "Đã duyệt hoàn tiền thành công! (Chế độ giả lập do tài khoản Sandbox hạn chế quyền API Refund)"
-        : "Đã duyệt hoàn tiền thành công qua cổng thanh toán VNPay!",
-      booking
-    });
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-export const getPaymentUrlForExistingBooking = async (req, res) => {
-  try {
-    const booking = await Booking.findOne({ id: req.params.id });
-    if (!booking) {
-      return res.status(404).json({ error: "Không tìm thấy lịch đặt xe này." });
-    }
-    if (booking.paymentStatus === 'Paid') {
-      return res.status(400).json({ error: "Lịch đặt này đã được thanh toán." });
-    }
-
-    const paymentUrl = createPaymentUrl(booking.id, booking.totalPaid, req);
-    res.json({ paymentUrl });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 };
 
