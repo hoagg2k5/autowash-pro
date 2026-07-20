@@ -218,12 +218,9 @@ export default function CustomerDashboard({ user, onLogout }) {
             showAddFormDefault={showAddVehicleForm}
             onCloseForm={() => setShowAddVehicleForm(false)}
           />
-        </div>
       </div>
-
-
-
-
     </div>
+  </div>
+</div>
   );
 }
