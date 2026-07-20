@@ -168,22 +168,6 @@ export default function CustomerDashboard({ user, onLogout }) {
       </header>
 
       <div className="container mx-auto px-4">
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '1.05rem',
-            fontWeight: 700,
-            padding: '0.5rem 1rem',
-            cursor: 'pointer',
-            color: activeTab === 'rewards' ? 'var(--primary)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'rewards' ? '3px solid var(--primary)' : '3px solid transparent',
-            marginBottom: '-0.7rem',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          🎁 Kho Đổi Thưởng
-        </button>
-      </div>
 
       <div className="dashboard-grid">
         {/* Main Section: Booking Panel & History list / Rewards Shop */}
