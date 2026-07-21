@@ -13,7 +13,7 @@ export default function BookingStep3({
   redeemPoints,
   setRedeemPoints,
   loadingVouchers,
-  availableVouchers = [],
+  availableVouchers,
   promoCode,
   setPromoCode,
   applyVoucherCode,
@@ -57,53 +57,46 @@ export default function BookingStep3({
   }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      
+    <form onSubmit={handleSubmit}>
       {/* Booking Summary Box */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur-md">
-        <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-          <span>📋</span> TÓM TẮT THÔNG TIN ĐẶT LỊCH
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-300">
-          <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-850">
-            <span className="text-xs text-slate-500 block mb-1">Phương tiện rửa:</span>
-            <strong className="text-white text-sm">
-              {currentVehicleObj ? `${currentVehicleObj.licensePlate} (${currentVehicleObj.brand || ''} ${currentVehicleObj.model || ''})` : 'Chưa chọn'}
-            </strong>
+      <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+        <h4 style={{ color: 'var(--primary)', marginBottom: '0.75rem', fontSize: '0.95rem' }}>📋 TÓM TẮT THÔNG TIN ĐẶT LỊCH</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
+          <div>
+            <span style={{ color: 'var(--text-muted)' }}>Xe rửa:</span><br />
+            <strong>{currentVehicleObj ? `${currentVehicleObj.licensePlate} (${currentVehicleObj.brand} ${currentVehicleObj.model})` : 'Chưa rõ'}</strong>
           </div>
-          <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-850">
-            <span className="text-xs text-slate-500 block mb-1">Chi nhánh:</span>
-            <strong className="text-white text-sm">{selectedBranch}</strong>
+          <div>
+            <span style={{ color: 'var(--text-muted)' }}>Chi nhánh:</span><br />
+            <strong>{selectedBranch}</strong>
           </div>
-          <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-850">
-            <span className="text-xs text-slate-500 block mb-1">Thời gian hẹn:</span>
-            <strong className="text-white text-sm">{bookingDate} ({selectedSlot})</strong>
+          <div>
+            <span style={{ color: 'var(--text-muted)' }}>Thời gian hẹn:</span><br />
+            <strong>{bookingDate} ({selectedSlot})</strong>
           </div>
-          <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-850">
-            <span className="text-xs text-slate-500 block mb-1">Khoang rửa chỉ định:</span>
-            <strong className="text-cyan-400 text-sm">
-              {selectedBay ? `Khoang ${selectedBay}` : 'Chờ xếp khoang làm việc'}
-            </strong>
+          <div>
+            <span style={{ color: 'var(--text-muted)' }}>Khoang rửa:</span><br />
+            <strong style={{ color: 'var(--primary)' }}>Đang chờ xếp</strong>
           </div>
-          <div className="col-span-1 sm:col-span-2 bg-slate-950/60 p-3.5 rounded-xl border border-slate-850">
-            <span className="text-xs text-slate-500 block mb-1">Gói dịch vụ đã chọn:</span>
-            <strong className="text-white text-sm">Gói {selectedPackage}</strong>
+          <div style={{ gridColumn: 'span 2' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Gói dịch vụ:</span><br />
+            <strong>Gói {selectedPackage}</strong>
           </div>
         </div>
       </div>
 
+
+
       {/* Available Vouchers Selector */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur-md">
-        <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-          <span>🎟️</span> VOUCHER ƯU ĐÃI CỦA BẠN
-        </h4>
+      <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🎟️ Voucher Ưu Đãi Của Bạn</h4>
         
         {fetchingVouchers ? (
-          <p className="text-xs text-slate-400 animate-pulse">Đang tải danh sách voucher khả dụng...</p>
-        ) : availableVouchers.length === 0 ? (
-          <p className="text-xs text-slate-500 py-2">Hiện tài khoản chưa tích lũy voucher giảm giá nào.</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Đang tải danh sách voucher...</p>
+        ) : myVouchers.length === 0 ? (
+          <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0 }}>Hiện chưa có voucher nào</p>
         ) : (
-          <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '180px', overflowY: 'auto', marginBottom: '1rem', paddingRight: '0.25rem' }}>
             {availableVouchers.map(v => {
               const isApplied = promoCode === v.voucherCode;
               
@@ -117,7 +110,9 @@ export default function BookingStep3({
                 <div 
                   key={v.voucherCode}
                   onClick={() => {
-                    if (!meetsMinSpent) return;
+                    if (!meetsMinSpent) {
+                      return;
+                    }
                     if (isApplied) {
                       setPromoCode('');
                       applyVoucherCode('');
@@ -126,40 +121,69 @@ export default function BookingStep3({
                       applyVoucherCode(v.voucherCode);
                     }
                   }}
-                  className={`relative overflow-hidden p-4 rounded-xl border-2 border-dashed flex justify-between items-center transition-all duration-300 ${
-                    isApplied 
-                      ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' 
-                      : meetsMinSpent
-                      ? 'bg-slate-950/60 border-slate-850 hover:border-slate-700 text-slate-300 cursor-pointer'
-                      : 'bg-slate-950/20 border-slate-900 text-slate-600 cursor-not-allowed'
-                  }`}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    border: `1.5px dashed ${isApplied ? '#10b981' : 'var(--border-color)'}`,
+                    borderLeft: `5px solid ${isApplied ? '#10b981' : meetsMinSpent ? 'var(--primary)' : '#ef4444'}`,
+                    background: isApplied ? 'rgba(16, 185, 129, 0.05)' : meetsMinSpent ? 'var(--bg-card)' : 'var(--bg-secondary)',
+                    cursor: meetsMinSpent ? 'pointer' : 'not-allowed',
+                    opacity: meetsMinSpent ? 1 : 0.65,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isApplied ? '0 0 10px rgba(16, 185, 129, 0.15)' : 'none'
+                  }}
                 >
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <code className={`font-mono text-sm font-extrabold px-2 py-0.5 rounded ${isApplied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-900 text-cyan-400'}`}>
-                        {v.voucherCode}
-                      </code>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isApplied ? 'bg-emerald-500 text-white' : 'bg-cyan-500/10 text-cyan-400'}`}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <code style={{ fontSize: '0.9rem', color: isApplied ? '#10b981' : 'var(--primary)', fontWeight: 'bold' }}>{v.voucherCode}</code>
+                      <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: isApplied ? '#10b981' : 'var(--border-color)', color: isApplied ? '#fff' : 'var(--primary)', fontWeight: 600 }}>
                         {valText}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500">
-                      Hạn: {v.expiryDate} {v.minSpent > 0 && `• Đơn tối thiểu: ${formatVnd(v.minSpent)}`}
+                    <div className="text-xs" style={{ color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      HSD: {v.expiryDate} {v.minSpent > 0 && `| Tối thiểu: ${formatVnd(v.minSpent)}`}
                     </div>
                   </div>
                   
                   <div>
                     {isApplied ? (
-                      <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-black shadow">
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: '#10b981', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
                         ✓ Đang Áp Dụng
                       </span>
                     ) : meetsMinSpent ? (
-                      <span className="px-3 py-1 rounded-full bg-cyan-500/10 hover:bg-cyan-500 hover:text-white border border-cyan-500/30 text-cyan-400 text-xs font-bold transition-all">
-                        Sử dụng
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: 'var(--primary)', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        Dùng Mã
                       </span>
                     ) : (
-                      <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold">
-                        Thiếu {formatVnd(v.minSpent - (estimate?.price || 0))}
+                      <span style={{ 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '20px', 
+                        background: '#ef4444', 
+                        color: '#ffffff', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold',
+                        display: 'inline-block'
+                      }}>
+                        Chưa Đủ HĐ
                       </span>
                     )}
                   </div>
@@ -169,83 +193,90 @@ export default function BookingStep3({
           </div>
         )}
         
-        {voucherError && <div className="mt-2 text-xs font-semibold text-red-400">❌ {voucherError}</div>}
-        {voucherSuccess && <div className="mt-2 text-xs font-semibold text-emerald-400">✓ {voucherSuccess}</div>}
+        {voucherError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>❌ {voucherError}</div>}
+        {voucherSuccess && <div style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>✓ {voucherSuccess}</div>}
       </div>
 
       {/* Payment Method Selection */}
-      <div className="space-y-3">
-        <label className="text-sm font-bold text-slate-300 block">Chọn Phương Thức Thanh Toán *</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="form-group" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+        <label style={{ fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>Chọn Phương Thức Thanh Toán *</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div
             onClick={() => setPaymentMethod('Cash')}
-            className={`p-4 rounded-2xl border cursor-pointer flex flex-col items-center justify-center gap-2 text-center transition-all duration-300 ${
-              paymentMethod === 'Cash'
-                ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-lg shadow-cyan-500/5'
-                : 'bg-slate-900/40 border-slate-850 text-slate-400 hover:border-slate-800 hover:bg-slate-900/80'
-            }`}
+            style={{
+              padding: '1rem',
+              borderRadius: '10px',
+              border: `1.5px solid ${paymentMethod === 'Cash' ? 'var(--primary)' : 'var(--border-color)'}`,
+              background: paymentMethod === 'Cash' ? 'var(--secondary-glow)' : 'var(--bg-card)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.25rem',
+              transition: 'all 0.2s ease',
+              boxShadow: paymentMethod === 'Cash' ? '0 0 10px var(--primary-glow)' : 'none'
+            }}
           >
-            <span className="text-2xl">💵</span>
-            <span className="font-extrabold text-sm text-white">Thanh toán trực tiếp</span>
-            <span className="text-[10px] text-slate-500">Thanh toán bằng tiền mặt/quẹt thẻ tại quầy sau khi rửa xong</span>
+            <span style={{ fontSize: '1.5rem' }}>💵</span>
+            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>Tiền mặt</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>Thanh toán tại quầy sau khi rửa</span>
           </div>
 
           <div
             onClick={() => setPaymentMethod('Online')}
-            className={`p-4 rounded-2xl border cursor-pointer flex flex-col items-center justify-center gap-2 text-center transition-all duration-300 ${
-              paymentMethod === 'Online'
-                ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-lg shadow-cyan-500/5'
-                : 'bg-slate-900/40 border-slate-850 text-slate-400 hover:border-slate-800 hover:bg-slate-900/80'
-            }`}
+            style={{
+              padding: '1rem',
+              borderRadius: '10px',
+              border: `1.5px solid ${paymentMethod === 'Online' ? 'var(--primary)' : 'var(--border-color)'}`,
+              background: paymentMethod === 'Online' ? 'var(--secondary-glow)' : 'var(--bg-card)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.25rem',
+              transition: 'all 0.2s ease',
+              boxShadow: paymentMethod === 'Online' ? '0 0 10px var(--primary-glow)' : 'none'
+            }}
           >
-            <span className="text-2xl">📱</span>
-            <span className="font-extrabold text-sm text-white">Chuyển khoản Online</span>
-            <span className="text-[10px] text-slate-500">Quét mã QR (VietQR / MoMo) chuyển khoản nhanh nhận xe</span>
+            <span style={{ fontSize: '1.5rem' }}>📱</span>
+            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>Chuyển khoản Online</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>Quét mã QR VietQR / MoMo nhận ngay</span>
           </div>
         </div>
       </div>
 
       {/* Receipt Panel */}
-      <div className="bg-slate-950/80 border border-slate-900 rounded-2xl p-5 space-y-3.5">
-        <div className="flex justify-between items-center text-sm text-slate-400">
+      <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+        <div className="flex-between text-sm" style={{ marginBottom: '0.4rem' }}>
           <span>Giá dịch vụ gốc:</span>
-          <span className="font-bold text-white">{formatVnd(estimate?.price || 0)}</span>
+          <span style={{ fontWeight: 600 }}>{formatVnd(estimate?.price || 0)}</span>
         </div>
         {(estimate?.discount || 0) > 0 && (
-          <div className="flex justify-between items-center text-sm text-red-400">
-            <span>Ưu đãi giảm giá (Hội viên / Voucher):</span>
-            <span className="font-bold">-{formatVnd(estimate.discount)}</span>
+          <div className="flex-between text-sm" style={{ color: '#ef4444', marginBottom: '0.4rem' }}>
+            <span>Ưu đãi giảm giá (Hạng hội viên / Voucher):</span>
+            <span style={{ fontWeight: 600 }}>-{formatVnd(estimate.discount)}</span>
           </div>
         )}
-        <div className="border-t border-slate-900 pt-3.5 flex justify-between items-center">
-          <span className="text-sm text-slate-200 font-bold">Thực Tế Thanh Toán ({paymentMethod === 'Online' ? 'chuyển khoản' : 'tại quầy'}):</span>
-          <span className="text-2xl font-black text-cyan-400 tracking-wide">{formatVnd(estimate?.total || 0)}</span>
+        <div className="flex-between" style={{ borderTop: '1px solid var(--border-color)', marginTop: '0.5rem', paddingTop: '0.5rem', fontWeight: 700 }}>
+          <span>Thực Tế Thanh Toán ({paymentMethod === 'Online' ? 'chuyển khoản' : 'tại quầy'}):</span>
+          <span style={{ color: 'var(--primary)', fontSize: '1.3rem' }}>{formatVnd(estimate?.total || 0)}</span>
         </div>
-        <div className="flex justify-between items-center text-xs text-emerald-400 font-bold bg-emerald-500/5 px-3 py-2 rounded-lg border border-emerald-500/10">
-          <span>Tích lũy điểm nhận được (Hệ số x{rules?.tierSettings?.[dbUser?.loyaltyTier]?.pointMultiplier || 1}):</span>
-          <span>+{estimate?.pointsEarned || 0} pts</span>
+        <div className="flex-between text-xs" style={{ color: 'var(--status-completed)', marginTop: '0.25rem', fontWeight: 600 }}>
+          <span>Tích lũy điểm khi hoàn tất (x{rules?.tierSettings[dbUser?.loyaltyTier]?.pointMultiplier || 1}):</span>
+          <span>+{estimate?.pointsEarned || 0} điểm</span>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-between items-center gap-4 pt-4 border-t border-slate-900">
-        <button 
-          type="button" 
-          className="px-5 py-2.5 bg-slate-900 border border-slate-800 text-slate-300 font-bold rounded-xl text-sm hover:bg-slate-800 transition-colors"
-          onClick={prevStep} 
-          disabled={loading}
-        >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+        <button type="button" className="btn btn-secondary" onClick={prevStep} disabled={loading}>
           ⮌ Quay Lại
         </button>
-        <button 
-          type="submit" 
-          className="flex-1 px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-95 text-white font-extrabold rounded-xl text-sm shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
-          disabled={loading}
-        >
+        <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
           {loading ? 'Đang gửi thông tin...' : paymentMethod === 'Online' ? '⚡ Đi Đến Thanh Toán ➔' : '✓ Xác Nhận & Đặt Lịch'}
         </button>
       </div>
-
     </form>
   );
 }
