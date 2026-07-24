@@ -9,7 +9,7 @@ router.use(authenticateToken);
 
 router.get('/', listBays);
 router.post('/', requireRole(['admin']), createBay);
-router.put('/:id', requireRole(['admin']), updateBay);
+router.put('/:id', requireRole(['admin', 'staff']), updateBay);
 router.delete('/:id', requireRole(['admin']), deleteBay);
 
 export default router;

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   User, 
   Bell, 
@@ -22,15 +22,36 @@ import VehicleManager from './VehicleManager.jsx';
 import PointsHistoryTab from './PointsHistoryTab.jsx';
 import BookingHistoryTab from './BookingHistoryTab.jsx';
 import { io } from 'socket.io-client';
-
 export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('tab') === 'vouchers' ? 'khovoucher' : 'hoso';
+    const tab = params.get('tab');
+    if (tab === 'vouchers') return 'khovoucher';
+    if (tab === 'xecuatoi' || tab === 'vehicles') return 'xecuatoi';
+    if (tab === 'orders') return 'donmua';
+    if (tab === 'password') return 'doimatkhau';
+    if (tab === 'notifications') return 'caidat';
+    if (tab === 'rewards') return 'diemthuong';
+    if (tab === 'profile') return 'hoso';
+    return 'hoso';
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'vouchers') setActiveTab('khovoucher');
+    else if (tab === 'xecuatoi' || tab === 'vehicles') setActiveTab('xecuatoi');
+    else if (tab === 'orders') setActiveTab('donmua');
+    else if (tab === 'password') setActiveTab('doimatkhau');
+    else if (tab === 'notifications') setActiveTab('caidat');
+    else if (tab === 'rewards') setActiveTab('diemthuong');
+    else if (tab === 'profile') setActiveTab('hoso');
+    else setActiveTab('hoso');
+  }, [location.search]);
   
   const [dbUser, setDbUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -82,6 +103,9 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
             dateOfBirth: data.user.dateOfBirth || '',
             avatar: data.user.avatar || ''
           });
+          if (onUpdateUser) {
+            onUpdateUser(data.user);
+          }
         }
       }
     } catch (err) {
@@ -131,15 +155,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
     };
   }, [user.id]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
-    if (tabParam === 'vouchers') {
-      setActiveTab('khovoucher');
-    } else if (tabParam === 'orders') {
-      setActiveTab('donmua');
-    }
-  }, [window.location.search]);
+
 
   const handleCancelBooking = async (bookingId, reason) => {
     try {
@@ -162,6 +178,43 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
     }
   };
 
+  const saveAvatarDirectly = async (base64Avatar) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/customers/${user.id}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        },
+        body: JSON.stringify({
+          fullName: profile.fullName,
+          email: profile.email,
+          phone: profile.phone,
+          gender: profile.gender,
+          dateOfBirth: profile.dateOfBirth,
+          avatar: base64Avatar
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Không thể cập nhật ảnh đại diện.");
+      }
+
+      toast.success("Cập nhật ảnh đại diện thành công!");
+      setProfile(prev => ({ ...prev, avatar: base64Avatar }));
+
+      if (onUpdateUser && data.user) {
+        onUpdateUser(data.user);
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -178,7 +231,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setProfile(prev => ({ ...prev, avatar: reader.result }));
+      saveAvatarDirectly(reader.result);
     };
     reader.readAsDataURL(file);
   };
@@ -292,7 +345,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
             <div className="flex flex-col min-w-0">
               <strong className="text-sm text-slate-800 dark:text-slate-200 truncate">{profile.fullName || user.fullName}</strong>
               <button 
-                onClick={() => { setActiveTab('hoso'); }}
+                onClick={() => navigate('/customer/profile?tab=profile')}
                 className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center gap-1 mt-0.5 border-none bg-transparent cursor-pointer p-0"
               >
                 <Pencil className="w-3 h-3 text-slate-400" /> Sửa Hồ Sơ
@@ -324,7 +377,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
               {isAccountExpanded && (
                 <div className="pl-9 flex flex-col gap-0.5 mt-0.5">
                   <button
-                    onClick={() => setActiveTab('hoso')}
+                    onClick={() => navigate('/customer/profile?tab=profile')}
                     className={`text-xs py-1.5 text-left border-none bg-transparent cursor-pointer transition-all ${
                       activeTab === 'hoso' ? 'text-[#ee4d2d] font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#ee4d2d]'
                     }`}
@@ -332,7 +385,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
                     Hồ Sơ
                   </button>
                   <button
-                    onClick={() => setActiveTab('doimatkhau')}
+                    onClick={() => navigate('/customer/profile?tab=password')}
                     className={`text-xs py-1.5 text-left border-none bg-transparent cursor-pointer transition-all ${
                       activeTab === 'doimatkhau' ? 'text-[#ee4d2d] font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#ee4d2d]'
                     }`}
@@ -340,7 +393,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
                     Đổi Mật Khẩu
                   </button>
                   <button
-                    onClick={() => setActiveTab('caidat')}
+                    onClick={() => navigate('/customer/profile?tab=notifications')}
                     className={`text-xs py-1.5 text-left border-none bg-transparent cursor-pointer transition-all ${
                       activeTab === 'caidat' ? 'text-[#ee4d2d] font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#ee4d2d]'
                     }`}
@@ -348,7 +401,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
                     Cài Đặt Thông Báo
                   </button>
                   <button
-                    onClick={() => setActiveTab('xecuatoi')}
+                    onClick={() => navigate('/customer/profile?tab=vehicles')}
                     className={`text-xs py-1.5 text-left border-none bg-transparent cursor-pointer transition-all ${
                       activeTab === 'xecuatoi' ? 'text-[#ee4d2d] font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#ee4d2d]'
                     }`}
@@ -360,7 +413,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
             </div>
 
             <button
-              onClick={() => setActiveTab('donmua')}
+              onClick={() => navigate('/customer/profile?tab=orders')}
               className={`flex items-center gap-2.5 px-3 py-2 text-sm font-semibold border-none bg-transparent text-left cursor-pointer mt-1 transition-all ${
                 activeTab === 'donmua' ? 'text-[#ee4d2d]' : 'text-slate-600 dark:text-slate-400 hover:text-[#ee4d2d]'
               }`}
@@ -370,7 +423,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
             </button>
 
             <button
-              onClick={() => setActiveTab('khovoucher')}
+              onClick={() => navigate('/customer/profile?tab=vouchers')}
               className={`flex items-center gap-2.5 px-3 py-2 text-sm font-semibold border-none bg-transparent text-left cursor-pointer transition-all ${
                 activeTab === 'khovoucher' ? 'text-[#ee4d2d]' : 'text-slate-600 dark:text-slate-400 hover:text-[#ee4d2d]'
               }`}
@@ -380,7 +433,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
             </button>
 
             <button
-              onClick={() => setActiveTab('diemthuong')}
+              onClick={() => navigate('/customer/profile?tab=rewards')}
               className={`flex items-center gap-2.5 px-3 py-2 text-sm font-semibold border-none bg-transparent text-left cursor-pointer transition-all ${
                 activeTab === 'diemthuong' ? 'text-[#ee4d2d]' : 'text-slate-600 dark:text-slate-400 hover:text-[#ee4d2d]'
               }`}
@@ -637,7 +690,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
                 Tính năng này đang được đồng bộ hóa và bảo mật thông tin. Vui lòng liên hệ quản trị viên để cập nhật chi tiết.
               </p>
               <button 
-                onClick={() => setActiveTab('hoso')}
+                onClick={() => navigate('/customer/profile?tab=profile')}
                 className="mt-6 border border-[#ee4d2d] text-[#ee4d2d] rounded-sm text-xs font-semibold px-4 py-2 hover:bg-red-50 dark:hover:bg-red-950/20 bg-transparent transition-all cursor-pointer"
               >
                 Quay Lại Hồ Sơ
@@ -678,7 +731,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
 
               {/* Total points summary */}
               <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
-                <div style={{ fontSize: '2.5rem' }}>🎁</div>
+                <div style={{ fontSize: '2.5rem' }}></div>
                 <div>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500, display: 'block' }}>Số dư điểm hiện tại</span>
                   <strong style={{ fontSize: '1.75rem', color: 'var(--primary)', fontWeight: 900 }}>{dbUser.pointsBalance} <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>điểm</span></strong>
@@ -688,7 +741,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
               {/* Points history table */}
               <div className="glass-panel" style={{ padding: '1.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  📊 LỊCH SỬ BIẾN ĐỘNG ĐIỂM
+                  LỊCH SỬ BIẾN ĐỘNG ĐIỂM
                 </h3>
                 <PointsHistoryTab pointsHistory={pointsHistory} />
               </div>

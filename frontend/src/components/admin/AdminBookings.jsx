@@ -304,11 +304,11 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                           <span style={{ color: '#94a3b8' }}>{bayName}:</span>
                           {b ? (
                             <span style={{ color: '#f87171', fontWeight: 600 }} title={`Khách: ${b.customerName} - Xe: ${b.licensePlate}`}>
-                              🚗 {b.licensePlate}
+                              {b.licensePlate}
                             </span>
                           ) : (
                             <span style={{ color: '#4ade80', fontWeight: 600 }}>
-                              🟢 Trống
+                              Trống
                             </span>
                           )}
                         </div>
@@ -329,7 +329,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
       ) : (
         <>
           <div className="table-container">
-            <table style={{ minWidth: '1100px' }}>
+            <table style={{ minWidth: '1300px' }}>
               <thead>
                 <tr>
                   <th>Thông tin khách</th>
@@ -341,7 +341,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                   <th>Gói dịch vụ</th>
                   <th>Phải thu</th>
                   <th>Trạng thái</th>
-                  <th>Thao tác</th>
+                  <th style={{ minWidth: '140px' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -356,7 +356,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                         <code style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>{b.licensePlate}</code>
                         {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress')) && (
                           <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`} title={`Khách hàng ưu tiên hạng ${b.customerTier}`} style={{ padding: '0.1rem 0.3rem', fontSize: '0.65rem' }}>
-                            💎 VIP
+                            VIP
                           </span>
                         )}
                       </div>
@@ -409,7 +409,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                         )}
                         {b.status === 'In Progress' && (
                           <button className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', background: '#10b981' }} onClick={() => handleCompleteWash(b.id)}>
-                            ✓ Hoàn Tất
+                            Hoàn Tất
                           </button>
                         )}
                         {(b.status === 'Pending' || b.status === 'Confirmed') && !isRefundable(b) && (
@@ -423,8 +423,8 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                           </button>
                         )}
                         {b.paymentStatus === 'Refund Pending' && (
-                          <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', background: '#e11d48', color: 'white', whiteSpace: 'nowrap' }} onClick={() => handleRefundBooking(b.id)}>
-                            💸 Duyệt Hoàn Tiền
+                          <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', background: '#e11d48', color: 'white', whiteSpace: 'nowrap', position: 'relative', zIndex: 10, cursor: 'pointer' }} onClick={() => { console.log('REFUND CLICK', b.id); handleRefundBooking(b.id); }}>
+                            Duyệt Hoàn Tiền
                           </button>
                         )}
                       </div>
@@ -457,7 +457,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               >
-                ◀ Trước
+                Trước
               </button>
               
               {[...Array(totalPages)].map((_, i) => {
@@ -487,7 +487,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               >
-                Sau ▶
+                Sau
               </button>
             </div>
           )}

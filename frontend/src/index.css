@@ -40,7 +40,7 @@
   --status-cancelled: #dc2626;
 
   /* Typography */
-  --font-heading: 'Outfit', sans-serif;
+  --font-heading: 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-main: var(--font-body);
 }
@@ -989,4 +989,31 @@ body.dark input, body.dark select, body.dark textarea {
     border-right: 1px solid var(--border-color);
     padding-right: 2rem;
   }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Custom elegant scrollbar for navigation tabs */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }

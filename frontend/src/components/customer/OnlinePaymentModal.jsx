@@ -22,7 +22,7 @@ export default function OnlinePaymentModal({
             <p className="text-white/80 text-xs mt-0.5">Mã đơn: {booking.id}</p>
           </div>
           <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold text-white">
-            ⏱️ {Math.floor(paymentTimeLeft / 60)}:{"0" + (paymentTimeLeft % 60).toString().slice(-2)}
+            {Math.floor(paymentTimeLeft / 60)}:{"0" + (paymentTimeLeft % 60).toString().slice(-2)}
           </div>
         </div>
 
@@ -49,7 +49,7 @@ export default function OnlinePaymentModal({
 
             {/* VNPay Test Cards Box */}
             <div className="bg-sky-50 border border-sky-200 text-sky-900 rounded-xl p-4 w-full text-xs mb-4">
-              <p className="font-bold mb-1.5 text-center text-sm">💳 THÔNG TIN THẺ TEST VNPAY (NCB)</p>
+              <p className="font-bold mb-1.5 text-center text-sm">THÔNG TIN THẺ TEST VNPAY (NCB)</p>
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Ngân hàng:</span>
@@ -105,7 +105,7 @@ export default function OnlinePaymentModal({
               }}
               className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mb-4"
             >
-              ⚡ Đi Đến Cổng Thanh Toán VNPay ➔
+              Đi Đến Cổng Thanh Toán VNPay ➔
             </button>
           </div>
 
@@ -116,7 +116,7 @@ export default function OnlinePaymentModal({
             disabled={isSimulatingPayment}
             className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mb-2"
           >
-            {isSimulatingPayment ? 'Đang xác nhận...' : '⚡ Giả Lập Thanh Toán Thành Công (Test)'}
+            {isSimulatingPayment ? 'Đang xác nhận...' : 'Giả Lập Thanh Toán Thành Công (Test)'}
           </button>
 
           <button

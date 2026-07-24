@@ -42,7 +42,7 @@ export function createPaymentUrl(bookingId, amount, req) {
   const vnpUrl = process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
   const returnUrl = process.env.VNP_RETURN_URL || 'http://localhost:5173/payment-result';
 
-  const date = new Date();
+  const date = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
   const createDate = date.getFullYear().toString() + 
                      (date.getMonth() + 1).toString().padStart(2, '0') + 
                      date.getDate().toString().padStart(2, '0') + 
@@ -90,7 +90,7 @@ export async function callRefundApi(booking, adminUser, req) {
   const secretKey = process.env.VNP_HASH_SECRET || 'UZDGBNCOWVHUXWDVJPRWUXZFTJYZXMXP';
   const vnpApiUrl = process.env.VNP_API || 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction';
 
-  const date = new Date();
+  const date = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
   const createDate = date.getFullYear().toString() + 
                      (date.getMonth() + 1).toString().padStart(2, '0') + 
                      date.getDate().toString().padStart(2, '0') + 

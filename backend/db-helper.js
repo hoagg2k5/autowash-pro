@@ -154,9 +154,9 @@ export async function createBooking(userId, bookingData) {
 
   // Kiểm tra thời gian đặt trước tối đa của hạng
   const maxDays = tierSetting.bookingWindowDays;
-  const bookingDate = new Date(bookingData.bookingDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const today = new Date(todayStr + 'T00:00:00+07:00');
+  const bookingDate = new Date(bookingData.bookingDate + 'T00:00:00+07:00');
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + maxDays);
 
@@ -165,11 +165,7 @@ export async function createBooking(userId, bookingData) {
   }
 
   // Kiểm tra khung giờ đặt lịch đã qua chưa (nếu đặt cho ngày hôm nay)
-  const now = new Date();
-  const nowYear = now.getFullYear();
-  const nowMonth = String(now.getMonth() + 1).padStart(2, '0');
-  const nowDay = String(now.getDate()).padStart(2, '0');
-  const todayStr = `${nowYear}-${nowMonth}-${nowDay}`;
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
 
   if (bookingData.bookingDate === todayStr) {
     try {
@@ -262,7 +258,7 @@ export async function createBooking(userId, bookingData) {
     if (
       voucher &&
       voucher.isActive &&
-      new Date(voucher.expiryDate) >= new Date() &&
+      voucher.expiryDate >= new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }) &&
       voucher.targetTiers.includes(userTier) &&
       (price - actualDiscount) >= voucher.minSpent
     ) {
@@ -488,8 +484,9 @@ export function getSlotTimes(bookingDate, timeSlot) {
   const [startH, startM] = startStr.split(":").map(Number);
   const [endH, endM] = endStr.split(":").map(Number);
 
-  const startTime = new Date(year, month, day, startH, startM, 0, 0);
-  const endTime = new Date(year, month, day, endH, endM, 0, 0);
+  const pad = (n) => String(n).padStart(2, '0');
+  const startTime = new Date(`${year}-${pad(month + 1)}-${pad(day)}T${pad(startH)}:${pad(startM)}:00+07:00`);
+  const endTime = new Date(`${year}-${pad(month + 1)}-${pad(day)}T${pad(endH)}:${pad(endM)}:00+07:00`);
 
   return { startTime, endTime };
 }

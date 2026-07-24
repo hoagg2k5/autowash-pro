@@ -33,7 +33,7 @@ export default function AdminRules({ rules, onUpdateRules }) {
   return (
     <div className="glass-panel" style={{ padding: '2rem' }}>
       <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-        ⚙️ CẤU HÌNH ĐIỂM & ĐẶC QUYỀN HẠNG HỘI VIÊN
+        CẤU HÌNH ĐIỂM & ĐẶC QUYỀN HẠNG HỘI VIÊN
       </h3>
 
       <form onSubmit={handleSubmit}>

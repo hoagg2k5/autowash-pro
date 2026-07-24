@@ -1,5 +1,5 @@
 import React from 'react';
-import { HelpCircle } from 'lucide-react';
+
 import { Button } from '../ui/Button.jsx';
 import { Input } from '../ui/Input.jsx';
 
@@ -61,23 +61,7 @@ export default function LoginForm({
         </span>
       </p>
 
-      <div className="mt-8 p-4 bg-slate-50 border border-slate-200/50 rounded-xl text-xs text-slate-500 font-body leading-relaxed space-y-2">
-        <p className="font-bold text-sky-600 flex items-center gap-1.5">
-          <HelpCircle className="w-3.5 h-3.5" /> Tài khoản thử nghiệm:
-        </p>
-        <p className="flex items-start gap-1">
-          <span className="text-sky-500 font-bold">•</span>
-          <span><strong>Khách hàng:</strong> SĐT: <code>0123456789</code> hoặc Email: <code>customer@gmail.com</code> | Mật khẩu: <code>123456</code></span>
-        </p>
-        <p className="flex items-start gap-1">
-          <span className="text-sky-500 font-bold">•</span>
-          <span><strong>Nhân viên:</strong> SĐT: <code>0888888888</code> | Mật khẩu: <code>staff123</code></span>
-        </p>
-        <p className="flex items-start gap-1">
-          <span className="text-sky-500 font-bold">•</span>
-          <span><strong>Quản trị viên:</strong> SĐT: <code>0999999999</code> | Mật khẩu: <code>admin123</code></span>
-        </p>
-      </div>
+
     </form>
   );
 }

@@ -146,21 +146,23 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
   };
 
   const handleRefundBooking = async (bookingId) => {
-    if (!window.confirm("Xác nhận duyệt hoàn tiền cho đơn đặt lịch này? Hệ thống sẽ gửi yêu cầu hoàn tiền qua VNPay Sandbox.")) return;
-
+    console.log('[Refund] Button clicked for booking:', bookingId);
     try {
       const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/refund`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
         }
       });
       const data = await response.json();
+      console.log('[Refund] Response:', response.status, data);
       if (!response.ok) throw new Error(data.error || "Duyệt hoàn tiền thất bại.");
 
       toast.success(data.message || "Hoàn tiền thành công!");
       fetchData(true);
     } catch (err) {
+      console.error('[Refund] Error:', err);
       toast.error(err.message);
     }
   };

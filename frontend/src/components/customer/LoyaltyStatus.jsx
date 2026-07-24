@@ -13,7 +13,7 @@ export function TierPerks({ dbUser, tp, rules }) {
         {/* Left Column: Loyalty Status / Progress */}
         <div className="tier-perks-left" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontWeight: 800 }}>
-            📈 TIẾN TRÌNH THÀNH VIÊN
+            TIẾN TRÌNH THÀNH VIÊN
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem' }}>
@@ -36,7 +36,7 @@ export function TierPerks({ dbUser, tp, rules }) {
                 </p>
               ) : (
                 <p className="text-xs" style={{ color: 'var(--tier-platinum)', fontWeight: 700, margin: 0 }}>
-                  🎉 Bạn đang ở cấp bậc cao nhất ({dbUser.loyaltyTier.toUpperCase()}). Xin cảm ơn sự đồng hành của bạn!
+                  Bạn đang ở cấp bậc cao nhất ({dbUser.loyaltyTier.toUpperCase()}). Xin cảm ơn sự đồng hành của bạn!
                 </p>
               )}
             </>
@@ -44,13 +44,13 @@ export function TierPerks({ dbUser, tp, rules }) {
 
           {dbUser.loyaltyTier !== 'Member' && dbUser.tierExpiryDate && (
             <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0, fontStyle: 'italic' }}>
-              📅 Duy trì hạng đến: <strong>{new Date(dbUser.tierExpiryDate).toLocaleDateString('vi-VN')}</strong>
+              Duy trì hạng đến: <strong>{new Date(dbUser.tierExpiryDate).toLocaleDateString('vi-VN')}</strong>
             </p>
           )}
 
           {dbUser.pointsExpiredSoon > 0 && (
             <div style={{ padding: '0.5rem 0.75rem', background: 'rgba(220, 38, 38, 0.05)', border: '1px solid rgba(220, 38, 38, 0.15)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--status-cancelled)' }}>
-              ⚠️ Lưu ý: {dbUser.pointsExpiredSoon} điểm sẽ hết hạn vào cuối tháng này.
+              Lưu ý: {dbUser.pointsExpiredSoon} điểm sẽ hết hạn vào cuối tháng này.
             </div>
           )}
         </div>
@@ -58,7 +58,7 @@ export function TierPerks({ dbUser, tp, rules }) {
         {/* Right Column: Tier Perks */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <h3 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 800 }}>
-            💎 ĐẶC QUYỀN HẠNG {dbUser.loyaltyTier.toUpperCase()}
+            ĐẶC QUYỀN HẠNG {dbUser.loyaltyTier.toUpperCase()}
           </h3>
           
           <div style={{ marginTop: '0.25rem' }}>

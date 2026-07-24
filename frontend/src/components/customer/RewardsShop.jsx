@@ -109,7 +109,7 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
       {/* Owned Vouchers list */}
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-heading)' }}>🎟️ KHO VOUCHER CỦA BẠN</h3>
+          <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-heading)' }}>KHO VOUCHER CỦA BẠN</h3>
           <p className="text-xs" style={{ color: 'var(--text-muted)', marginTop: '0.2rem' }}>
             Danh sách các Voucher bạn đang sở hữu và chưa sử dụng. Các voucher này sẽ hiển thị ở màn hình đặt lịch.
           </p>
@@ -166,7 +166,7 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
               border: '2.5px dashed var(--border-color)',
               borderRadius: '12px'
             }}>
-              🌈 Kho voucher trống. Hãy rửa xe tích điểm hoặc đổi quà từ điểm số dư của bạn nhé!
+              Kho voucher trống. Hãy rửa xe tích điểm hoặc đổi quà từ điểm số dư của bạn nhé!
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
@@ -264,7 +264,7 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
       {/* Rewards shop panel */}
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-heading)' }}>🎁 CỬA HÀNG ĐỔI THƯỞNG</h3>
+          <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-heading)' }}>CỬA HÀNG ĐỔI THƯỞNG</h3>
           <p className="text-xs" style={{ color: 'var(--text-muted)', marginTop: '0.2rem' }}>
             Sử dụng điểm tích lũy tích lũy được từ những lần rửa xe trước để đổi lấy Voucher ưu đãi đặc quyền.
           </p>

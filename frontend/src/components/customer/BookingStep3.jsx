@@ -60,7 +60,7 @@ export default function BookingStep3({
     <form onSubmit={handleSubmit}>
       {/* Booking Summary Box */}
       <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
-        <h4 style={{ color: 'var(--primary)', marginBottom: '0.75rem', fontSize: '0.95rem' }}>📋 TÓM TẮT THÔNG TIN ĐẶT LỊCH</h4>
+        <h4 style={{ color: 'var(--primary)', marginBottom: '0.75rem', fontSize: '0.95rem' }}>TÓM TẮT THÔNG TIN ĐẶT LỊCH</h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
           <div>
             <span style={{ color: 'var(--text-muted)' }}>Xe rửa:</span><br />
@@ -89,7 +89,7 @@ export default function BookingStep3({
 
       {/* Available Vouchers Selector */}
       <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
-        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🎟️ Voucher Ưu Đãi Của Bạn</h4>
+        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>Voucher Ưu Đãi Của Bạn</h4>
         
         {fetchingVouchers ? (
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Đang tải danh sách voucher...</p>
@@ -193,8 +193,8 @@ export default function BookingStep3({
           </div>
         )}
         
-        {voucherError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>❌ {voucherError}</div>}
-        {voucherSuccess && <div style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>✓ {voucherSuccess}</div>}
+        {voucherError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>{voucherError}</div>}
+        {voucherSuccess && <div style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>{voucherSuccess}</div>}
       </div>
 
       {/* Payment Method Selection */}
@@ -218,7 +218,6 @@ export default function BookingStep3({
               boxShadow: paymentMethod === 'Cash' ? '0 0 10px var(--primary-glow)' : 'none'
             }}
           >
-            <span style={{ fontSize: '1.5rem' }}>💵</span>
             <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>Tiền mặt</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>Thanh toán tại quầy sau khi rửa</span>
           </div>
@@ -240,7 +239,6 @@ export default function BookingStep3({
               boxShadow: paymentMethod === 'Online' ? '0 0 10px var(--primary-glow)' : 'none'
             }}
           >
-            <span style={{ fontSize: '1.5rem' }}>📱</span>
             <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>Chuyển khoản Online</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>Quét mã QR VietQR / MoMo nhận ngay</span>
           </div>
@@ -271,10 +269,10 @@ export default function BookingStep3({
 
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
         <button type="button" className="btn btn-secondary" onClick={prevStep} disabled={loading}>
-          ⮌ Quay Lại
+          Quay Lại
         </button>
         <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
-          {loading ? 'Đang gửi thông tin...' : paymentMethod === 'Online' ? '⚡ Đi Đến Thanh Toán ➔' : '✓ Xác Nhận & Đặt Lịch'}
+          {loading ? 'Đang gửi thông tin...' : paymentMethod === 'Online' ? 'Đi Đến Thanh Toán ➔' : 'Xác Nhận & Đặt Lịch'}
         </button>
       </div>
     </form>

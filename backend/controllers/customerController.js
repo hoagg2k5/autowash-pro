@@ -251,7 +251,7 @@ export const getMyVouchers = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy người dùng." });
     }
     const loyaltyTier = user.loyaltyTier || 'Member';
-    const today = new Date().toLocaleDateString('sv-SE');
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     // Lấy các UserVoucher đang khả dụng (chưa sử dụng) của khách hàng
     const userVouchers = await UserVoucher.find({ userId: user.id, isUsed: false });
@@ -395,7 +395,7 @@ export const getRedeemableVouchers = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy người dùng." });
     }
     const loyaltyTier = user.loyaltyTier || 'Member';
-    const today = new Date().toLocaleDateString('sv-SE');
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     const vouchers = await Voucher.find({
       isActive: true,

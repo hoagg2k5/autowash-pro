@@ -1,5 +1,5 @@
 {
-  "userId": "cust-gold-id",
+  "userId": "u-dyweq1jpr",
   "vouchers": [
     {
       "code": "MEMBER_GIAM10",

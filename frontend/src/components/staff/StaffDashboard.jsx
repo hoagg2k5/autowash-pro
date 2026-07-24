@@ -148,8 +148,6 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
   };
 
   const handleCheckin = async (id) => {
-    const isConfirmed = window.confirm("Bạn có chắc chắn muốn check-in cho khách hàng này không?");
-    if (!isConfirmed) return;
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/checkin`, { method: 'POST' });
       const data = await res.json();
@@ -378,56 +376,58 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
 
   return (
     <div className="container">
-      {/* Welcome Banner - Shared by all view modes */}
-      <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
-        <div className="flex-between" style={{ flexWrap: 'wrap', gap: '1.5rem' }}>
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-heading)' }}>XIN CHÀO, {user.fullName}!</h2>
-            <p style={{ color: 'var(--text-muted)' }}>Chi nhánh: <strong style={{ color: 'var(--primary)' }}>{user.branch || 'Chưa gán'}</strong> | Ngày làm việc: {new Date(dashboardDate).toLocaleDateString('vi-VN')}</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Chọn ngày:</span>
-              <input
-                type="date"
-                className="form-input"
-                style={{
-                  width: '140px',
-                  padding: '0.4rem 0.6rem',
-                  fontSize: '0.85rem',
-                  borderRadius: '8px',
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
-                  outline: 'none'
-                }}
-                value={dashboardDate}
-                onChange={(e) => setDashboardDate(e.target.value)}
-              />
-              {dashboardDate !== todayStr && (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
+      {/* Welcome Banner - Shared by all view modes except Queue */}
+      {viewMode !== 'queue' && (
+        <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
+          <div className="flex-between" style={{ flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-heading)' }}>XIN CHÀO, {user.fullName}!</h2>
+              <p style={{ color: 'var(--text-muted)' }}>Chi nhánh: <strong style={{ color: 'var(--primary)' }}>{user.branch || 'Chưa gán'}</strong> | Ngày làm việc: {new Date(dashboardDate).toLocaleDateString('vi-VN')}</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Chọn ngày:</span>
+                <input
+                  type="date"
+                  className="form-input"
                   style={{
-                    padding: '0.4rem 0.8rem',
-                    fontSize: '0.8rem',
-                    borderRadius: '8px'
+                    width: '140px',
+                    padding: '0.4rem 0.6rem',
+                    fontSize: '0.85rem',
+                    borderRadius: '8px',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    outline: 'none'
                   }}
-                  onClick={() => setDashboardDate(todayStr)}
-                >
-                  Hôm nay
-                </button>
-              )}
+                  value={dashboardDate}
+                  onChange={(e) => setDashboardDate(e.target.value)}
+                />
+                {dashboardDate !== todayStr && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      fontSize: '0.8rem',
+                      borderRadius: '8px'
+                    }}
+                    onClick={() => setDashboardDate(todayStr)}
+                  >
+                    Hôm nay
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Render conditional sections based on viewMode */}
       {viewMode === 'console' && (
         <>
           {/* Shift Stats Card Grid */}
           <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
-            <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>📊 THỐNG KÊ CA LÀM VIỆC</h3>
+            <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>THỐNG KÊ CA LÀM VIỆC</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
               <div
                 className="clickable-kpi-card"
@@ -506,7 +506,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       {viewMode === 'list' && (
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <div className="flex-between" style={{ marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>📋 DANH SÁCH LỊCH ĐẶT RỬA XE</h3>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>DANH SÁCH LỊCH ĐẶT RỬA XE</h3>
             <button
               type="button"
               className="btn btn-sm"
@@ -527,7 +527,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
               }}
               onClick={() => setShowWalkInModal(true)}
             >
-              ➕ Đặt Lịch
+              Đặt Lịch
             </button>
           </div>
 
@@ -564,7 +564,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       {viewMode === 'timeline' && (
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <div className="flex-between" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>📅 SƠ ĐỒ KHOANG RỬA XE (TIMELINE)</h3>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>SƠ ĐỒ KHOANG RỬA XE (TIMELINE)</h3>
           </div>
           {error && <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>{error}</div>}
           <StaffTimelineView
@@ -588,7 +588,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       {viewMode === 'queue' && (
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <div className="flex-between" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>⏳ HÀNG ĐỢI RỬA XE</h3>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>HÀNG ĐỢI RỬA XE</h3>
             <button
               type="button"
               className="btn btn-sm"
@@ -609,7 +609,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
               }}
               onClick={() => setShowWalkInModal(true)}
             >
-              ➕ Đặt Lịch
+              Đặt Lịch
             </button>
           </div>
           {error && <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>{error}</div>}

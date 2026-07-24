@@ -538,7 +538,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
   return (
     <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
       <div className="flex-between" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-        <h3 style={{ fontSize: '1.25rem' }}>📅 ĐẶT LỊCH HẸN RỬA XE</h3>
+        <h3 style={{ fontSize: '1.25rem' }}>ĐẶT LỊCH HẸN RỬA XE</h3>
         <span className="badge-info">Hạng {dbUser.loyaltyTier}: Đặt trước {windowDays} ngày</span>
       </div>
 

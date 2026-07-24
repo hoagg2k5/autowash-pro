@@ -1,7 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShowerHead, User, Wrench, Crown, LogOut, Home, Sun, Moon, Ticket } from 'lucide-react';
 import { Button } from '../ui/Button.jsx';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+function useDragScroll() {
+  const ref = useRef(null);
+  const [isDown, setIsDown] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [hasMoved, setHasMoved] = useState(false);
+
+  const onMouseDown = (e) => {
+    setIsDown(true);
+    setHasMoved(false);
+    setStartX(e.pageX - ref.current.offsetLeft);
+    setScrollLeft(ref.current.scrollLeft);
+  };
+
+  const onMouseLeave = () => {
+    setIsDown(false);
+  };
+
+  const onMouseUp = () => {
+    setIsDown(false);
+  };
+
+  const onMouseMove = (e) => {
+    if (!isDown) return;
+    const x = e.pageX - ref.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    if (Math.abs(x - startX) > 5) {
+      setHasMoved(true);
+    }
+    ref.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const onClickCapture = (e) => {
+    if (hasMoved) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
+  return {
+    ref,
+    props: {
+      onMouseDown,
+      onMouseLeave,
+      onMouseUp,
+      onMouseMove,
+      onClickCapture,
+      style: {
+        cursor: isDown ? 'grabbing' : 'grab',
+        userSelect: 'none'
+      }
+    }
+  };
+}
 
 export default function Header({ 
   currentUser, 
@@ -15,6 +70,9 @@ export default function Header({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const adminDrag = useDragScroll();
+  const staffDrag = useDragScroll();
 
   const pathParts = location.pathname.split('/');
   const adminActiveTab = pathParts[1] === 'admin' ? pathParts[3] || 'analytics' : 'analytics';
@@ -56,7 +114,11 @@ export default function Header({
       </div>
 
       {currentUser && currentUser.role === 'admin' && (
-        <div className="flex-1 flex justify-center overflow-x-auto scrollbar-hide max-w-[70%] select-none">
+        <div 
+          ref={adminDrag.ref}
+          {...adminDrag.props}
+          className="flex-1 flex justify-start overflow-x-auto custom-scrollbar max-w-[75%] lg:max-w-[70%]"
+        >
           <nav className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 shrink-0">
             <button
               onClick={() => navigate('/admin/dashboard/analytics')}
@@ -147,7 +209,11 @@ export default function Header({
       )}
 
       {currentUser && currentUser.role === 'staff' && (
-        <div className="flex-1 flex justify-center overflow-x-auto scrollbar-hide max-w-[70%] select-none">
+        <div 
+          ref={staffDrag.ref}
+          {...staffDrag.props}
+          className="flex-1 flex justify-start overflow-x-auto custom-scrollbar max-w-[75%] lg:max-w-[70%]"
+        >
           <nav className="flex items-center gap-2 text-xs font-semibold text-slate-600 shrink-0">
             <button
               onClick={() => navigate('/staff/dashboard/console')}
@@ -183,15 +249,17 @@ export default function Header({
       )}
 
       <div className="nav-buttons flex items-center gap-3">
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="h-8 w-8 p-0 rounded-full border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-50 transition-colors"
-          onClick={() => setIsDark(!isDark)}
-          title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
-        >
-          {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-500" />}
-        </Button>
+        {location.pathname !== '/' && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="h-8 w-8 p-0 rounded-full border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-50 transition-colors"
+            onClick={() => setIsDark(!isDark)}
+            title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-500" />}
+          </Button>
+        )}
         {currentUser ? (
           <>
             {currentUser.role === 'customer' ? (
