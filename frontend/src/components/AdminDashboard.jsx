@@ -217,6 +217,41 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
     }
   };
 
+  const handleEditPromo = async (id, updatedPromo) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/promotions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPromo)
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Không thể cập nhật khuyến mãi.");
+      
+      fetchData(true);
+      return `Cập nhật khuyến mãi '${data.title}' thành công.`;
+    } catch (err) {
+      toast.error(err.message);
+      return '';
+    }
+  };
+
+  const handleDeletePromo = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/promotions/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Không thể xóa khuyến mãi.");
+      }
+      toast.success("Xóa khuyến mãi thành công.");
+      fetchData(true);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   const handleRunMonthlyReview = async () => {
     if (!window.confirm("Bắt đầu thực hiện quy trình rà soát tháng? Hệ thống sẽ rà soát lại cấp bậc hội viên dựa trên cấu hình tích lũy mới.")) return;
     try {
@@ -345,6 +380,9 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
           promotions={promotions} 
           onCreatePromo={handleCreatePromo} 
           onTogglePromo={handleTogglePromo} 
+          onEditPromo={handleEditPromo}
+          onDeletePromo={handleDeletePromo}
+          rules={rules}
         />
       )}
 

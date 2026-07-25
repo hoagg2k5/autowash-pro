@@ -22,6 +22,7 @@ import {
   redeemVoucher,
   listMyVouchers,
   listMyUsedVouchers,
+  listRedeemableVouchers,
   assignStaff,
   listStaffForAssignment,
   vnpayIpn,
@@ -43,6 +44,7 @@ router.use(authenticateToken);
 router.get('/', listBookings);
 router.get('/validate-voucher', validateVoucherEndpoint);
 router.get('/vouchers/active', listActiveVouchers);
+router.get('/vouchers/redeemable', listRedeemableVouchers);
 router.get('/vouchers/my', listMyVouchers);
 router.get('/vouchers/my-used', listMyUsedVouchers);
 router.get('/occupancy', getOccupancy);

@@ -44,19 +44,17 @@ export default function BookingStep1({
       <div className="form-group" style={{ marginTop: '1.5rem' }}>
         <label style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>Chọn Gói Rửa Xe Chuyên Dụng *</label>
         <div className="packages-grid" style={{ marginTop: '0.85rem' }}>
-          {packages.map(pkg => {
+          {packages.map((pkg, idx) => {
             const isSelected = selectedPackage === pkg.name;
             
             let badgeText = '';
             let badgeStyle = {};
             let cardStyle = {};
-            let icon = '';
             let durationText = '';
             
             if (pkg.name === 'Express') {
-              badgeText = '⚡ Siêu Tốc';
+              badgeText = 'Siêu Tốc';
               badgeStyle = { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' };
-              icon = '⚡';
               durationText = '15-20 phút';
               if (isSelected) {
                 cardStyle = { 
@@ -66,9 +64,8 @@ export default function BookingStep1({
                 };
               }
             } else if (pkg.name === 'Deluxe') {
-              badgeText = '🔥 Phổ Biến';
+              badgeText = 'Phổ Biến';
               badgeStyle = { background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' };
-              icon = '🧼';
               durationText = '30-40 phút';
               if (isSelected) {
                 cardStyle = {
@@ -78,9 +75,8 @@ export default function BookingStep1({
                 };
               }
             } else if (pkg.name === 'Premium Ultimate' || pkg.name?.includes('Ultimate')) {
-              badgeText = '💎 Luxury';
+              badgeText = 'Luxury';
               badgeStyle = { background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2))', color: '#f59e0b', fontWeight: 800 };
-              icon = '👑';
               durationText = '45-60 phút';
               if (isSelected) {
                 cardStyle = {
@@ -90,9 +86,8 @@ export default function BookingStep1({
                 };
               }
             } else {
-              badgeText = '✨ Khuyên Dùng';
+              badgeText = 'Khuyên Dùng';
               badgeStyle = { background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1' };
-              icon = '🧼';
               durationText = '30 phút';
               if (isSelected) {
                 cardStyle = {
@@ -104,11 +99,26 @@ export default function BookingStep1({
             }
 
             const showBanner = true;
-            const bannerSrc = pkg.name === 'Express' 
-              ? '/express-pkg.jpg' 
-              : pkg.name === 'Deluxe' 
-                ? '/deluxe-pkg.jpg' 
-                : '/premium-pkg.jpg';
+            let bannerSrc = '';
+            let hueRotate = 'none';
+
+            // Nếu trong database gói rửa có cấu hình ảnh đại diện (custom image) thì sử dụng ảnh đó
+            if (pkg.image) {
+              bannerSrc = pkg.image;
+            } else {
+              // Ngược lại, tự động gán ảnh dựa trên thứ tự để không bị trùng
+              if (idx === 0) {
+                bannerSrc = '/express-pkg.jpg';
+              } else if (idx === 1) {
+                bannerSrc = '/deluxe-pkg.jpg';
+              } else if (idx === 2) {
+                bannerSrc = '/premium-pkg.jpg';
+              } else {
+                bannerSrc = '/premium-pkg.jpg';
+                // Tự động xoay tông màu theo chỉ số để tạo sắc màu sơn xe độc nhất
+                hueRotate = `hue-rotate(${(idx - 2) * 80}deg)`;
+              }
+            }
 
             return (
               <div
@@ -145,7 +155,8 @@ export default function BookingStep1({
                       style={{ 
                         width: '100%', 
                         height: '100%', 
-                        objectFit: 'cover' 
+                        objectFit: 'cover',
+                        filter: hueRotate
                       }} 
                     />
                     <div style={{
@@ -192,11 +203,11 @@ export default function BookingStep1({
                     gap: '0.2rem',
                     textShadow: showBanner ? '0 1px 3px rgba(0,0,0,0.8)' : 'none'
                   }}>
-                    ⏱️ {durationText}
+                    {durationText}
                   </span>
                 </div>
 
-                {/* Package Name & Icon */}
+                {/* Package Name & Description */}
                 <div style={{ marginTop: showBanner ? '0.25rem' : '0.75rem', flexGrow: 1 }}>
                   <h4 style={{ 
                     color: 'var(--text-main)', 
@@ -207,7 +218,6 @@ export default function BookingStep1({
                     alignItems: 'center',
                     gap: '0.4rem'
                   }}>
-                    <span style={{ fontSize: '1.4rem' }}>{icon}</span>
                     Gói {pkg.name}
                   </h4>
                   <p className="text-xs" style={{ 
@@ -309,7 +319,7 @@ export default function BookingStep1({
               gap: '0.4rem',
               fontSize: '0.95rem'
             }}>
-              🧼 Chi tiết dịch vụ gói {currentPkg.name}:
+              Chi tiết dịch vụ gói {currentPkg.name}:
             </h5>
             <ul style={{ 
               margin: 0, 

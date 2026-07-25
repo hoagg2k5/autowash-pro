@@ -346,15 +346,31 @@ export const redeemVoucher = async (req, res) => {
     user.pointsBalance -= pointsRequired;
     await user.save({ session });
 
-    // Generate uniqueCode
-    const uniqueCode = `${voucher.code}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    // sinh mã ngẫu nhiên có tiền tố RW-
+    const randomCode = 'RW-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+    // Tạo bản ghi Voucher mới cho user này
+    const newVoucher = new Voucher({
+      code: randomCode,
+      discountVnd: voucher.discountVnd,
+      discountPercent: voucher.discountPercent,
+      minSpent: voucher.minSpent,
+      targetTiers: ['Member', 'Silver', 'Gold', 'Platinum'],
+      isActive: true,
+      pointsRequired: voucher.pointsRequired,
+      expiryDate
+    });
+    await newVoucher.save({ session });
 
     // Add to UserVoucher collection
     const userVoucher = new UserVoucher({
+      id: 'uv-' + Math.random().toString(36).substr(2, 9),
       userId: user.id,
-      voucherId: voucher._id,
-      uniqueCode,
-      status: 'Available'
+      voucherCode: randomCode,
+      redeemedAt: new Date(),
+      isUsed: false,
+      expiryDate
     });
     await userVoucher.save({ session });
 
@@ -372,14 +388,10 @@ export const redeemVoucher = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    // Lấy lại danh sách voucher đã sở hữu (ID) để tương thích ngược
-    const uvList = await UserVoucher.find({ userId: user.id, status: 'Available' });
-    const ownedIds = uvList.map(uv => uv.voucherId);
-
     res.json({
-      message: `Đổi voucher thành công! Mã của bạn là ${uniqueCode}. Đã dùng ${pointsRequired} điểm.`,
+      message: `Đổi voucher thành công! Mã của bạn là ${randomCode}. Đã dùng ${pointsRequired} điểm.`,
       pointsBalance: user.pointsBalance,
-      ownedVouchers: ownedIds
+      voucher: { code: randomCode }
     });
   } catch (error) {
     await session.abortTransaction();

@@ -145,6 +145,46 @@ export const togglePromotion = async (req, res) => {
   }
 };
 
+export const editPromotion = async (req, res) => {
+  try {
+    const promoId = req.params.id;
+    const { title, description, discountPercentage, targetTiers, startDate, endDate, isActive } = req.body;
+
+    const promo = await Promotion.findOne({ id: promoId });
+    if (!promo) {
+      return res.status(404).json({ error: "Không tìm thấy khuyến mãi này." });
+    }
+
+    if (title !== undefined) promo.title = title;
+    if (description !== undefined) promo.description = description;
+    if (discountPercentage !== undefined) promo.discountPercentage = Number(discountPercentage);
+    if (targetTiers !== undefined) promo.targetTiers = targetTiers;
+    if (startDate !== undefined) promo.startDate = startDate;
+    if (endDate !== undefined) promo.endDate = endDate;
+    if (isActive !== undefined) promo.isActive = isActive;
+
+    await promo.save();
+    await logAdminAction(req, 'EDIT_PROMOTION', `Chỉnh sửa chiến dịch khuyến mãi: "${promo.title}".`);
+    res.json(promo);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const removePromotion = async (req, res) => {
+  try {
+    const promoId = req.params.id;
+    const result = await Promotion.deleteOne({ id: promoId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Không tìm thấy khuyến mãi này." });
+    }
+    await logAdminAction(req, 'DELETE_PROMOTION', `Xóa chiến dịch khuyến mãi ID ${promoId}.`);
+    res.json({ message: "Xóa chiến dịch khuyến mãi thành công." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const runReview = async (req, res) => {
   try {
     const updatedCount = await runMonthlyReview();

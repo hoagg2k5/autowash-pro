@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../../config.js';
+import React, { useState } from 'react';
 
 export default function BookingStep3({
   handleSubmit,
@@ -31,30 +30,7 @@ export default function BookingStep3({
   appliedVoucherId,
   handleVoucherSelect
 }) {
-  const [myVouchers, setMyVouchers] = useState([]);
-  const [fetchingVouchers, setFetchingVouchers] = useState(false);
-
-  useEffect(() => {
-    const fetchMyVouchers = async () => {
-      setFetchingVouchers(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/customer/my-vouchers`, {
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setMyVouchers(data);
-        }
-      } catch (err) {
-        console.error("Error fetching my vouchers:", err);
-      } finally {
-        setFetchingVouchers(false);
-      }
-    };
-    fetchMyVouchers();
-  }, []);
+  const [manualCode, setManualCode] = useState('');
 
   return (
     <form onSubmit={handleSubmit}>
@@ -85,34 +61,86 @@ export default function BookingStep3({
         </div>
       </div>
 
-
-
-      {/* Available Vouchers Selector */}
+      {/* Voucher Section */}
       <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
         <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>Voucher Ưu Đãi Của Bạn</h4>
-        
-        {fetchingVouchers ? (
+
+        {/* Ô nhập mã thủ công */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <input
+            type="text"
+            value={manualCode}
+            onChange={e => setManualCode(e.target.value.toUpperCase())}
+            placeholder="Nhập mã voucher thủ công (VD: SUMMER20)..."
+            style={{
+              flex: 1,
+              padding: '0.5rem 0.75rem',
+              borderRadius: '8px',
+              border: '1.5px solid var(--border-color)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-main)',
+              fontSize: '0.85rem',
+              fontFamily: 'monospace',
+              letterSpacing: '0.05em',
+              outline: 'none'
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (manualCode.trim()) {
+                  setPromoCode(manualCode.trim());
+                  applyVoucherCode(manualCode.trim());
+                }
+              }
+            }}
+          />
+          <button
+            type="button"
+            disabled={!manualCode.trim() || validatingVoucher}
+            onClick={() => {
+              setPromoCode(manualCode.trim());
+              applyVoucherCode(manualCode.trim());
+            }}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: manualCode.trim() ? 'var(--primary)' : 'var(--border-color)',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              cursor: manualCode.trim() ? 'pointer' : 'not-allowed',
+              whiteSpace: 'nowrap',
+              transition: 'background 0.2s'
+            }}
+          >
+            {validatingVoucher ? 'Đang kiểm tra...' : 'Áp Dụng'}
+          </button>
+        </div>
+
+        {/* Danh sách voucher trong kho */}
+        {loadingVouchers ? (
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Đang tải danh sách voucher...</p>
-        ) : myVouchers.length === 0 ? (
-          <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0 }}>Hiện chưa có voucher nào</p>
+        ) : availableVouchers.length === 0 ? (
+          <p className="text-xs" style={{ color: 'var(--text-muted)', margin: 0 }}>
+            Kho voucher trống. Đổi điểm tích lũy lấy voucher hoặc nhập mã thủ công ở trên.
+          </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '180px', overflowY: 'auto', marginBottom: '1rem', paddingRight: '0.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '180px', overflowY: 'auto', paddingRight: '0.25rem' }}>
             {availableVouchers.map(v => {
               const isApplied = promoCode === v.voucherCode;
-              
+
               let valText = "";
               if (v.discountVnd) valText = `Giảm ${formatVnd(v.discountVnd)}`;
               else if (v.discountPercent) valText = `Giảm ${v.discountPercent}%`;
 
               const meetsMinSpent = (estimate?.price || 0) >= v.minSpent;
-              
+
               return (
-                <div 
+                <div
                   key={v.voucherCode}
                   onClick={() => {
-                    if (!meetsMinSpent) {
-                      return;
-                    }
+                    if (!meetsMinSpent) return;
                     if (isApplied) {
                       setPromoCode('');
                       applyVoucherCode('');
@@ -147,42 +175,18 @@ export default function BookingStep3({
                       HSD: {v.expiryDate} {v.minSpent > 0 && `| Tối thiểu: ${formatVnd(v.minSpent)}`}
                     </div>
                   </div>
-                  
+
                   <div>
                     {isApplied ? (
-                      <span style={{ 
-                        padding: '0.3rem 0.75rem', 
-                        borderRadius: '20px', 
-                        background: '#10b981', 
-                        color: '#ffffff', 
-                        fontSize: '0.75rem', 
-                        fontWeight: 'bold',
-                        display: 'inline-block'
-                      }}>
+                      <span style={{ padding: '0.3rem 0.75rem', borderRadius: '20px', background: '#10b981', color: '#ffffff', fontSize: '0.75rem', fontWeight: 'bold', display: 'inline-block' }}>
                         ✓ Đang Áp Dụng
                       </span>
                     ) : meetsMinSpent ? (
-                      <span style={{ 
-                        padding: '0.3rem 0.75rem', 
-                        borderRadius: '20px', 
-                        background: 'var(--primary)', 
-                        color: '#ffffff', 
-                        fontSize: '0.75rem', 
-                        fontWeight: 'bold',
-                        display: 'inline-block'
-                      }}>
+                      <span style={{ padding: '0.3rem 0.75rem', borderRadius: '20px', background: 'var(--primary)', color: '#ffffff', fontSize: '0.75rem', fontWeight: 'bold', display: 'inline-block' }}>
                         Dùng Mã
                       </span>
                     ) : (
-                      <span style={{ 
-                        padding: '0.3rem 0.75rem', 
-                        borderRadius: '20px', 
-                        background: '#ef4444', 
-                        color: '#ffffff', 
-                        fontSize: '0.75rem', 
-                        fontWeight: 'bold',
-                        display: 'inline-block'
-                      }}>
+                      <span style={{ padding: '0.3rem 0.75rem', borderRadius: '20px', background: '#ef4444', color: '#ffffff', fontSize: '0.75rem', fontWeight: 'bold', display: 'inline-block' }}>
                         Chưa Đủ HĐ
                       </span>
                     )}
@@ -192,7 +196,7 @@ export default function BookingStep3({
             })}
           </div>
         )}
-        
+
         {voucherError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>{voucherError}</div>}
         {voucherSuccess && <div style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>{voucherSuccess}</div>}
       </div>

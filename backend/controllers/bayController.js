@@ -1,4 +1,4 @@
-import Bay from '../models/Bay.js';
+    import Bay from '../models/Bay.js';
 
 export const listBays = async (req, res) => {
   try {

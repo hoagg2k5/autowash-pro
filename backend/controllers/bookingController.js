@@ -971,22 +971,42 @@ export const createWalkInBooking = async (req, res) => {
   }
 };
 
-const REWARD_TEMPLATES = {
-  'rw-10k': { points: 10, discountVnd: 10000, discountPercent: 0, label: 'Voucher giảm 10.000đ', minSpent: 0 },
-  'rw-30k': { points: 25, discountVnd: 30000, discountPercent: 0, label: 'Voucher giảm 30.000đ', minSpent: 100000 },
-  'rw-50k': { points: 40, discountVnd: 50000, discountPercent: 0, label: 'Voucher giảm 50.000đ', minSpent: 150000 },
-  'rw-10pct': { points: 20, discountVnd: 0, discountPercent: 10, label: 'Voucher giảm 10%', minSpent: 50000 },
-  'rw-20pct': { points: 35, discountVnd: 0, discountPercent: 20, label: 'Voucher giảm 20%', minSpent: 100000 },
+// Lấy danh sách voucher admin tạo có pointsRequired > 0 (dùng cho Cửa hàng đổi thưởng)
+export const listRedeemableVouchers = async (req, res) => {
+  try {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const vouchers = await Voucher.find({
+      isActive: true,
+      pointsRequired: { $gt: 0 },
+      expiryDate: { $gte: today }
+    }).sort({ pointsRequired: 1 });
+    res.json(vouchers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 export const redeemVoucher = async (req, res) => {
   try {
-    const { templateId } = req.body;
+    const { voucherId } = req.body;
     const userId = req.user.id;
 
-    const template = REWARD_TEMPLATES[templateId];
-    if (!template) {
-      return res.status(400).json({ error: "Gói đổi thưởng không hợp lệ." });
+    if (!voucherId) {
+      return res.status(400).json({ error: "Thiếu thông tin voucher cần đổi." });
+    }
+
+    // Tìm voucher gốc từ DB theo _id
+    const sourceVoucher = await Voucher.findById(voucherId);
+    if (!sourceVoucher || !sourceVoucher.isActive) {
+      return res.status(400).json({ error: "Voucher không tồn tại hoặc đã ngưng hoạt động." });
+    }
+    if (sourceVoucher.pointsRequired <= 0) {
+      return res.status(400).json({ error: "Voucher này không thể đổi bằng điểm." });
+    }
+
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+    if (sourceVoucher.expiryDate < today) {
+      return res.status(400).json({ error: "Voucher đã hết hạn." });
     }
 
     const user = await User.findOne({ id: userId });
@@ -994,33 +1014,32 @@ export const redeemVoucher = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy người dùng." });
     }
 
-    if (user.pointsBalance < template.points) {
-      return res.status(400).json({ error: "Số điểm tích lũy của bạn không đủ để đổi voucher này." });
+    if (user.pointsBalance < sourceVoucher.pointsRequired) {
+      return res.status(400).json({ error: `Số điểm tích lũy không đủ. Cần ${sourceVoucher.pointsRequired} điểm, bạn có ${user.pointsBalance} điểm.` });
     }
 
     // Trừ điểm tích lũy của người dùng
-    const originalPoints = user.pointsBalance;
-    user.pointsBalance -= template.points;
+    user.pointsBalance -= sourceVoucher.pointsRequired;
     await user.save();
 
-    // Sinh mã Voucher ngẫu nhiên có độ dài 8 ký tự với tiền tố RW-
+    // Sinh mã Voucher cá nhân ngẫu nhiên với tiền tố RW-
     const randomCode = 'RW-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }); // Hạn 30 ngày
+    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
 
-    // Tạo bản ghi Voucher mới
+    // Tạo bản ghi Voucher mới cho user này
     const newVoucher = new Voucher({
       code: randomCode,
-      discountVnd: template.discountVnd,
-      discountPercent: template.discountPercent,
-      minSpent: template.minSpent,
+      discountVnd: sourceVoucher.discountVnd,
+      discountPercent: sourceVoucher.discountPercent,
+      minSpent: sourceVoucher.minSpent,
       targetTiers: ['Member', 'Silver', 'Gold', 'Platinum'],
       isActive: true,
-      pointsRequired: template.points,
+      pointsRequired: sourceVoucher.pointsRequired,
       expiryDate
     });
     await newVoucher.save();
 
-    // Tạo bản ghi UserVoucher mới liên kết với user
+    // Tạo bản ghi UserVoucher liên kết với user
     const newUserVoucher = new UserVoucher({
       id: 'uv-' + Math.random().toString(36).substr(2, 9),
       userId: user.id,
@@ -1031,20 +1050,24 @@ export const redeemVoucher = async (req, res) => {
     });
     await newUserVoucher.save();
 
-    // Lưu vào lịch sử điểm thưởng
+    // Lưu lịch sử điểm thưởng
+    const label = sourceVoucher.discountVnd > 0
+      ? `Giảm ${sourceVoucher.discountVnd.toLocaleString('vi-VN')}đ`
+      : `Giảm ${sourceVoucher.discountPercent}%`;
+
     const historyRedeem = new PointHistory({
       id: 'ph-' + Math.random().toString(36).substr(2, 9),
       userId: user.id,
       bookingId: null,
       type: 'Redeemed',
-      points: template.points,
-      reason: `Đổi điểm lấy ${template.label}`
+      points: sourceVoucher.pointsRequired,
+      reason: `Đổi điểm lấy Voucher ${label}`
     });
     await historyRedeem.save();
 
     res.status(201).json({
       message: "Đổi voucher thành công!",
-      voucher: newVoucher,
+      voucher: { code: randomCode, ...newVoucher.toObject() },
       userVoucher: newUserVoucher,
       pointsBalance: user.pointsBalance
     });

@@ -12,6 +12,7 @@ export default function AdminServices() {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
+  const [image, setImage] = useState('');
   const [detailsText, setDetailsText] = useState(''); // Newline-separated details
   const [submitting, setSubmitting] = useState(false);
 
@@ -42,6 +43,7 @@ export default function AdminServices() {
     setName(srv.name);
     setPrice(srv.price);
     setDescription(srv.description || '');
+    setImage(srv.image || '');
     setDetailsText(srv.details ? srv.details.join('\n') : '');
     // Scroll to form
     const formElement = document.getElementById('service-form');
@@ -55,6 +57,7 @@ export default function AdminServices() {
     setName('');
     setPrice('');
     setDescription('');
+    setImage('');
     setDetailsText('');
   };
 
@@ -75,6 +78,7 @@ export default function AdminServices() {
       name,
       price: Number(price),
       description,
+      image,
       details
     };
 
@@ -137,6 +141,7 @@ export default function AdminServices() {
             <table>
               <thead>
                 <tr>
+                  <th>Ảnh</th>
                   <th>Tên Gói</th>
                   <th>Giá Vé</th>
                   <th>Mô Tả</th>
@@ -147,6 +152,17 @@ export default function AdminServices() {
               <tbody>
                 {services.map(srv => (
                   <tr key={srv.id}>
+                    <td>
+                      {srv.image ? (
+                        <img 
+                          src={srv.image} 
+                          alt={srv.name} 
+                          style={{ width: '60px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }} 
+                        />
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mặc định</span>
+                      )}
+                    </td>
                     <td><strong>{srv.name}</strong></td>
                     <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{formatVnd(srv.price)}</td>
                     <td className="text-sm" style={{ maxWidth: '180px' }}>{srv.description}</td>
@@ -230,11 +246,34 @@ export default function AdminServices() {
           </div>
 
           <div className="form-group">
+            <label htmlFor="srv-image">Đường dẫn ảnh đại diện (URL hoặc Tên tệp ảnh)</label>
+            <input 
+              id="srv-image"
+              type="text" 
+              className="form-input" 
+              value={image} 
+              onChange={(e) => setImage(e.target.value)} 
+              placeholder="Ví dụ: /express-pkg.jpg hoặc link ảnh online" 
+            />
+            {image && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <span className="text-xs" style={{ display: 'block', marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Xem trước ảnh:</span>
+                <img 
+                  src={image} 
+                  alt="Xem trước ảnh gói dịch vụ" 
+                  style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="form-group">
             <label htmlFor="srv-details">Các công việc chi tiết (Mỗi dòng một gạch đầu dòng)</label>
             <textarea 
               id="srv-details"
               className="form-input" 
-              rows="6"
+              rows="5"
               value={detailsText} 
               onChange={(e) => setDetailsText(e.target.value)} 
               placeholder="Rửa bọt tuyết chuyên sâu&#10;Hút bụi cabin&#10;Dưỡng bóng lốp"

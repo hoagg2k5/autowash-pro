@@ -89,6 +89,7 @@ export async function addService(serviceData) {
     name: serviceData.name,
     price: Number(serviceData.price),
     description: serviceData.description || '',
+    image: serviceData.image || '',
     details: serviceData.details || []
   });
   await newService.save();
@@ -102,6 +103,7 @@ export async function updateService(id, serviceData) {
   service.name = serviceData.name;
   service.price = Number(serviceData.price);
   service.description = serviceData.description || '';
+  service.image = serviceData.image || '';
   service.details = serviceData.details || [];
 
   await service.save();

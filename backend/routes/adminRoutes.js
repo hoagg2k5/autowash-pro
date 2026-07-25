@@ -8,6 +8,8 @@ import {
   listPromotions, 
   createPromotion, 
   togglePromotion, 
+  editPromotion,
+  removePromotion,
   runReview, 
   simulateData, 
   exportData,
@@ -44,6 +46,8 @@ router.post('/rules', updateRules);
 router.get('/promotions', listPromotions);
 router.post('/promotions', createPromotion);
 router.post('/promotions/:id/toggle', togglePromotion);
+router.put('/promotions/:id', editPromotion);
+router.delete('/promotions/:id', removePromotion);
 
 // Voucher management
 router.get('/vouchers', listVouchers);
