@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ShowerHead, User, Wrench, Crown, LogOut, Home, Sun, Moon, Ticket } from 'lucide-react';
 import { Button } from '../ui/Button.jsx';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 
 function useDragScroll() {
   const ref = useRef(null);
@@ -108,10 +108,10 @@ export default function Header({
 
   return (
     <header className="header flex justify-between items-center px-8 py-5 border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-      <div className="logo flex items-center gap-2 text-2xl font-black font-heading bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer shrink-0" onClick={onGoToHome}>
+      <Link to="/" className="logo flex items-center gap-2 text-2xl font-black font-heading bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer shrink-0" style={{ textDecoration: 'none' }}>
         <ShowerHead className="w-7 h-7 text-sky-500 shrink-0" />
         <span>AutoWash Pro</span>
-      </div>
+      </Link>
 
       {currentUser && currentUser.role === 'admin' && (
         <div 
@@ -354,14 +354,13 @@ export default function Header({
             )}
           </>
         ) : (
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="text-xs font-semibold px-4 h-8 border-slate-200 shadow-sm"
-            onClick={onGoToHome}
+          <Link 
+            to="/"
+            className="text-xs font-semibold px-4 h-8 border border-slate-200 hover:bg-slate-50 rounded-lg flex items-center justify-center shadow-sm text-slate-700 bg-white transition-colors"
+            style={{ textDecoration: 'none' }}
           >
             <Home className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Trang Chủ
-          </Button>
+          </Link>
         )}
       </div>
     </header>
