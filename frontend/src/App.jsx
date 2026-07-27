@@ -14,6 +14,18 @@ import PaymentResult from './components/customer/PaymentResult.jsx';
 import CustomerProfile from './components/customer/CustomerProfile.jsx';
 
 export default function App() {
+  // Sync localStorage to sessionStorage on load so new tabs stay logged in
+  try {
+    if (!sessionStorage.getItem('autowash_token') && localStorage.getItem('autowash_token')) {
+      sessionStorage.setItem('autowash_token', localStorage.getItem('autowash_token') || '');
+      sessionStorage.setItem('autowash_user', localStorage.getItem('autowash_user') || '');
+      sessionStorage.setItem('autowash_vehicles', localStorage.getItem('autowash_vehicles') || '[]');
+      localStorage.setItem('autowash_active_user_id', JSON.parse(localStorage.getItem('autowash_user') || '{}').id || '');
+    }
+  } catch (e) {
+    console.error('Failed to sync auth storage:', e);
+  }
+
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const savedUser = sessionStorage.getItem('autowash_user');
@@ -132,8 +144,11 @@ export default function App() {
     try {
       sessionStorage.setItem('autowash_user', JSON.stringify(user));
       sessionStorage.setItem('autowash_vehicles', JSON.stringify(userVehicles));
+      localStorage.setItem('autowash_user', JSON.stringify(user));
+      localStorage.setItem('autowash_vehicles', JSON.stringify(userVehicles));
       if (token) {
         sessionStorage.setItem('autowash_token', token);
+        localStorage.setItem('autowash_token', token);
       }
       localStorage.setItem('autowash_active_user_id', user.id);
     } catch (e) {
@@ -166,6 +181,10 @@ export default function App() {
       sessionStorage.removeItem('autowash_user');
       sessionStorage.removeItem('autowash_vehicles');
       sessionStorage.removeItem('autowash_token');
+      localStorage.removeItem('autowash_user');
+      localStorage.removeItem('autowash_vehicles');
+      localStorage.removeItem('autowash_token');
+      localStorage.removeItem('autowash_active_user_id');
     } catch (e) {
       console.error(e);
     }
@@ -195,6 +214,7 @@ export default function App() {
           const data = await response.json();
           setCurrentUser(data.user);
           sessionStorage.setItem('autowash_user', JSON.stringify(data.user));
+          localStorage.setItem('autowash_user', JSON.stringify(data.user));
           localStorage.setItem('autowash_active_user_id', data.user.id);
         } else {
           // Lỗi xác thực hoặc hết hạn sẽ được fetch interceptor xử lý, 
@@ -353,6 +373,7 @@ export default function App() {
                   const newUser = { ...currentUser, ...updatedData };
                   setCurrentUser(newUser);
                   sessionStorage.setItem('autowash_user', JSON.stringify(newUser));
+                  localStorage.setItem('autowash_user', JSON.stringify(newUser));
                 }}
               />
             ) : (
@@ -368,6 +389,7 @@ export default function App() {
                   const newUser = { ...currentUser, ...updatedData };
                   setCurrentUser(newUser);
                   sessionStorage.setItem('autowash_user', JSON.stringify(newUser));
+                  localStorage.setItem('autowash_user', JSON.stringify(newUser));
                 }} 
               />
             ) : (
