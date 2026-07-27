@@ -327,7 +327,21 @@ export default function App() {
               currentUser.role === 'staff' ? <Navigate to="/staff/dashboard" replace /> :
               <Navigate to="/customer/dashboard" replace />
             ) : (
-              <Login onLoginSuccess={handleLoginSuccess} />
+              <Login onLoginSuccess={handleLoginSuccess} mode="login" />
+            )
+          } />
+          <Route path="/register" element={
+            currentUser ? (
+              <Navigate to="/customer/dashboard" replace />
+            ) : (
+              <Login onLoginSuccess={handleLoginSuccess} mode="register" />
+            )
+          } />
+          <Route path="/forgot-password" element={
+            currentUser ? (
+              <Navigate to="/customer/dashboard" replace />
+            ) : (
+              <Login onLoginSuccess={handleLoginSuccess} mode="forgot-password" />
             )
           } />
           <Route path="/customer/dashboard" element={

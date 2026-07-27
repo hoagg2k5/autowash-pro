@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config.js';
 import { ShieldAlert, BadgeCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Imported modular components
 import LoginForm from './auth/LoginForm.jsx';
 import RegisterForm from './auth/RegisterForm.jsx';
 import ForgotPassword from './auth/ForgotPassword.jsx';
 
-export default function Login({ onLoginSuccess }) {
-  const [isRegister, setIsRegister] = useState(false);
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
+export default function Login({ onLoginSuccess, mode = 'login' }) {
+  const navigate = useNavigate();
+  const isRegister = mode === 'register';
+  const isForgotPassword = mode === 'forgot-password';
 
   // General Form inputs
   const [phone, setPhone] = useState('');
@@ -211,7 +213,7 @@ export default function Login({ onLoginSuccess }) {
 
       setSuccess('Đặt lại mật khẩu thành công! Đang chuyển về trang đăng nhập...');
       setTimeout(() => {
-        setIsForgotPassword(false);
+        navigate('/login');
         setPhone(forgotEmail);
         setPassword('');
         resetFormState();
@@ -263,7 +265,7 @@ export default function Login({ onLoginSuccess }) {
           handleSendOtp={handleSendOtp}
           handleResetPassword={handleResetPassword}
           loading={loading}
-          onLoginBack={() => { setIsForgotPassword(false); resetFormState(); }}
+          onLoginBack={() => { navigate('/login'); resetFormState(); }}
         />
       ) : isRegister ? (
         <RegisterForm
@@ -290,7 +292,7 @@ export default function Login({ onLoginSuccess }) {
           handleSendOtp={handleSendOtp}
           handleRegister={handleRegister}
           loading={loading}
-          onLoginBack={() => { setIsRegister(false); resetFormState(); }}
+          onLoginBack={() => { navigate('/login'); resetFormState(); }}
         />
       ) : (
         <LoginForm
@@ -300,8 +302,8 @@ export default function Login({ onLoginSuccess }) {
           setPassword={setPassword}
           handleLogin={handleLogin}
           loading={loading}
-          onForgotPassword={() => { setIsForgotPassword(true); resetFormState(); }}
-          onRegister={() => { setIsRegister(true); resetFormState(); }}
+          onForgotPassword={() => { navigate('/forgot-password'); resetFormState(); }}
+          onRegister={() => { navigate('/register'); resetFormState(); }}
         />
       )}
     </div>
