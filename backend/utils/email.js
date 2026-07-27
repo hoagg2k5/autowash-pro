@@ -10,10 +10,15 @@ let transporter = null;
 
 if (emailUser && emailPass) {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // Use STARTTLS
     auth: {
       user: emailUser,
       pass: emailPass
+    },
+    tls: {
+      rejectUnauthorized: false // Avoid connection timeouts or SSL issues on cloud hosting
     }
   });
 }
