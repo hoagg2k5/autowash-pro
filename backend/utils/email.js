@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const brevoApiKey = process.env.BREVO_API_KEY;
 const emailUser = process.env.EMAIL_USER;
 const emailPass = process.env.EMAIL_PASS;
 
@@ -27,6 +28,40 @@ if (emailUser && emailPass) {
  * Gửi email chung
  */
 export async function sendEmail({ to, subject, html }) {
+  if (brevoApiKey) {
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': brevoApiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: { 
+            name: 'AutoWash Pro', 
+            email: emailUser || 'hoangmoba3988@gmail.com' 
+          },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: html
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Gửi qua Brevo thất bại.');
+      }
+      console.log(`[EMAIL SENT VIA BREVO] Message ID: ${data.messageId || 'N/A'} | Recipient: ${to}`);
+      return { success: true, simulated: false };
+    } catch (error) {
+      console.error(`[BREVO ERROR] Failed to send email to ${to}:`, error);
+      // Fallback to simulator logging on error
+      console.log(`\n========================================\n[BREVO FALLBACK (Error)]\nTo: ${to}\nSubject: ${subject}\nError: ${error.message}\n========================================\n`);
+      return { success: true, simulated: true, error: error.message };
+    }
+  }
+
   if (!transporter) {
     console.log(`\n========================================\n[SMTP EMAIL SIMULATOR (No Credentials)]\nTo: ${to}\nSubject: ${subject}\nHTML: Check below\n${html}\n========================================\n`);
     return { success: true, simulated: true };
