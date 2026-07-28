@@ -64,7 +64,6 @@ export default function BookingStep3({
       {/* Voucher Section */}
       <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
         <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>Voucher Ưu Đãi Của Bạn</h4>
-<<<<<<< Updated upstream
 
         {/* Ô nhập mã thủ công */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
