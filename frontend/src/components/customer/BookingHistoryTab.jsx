@@ -41,7 +41,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
   const [dateFilter, setDateFilter] = useState('all');
 
   const STATUS_TABS = [
-    { key: 'All', label: 'Tất cả', color: 'var(--text-main)' },
+    { key: 'All', label: 'Tất cả', color: 'var(--primary)' },
     { key: 'Upcoming', label: 'Lịch sắp tới', color: 'var(--primary)' },
     { key: 'Completed', label: 'Hoàn thành', color: '#10b981' },
     { key: 'Cancelled', label: 'Đã hủy', color: '#ef4444' }
@@ -368,8 +368,8 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                       fontSize: '0.72rem',
                       padding: '0.1rem 0.45rem',
                       borderRadius: '10px',
-                      background: isActive ? tab.color : '#f1f5f9',
-                      color: isActive ? '#ffffff' : '#64748b',
+                      background: isActive ? tab.color : 'var(--bg-secondary)',
+                      color: isActive ? '#ffffff' : 'var(--text-muted)',
                       fontWeight: 'bold',
                       transition: 'all 0.25s ease',
                       opacity: count === 0 && !isActive ? 0.5 : 1
