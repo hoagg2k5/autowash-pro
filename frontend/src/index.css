@@ -906,6 +906,14 @@ body.dark input, body.dark select, body.dark textarea {
   border-color: var(--border-color) !important;
 }
 
+body.dark :-webkit-autofill,
+body.dark :-webkit-autofill:hover,
+body.dark :-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-main) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-secondary) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 /* Printable Invoice Styles */
 @media print {
   body * {

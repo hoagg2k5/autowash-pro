@@ -210,7 +210,8 @@ export default function AdminCustomers({ customers, onPointsAdjusted, API_BASE_U
           zIndex: 1000
         }}>
           <div className="glass-panel" style={{
-            background: '#ffffff',
+            background: 'var(--bg-card)',
+            color: 'var(--text-main)',
             padding: '2rem',
             width: '450px',
             maxWidth: '95%',
@@ -278,7 +279,8 @@ export default function AdminCustomers({ customers, onPointsAdjusted, API_BASE_U
           zIndex: 1000
         }}>
           <div className="glass-panel" style={{
-            background: '#ffffff',
+            background: 'var(--bg-card)',
+            color: 'var(--text-main)',
             padding: '2rem',
             width: '600px',
             maxWidth: '95%',

@@ -197,7 +197,8 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
           zIndex: 1000
         }}>
           <div className="glass-panel" style={{
-            background: '#ffffff',
+            background: 'var(--bg-card)',
+            color: 'var(--text-main)',
             padding: '2rem',
             width: '480px',
             maxWidth: '95%',
