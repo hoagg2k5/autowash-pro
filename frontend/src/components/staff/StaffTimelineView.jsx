@@ -243,16 +243,19 @@ export default function StaffTimelineView({
           <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>SƠ ĐỒ PHÂN LỊCH THEO KHOANG RỬA</h4>
           <p className="text-xs" style={{ color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>Trực quan hóa lịch hoạt động và tình trạng rửa của các khoang trong ngày</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>Xem ngày:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Xem ngày:</span>
           <input
             type="date"
+            className="form-input"
             style={{
-              border: 'none',
-              background: 'transparent',
-              outline: 'none',
+              width: '140px',
+              padding: '0.4rem 0.6rem',
               fontSize: '0.85rem',
-              fontWeight: 700,
+              borderRadius: '8px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              outline: 'none',
               color: 'var(--text-main)',
               cursor: 'pointer'
             }}

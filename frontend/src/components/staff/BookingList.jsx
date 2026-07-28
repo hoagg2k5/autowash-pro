@@ -63,7 +63,7 @@ export default function BookingList({
   };
 
   const STATUS_TABS = [
-    { key: 'All', label: 'Tất cả', color: 'var(--text-main)' },
+    { key: 'All', label: 'Tất cả', color: 'var(--primary)' },
     { key: 'Pending', label: 'Chờ xác nhận', color: '#f59e0b' },
     { key: 'Confirmed', label: 'Đã xác nhận', color: 'var(--primary)' },
     { key: 'Waiting', label: 'Chờ rửa', color: '#6366f1' },
@@ -130,8 +130,8 @@ export default function BookingList({
                   fontSize: '0.72rem',
                   padding: '0.1rem 0.45rem',
                   borderRadius: '10px',
-                  background: isActive ? tab.color : '#f1f5f9',
-                  color: isActive ? '#ffffff' : '#64748b',
+                  background: isActive ? tab.color : 'var(--bg-secondary)',
+                  color: isActive ? '#ffffff' : 'var(--text-muted)',
                   fontWeight: 'bold',
                   transition: 'all 0.25s ease',
                   opacity: count === 0 && !isActive ? 0.5 : 1

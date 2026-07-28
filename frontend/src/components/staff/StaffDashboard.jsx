@@ -564,7 +564,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       {viewMode === 'timeline' && (
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <div className="flex-between" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>SƠ ĐỒ KHOANG RỬA XE (TIMELINE)</h3>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>SƠ ĐỒ KHOANG RỬA XE</h3>
           </div>
           {error && <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>{error}</div>}
           <StaffTimelineView
