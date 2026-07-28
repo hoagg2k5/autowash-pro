@@ -248,7 +248,10 @@ export default function App() {
     };
 
     const handleStorage = (e) => {
-      if (e.key === 'autowash_active_user_id' && e.newValue) {
+      if ((e.key === 'autowash_active_user_id' || e.key === 'autowash_user' || e.key === 'autowash_token') && !e.newValue) {
+        // Nếu một tab khác thực hiện Đăng xuất (xóa token/user) -> Tab này tự động đăng xuất theo ngay lập tức (0ms)
+        handleLogout(false);
+      } else if (e.key === 'autowash_active_user_id' && e.newValue) {
         checkTabSessionConflict();
       }
     };
