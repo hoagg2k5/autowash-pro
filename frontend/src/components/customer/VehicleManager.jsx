@@ -128,7 +128,7 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
                 const formatted = formatVietnamLicensePlate(e.target.value);
                 setPlate(formatted);
               }}
-              placeholder="Ví dụ: 49A-123.45 hoặc 51F-1234"
+              placeholder="Ví dụ: 30A-123.45 hoặc 30A-12345"
               required
             />
           </div>
