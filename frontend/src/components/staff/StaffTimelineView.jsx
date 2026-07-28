@@ -74,7 +74,7 @@ export default function StaffTimelineView({
           width: 100%;
           border-collapse: separate;
           border-spacing: 0 0.5rem;
-          min-width: 850px;
+          min-width: 100%;
         }
         .timeline-header-row th {
           padding: 1.25rem 1rem;
@@ -86,10 +86,13 @@ export default function StaffTimelineView({
           background: #f8fafc;
           border-bottom: 2px solid #e2e8f0;
         }
-        .timeline-header-row th:first-child {
+        .timeline-header-row th.timeline-col-time {
           border-top-left-radius: 12px;
           border-bottom-left-radius: 12px;
-          width: 140px;
+          width: 130px;
+          min-width: 130px;
+          max-width: 140px;
+          white-space: nowrap;
         }
         .timeline-header-row th:last-child {
           border-top-right-radius: 12px;
@@ -104,7 +107,7 @@ export default function StaffTimelineView({
         }
         
         .time-cell {
-          padding: 1.5rem 1rem;
+          padding: 1rem 0.5rem;
           text-align: center;
           font-weight: 800;
           color: #1e293b;
@@ -117,7 +120,25 @@ export default function StaffTimelineView({
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 0.25rem;
+          gap: 0.2rem;
+          width: 130px;
+          box-sizing: border-box;
+        }
+
+        body.dark .timeline-header-row th {
+          background: var(--bg-secondary);
+          color: var(--text-main);
+          border-bottom-color: var(--border-color);
+        }
+        body.dark .time-cell {
+          background: var(--bg-secondary);
+          color: var(--text-main);
+          border-color: var(--border-color);
+          box-shadow: none;
+        }
+        body.dark .timeline-row:hover {
+          background: rgba(255, 255, 255, 0.02);
+        }
           height: calc(100% - 1rem);
           margin: 0.5rem 0;
         }
@@ -268,7 +289,7 @@ export default function StaffTimelineView({
       <table className="timeline-table">
         <thead>
           <tr className="timeline-header-row">
-            <th>Khung Giờ</th>
+            <th className="timeline-col-time">Khung Giờ</th>
             {bays.map(bay => (
               <th key={bay}>
                 {bay.toUpperCase()}
@@ -282,10 +303,10 @@ export default function StaffTimelineView({
             return (
               <tr key={slot} className="timeline-row">
                 {/* Time display cell */}
-                <td style={{ verticalAlign: 'middle', padding: '0.5rem' }}>
+                <td className="timeline-col-time" style={{ verticalAlign: 'middle', padding: '0.5rem', width: '130px' }}>
                   <div className="time-cell">
                     <span>{slot.split(" ")[0]}</span>
-                    <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 500 }}>tới {slot.split(" ")[2]}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>tới {slot.split(" ")[2]}</span>
                   </div>
                 </td>
 
@@ -295,7 +316,7 @@ export default function StaffTimelineView({
                   const hasActiveBooking = slotBookings.some(booking => booking.status !== 'Completed');
 
                   return (
-                    <td key={bay} style={{ padding: '0.5rem', verticalAlign: 'middle', width: '30%' }}>
+                    <td key={bay} style={{ padding: '0.5rem', verticalAlign: 'middle' }}>
                       {slotBookings.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                           {slotBookings.map(b => {
