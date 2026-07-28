@@ -211,14 +211,15 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy thông tin người dùng." });
     }
 
-    if (fullName !== undefined) user.fullName = fullName;
-    if (email !== undefined) user.email = email;
+    if (fullName !== undefined) user.fullName = (fullName || '').trim();
+    if (email !== undefined) user.email = (email || '').trim().toLowerCase();
     if (phone !== undefined) {
-      const existingUser = await User.findOne({ phone, id: { $ne: userId } });
+      const cleanPhone = (phone || '').trim();
+      const existingUser = await User.findOne({ phone: cleanPhone, id: { $ne: userId } });
       if (existingUser) {
         return res.status(400).json({ error: "Số điện thoại này đã được sử dụng bởi tài khoản khác." });
       }
-      user.phone = phone;
+      user.phone = cleanPhone;
     }
     if (gender !== undefined) user.gender = gender;
     if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;

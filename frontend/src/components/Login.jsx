@@ -76,12 +76,13 @@ export default function Login({ onLoginSuccess, mode = 'login' }) {
   };
 
   const handleSendOtp = async (targetEmail, type) => {
-    if (!targetEmail) {
+    const cleanEmail = (targetEmail || '').trim();
+    if (!cleanEmail) {
       setError('Vui lòng nhập Email trước khi yêu cầu mã OTP.');
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(targetEmail)) {
+    if (!emailRegex.test(cleanEmail)) {
       setError('Email không đúng định dạng.');
       return;
     }
@@ -94,7 +95,7 @@ export default function Login({ onLoginSuccess, mode = 'login' }) {
       const response = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: targetEmail, type })
+        body: JSON.stringify({ email: cleanEmail, type })
       });
 
       const data = await response.json();
@@ -126,7 +127,7 @@ export default function Login({ onLoginSuccess, mode = 'login' }) {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneOrEmail: phone, password })
+        body: JSON.stringify({ phoneOrEmail: (phone || '').trim(), password })
       });
 
       const data = await response.json();
@@ -159,11 +160,11 @@ export default function Login({ onLoginSuccess, mode = 'login' }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone,
-          fullName,
-          email,
+          phone: (phone || '').trim(),
+          fullName: (fullName || '').trim(),
+          email: (email || '').trim(),
           password,
-          otp
+          otp: (otp || '').trim()
         })
       });
 
@@ -200,8 +201,8 @@ export default function Login({ onLoginSuccess, mode = 'login' }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: forgotEmail,
-          otp: forgotOtp,
+          email: (forgotEmail || '').trim(),
+          otp: (forgotOtp || '').trim(),
           newPassword
         })
       });

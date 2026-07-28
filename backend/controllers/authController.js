@@ -14,8 +14,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret-key-autowash';
 
 export const register = async (req, res) => {
   try {
-    const { phone, fullName, password, licensePlate, brand, model, color, email, otp } = req.body;
+    let { phone, fullName, password, licensePlate, brand, model, color, email, otp } = req.body;
     
+    phone = (phone || '').trim();
+    fullName = (fullName || '').trim();
+    email = (email || '').trim().toLowerCase();
+    otp = (otp || '').trim();
+
     if (!phone || !fullName || !password || !email || !otp) {
       return res.status(400).json({ error: "Vui lòng nhập đầy đủ Số điện thoại, Họ tên, Mật khẩu, Email và Mã OTP xác thực." });
     }
@@ -180,13 +185,15 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { phone, phoneOrEmail, password } = req.body;
-    const loginId = phoneOrEmail || phone;
+    const rawId = (phoneOrEmail || phone || '').trim();
     
-    if (!loginId || !password) {
+    if (!rawId || !password) {
       return res.status(400).json({ error: "Số điện thoại / Email và Mật khẩu là bắt buộc." });
     }
 
-    const user = await User.findOne({ $or: [{ phone: loginId }, { email: loginId }] });
+    const idLower = rawId.toLowerCase();
+
+    const user = await User.findOne({ $or: [{ phone: rawId }, { email: idLower }, { email: rawId }] });
     if (!user) {
       return res.status(404).json({ error: "Tài khoản không tồn tại. Vui lòng đăng ký." });
     }
@@ -256,7 +263,8 @@ const sendEmailOTP = async (email, otp, type) => {
 
 export const sendOtpEndpoint = async (req, res) => {
   try {
-    const { email, type } = req.body;
+    let { email, type } = req.body;
+    email = (email || '').trim().toLowerCase();
     if (!email) {
       return res.status(400).json({ error: "Email là bắt buộc." });
     }
@@ -308,7 +316,10 @@ export const sendOtpEndpoint = async (req, res) => {
 
 export const resetPasswordEndpoint = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    let { email, otp, newPassword } = req.body;
+    email = (email || '').trim().toLowerCase();
+    otp = (otp || '').trim();
+
     if (!email || !otp || !newPassword) {
       return res.status(400).json({ error: "Vui lòng nhập đầy đủ Email, Mã OTP và Mật khẩu mới." });
     }
