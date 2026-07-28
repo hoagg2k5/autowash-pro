@@ -54,7 +54,7 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
     }
 
     if (!isValidVietnamLicensePlate(formattedPlate)) {
-      setError("Biển số xe không đúng định dạng Việt Nam. Bắt buộc chứa 2 số tỉnh và 1-2 chữ cái sê-ri (Ví dụ: 49A-123.45 hoặc 51F-1234).");
+      setError("Biển số xe không đúng định dạng. Vui lòng nhập lại theo mẫu (Ví dụ: 30A-123.45 hoặc 30A12345)");
       setLoading(false);
       return;
     }

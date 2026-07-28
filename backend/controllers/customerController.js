@@ -110,7 +110,7 @@ export const createVehicle = async (req, res) => {
 
     // Kiểm tra định dạng biển số xe Việt Nam
     if (!isValidVietnamLicensePlate(formattedPlate)) {
-      return res.status(400).json({ error: "Biển số xe không đúng định dạng Việt Nam. Bắt buộc chứa 2 số tỉnh và 1-2 chữ cái sê-ri (Ví dụ: 49A-123.45 hoặc 51F-1234)." });
+      return res.status(400).json({ error: "Biển số xe không đúng định dạng. Vui lòng nhập lại theo mẫu (Ví dụ: 30A-123.45 hoặc 30A12345)" });
     }
 
     const existingPlate = await Vehicle.findOne({ licensePlate: formattedPlate });

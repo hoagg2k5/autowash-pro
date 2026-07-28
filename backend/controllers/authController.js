@@ -37,7 +37,7 @@ export const register = async (req, res) => {
     if (licensePlate) {
       formattedLicensePlate = formatVietnamLicensePlate(licensePlate);
       if (!isValidVietnamLicensePlate(formattedLicensePlate)) {
-        return res.status(400).json({ error: "Biển số xe không đúng định dạng Việt Nam (Ví dụ: 49A-123.45 hoặc 51F-1234)." });
+        return res.status(400).json({ error: "Biển số xe không đúng định dạng. Vui lòng nhập lại theo mẫu (Ví dụ: 30A-123.45 hoặc 30A12345)" });
       }
     }
 
