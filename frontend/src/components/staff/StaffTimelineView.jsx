@@ -85,6 +85,7 @@ export default function StaffTimelineView({
           text-transform: uppercase;
           background: #f8fafc;
           border-bottom: 2px solid #e2e8f0;
+          text-align: center;
         }
         .timeline-header-row th.timeline-col-time {
           border-top-left-radius: 12px;
@@ -206,6 +207,7 @@ export default function StaffTimelineView({
           display: flex;
           align-items: center;
           justifyContent: center;
+          text-align: center;
           gap: 0.35rem;
           min-height: 70px;
           font-weight: 600;
