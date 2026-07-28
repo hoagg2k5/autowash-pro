@@ -8,6 +8,7 @@ import {
 import User from '../models/User.js';
 import Vehicle from '../models/Vehicle.js';
 import Otp from '../models/Otp.js';
+import { formatVietnamLicensePlate, isValidVietnamLicensePlate } from '../utils/licensePlateHelper.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret-key-autowash';
 
@@ -32,10 +33,11 @@ export const register = async (req, res) => {
     }
 
     // 3. Kiểm tra định dạng biển số xe VN (nếu có)
+    let formattedLicensePlate = '';
     if (licensePlate) {
-      const plateRegex = /^[0-9]{2}[A-Z0-9][- -]?[0-9]{4,5}$/;
-      if (!plateRegex.test(licensePlate)) {
-        return res.status(400).json({ error: "Biển số xe không đúng định dạng Việt Nam." });
+      formattedLicensePlate = formatVietnamLicensePlate(licensePlate);
+      if (!isValidVietnamLicensePlate(formattedLicensePlate)) {
+        return res.status(400).json({ error: "Biển số xe không đúng định dạng Việt Nam (Ví dụ: 49A-123.45 hoặc 51F-1234)." });
       }
     }
 
@@ -62,7 +64,7 @@ export const register = async (req, res) => {
     let cleanedPlate = '';
     let existingPlate = null;
     if (licensePlate) {
-      cleanedPlate = licensePlate.toUpperCase().trim();
+      cleanedPlate = formattedLicensePlate;
       existingPlate = await Vehicle.findOne({ licensePlate: cleanedPlate });
       if (existingPlate) {
         if (!isWalkInUpgrade || existingPlate.userId !== existingUser.id) {

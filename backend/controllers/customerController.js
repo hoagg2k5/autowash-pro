@@ -9,6 +9,7 @@ import LoyaltyRules from '../models/LoyaltyRules.js';
 import Voucher from '../models/Voucher.js';
 import UserVoucher from '../models/UserVoucher.js';
 import { addVehicle } from '../db-helper.js';
+import { formatVietnamLicensePlate, isValidVietnamLicensePlate } from '../utils/licensePlateHelper.js';
 
 export const getDashboard = async (req, res) => {
   try {
@@ -98,25 +99,26 @@ export const createVehicle = async (req, res) => {
       return res.status(403).json({ error: "Bạn không có quyền thao tác trên tài khoản này." });
     }
 
-    const { licensePlate, brand, model, color } = req.body;
+    let { licensePlate, brand, model, color } = req.body;
 
     if (!licensePlate) {
       return res.status(400).json({ error: "Biển số xe là bắt buộc." });
     }
 
+    // Tự động định dạng biển số xe Việt Nam (VD: 49A12345 -> 49A-123.45)
+    const formattedPlate = formatVietnamLicensePlate(licensePlate);
+
     // Kiểm tra định dạng biển số xe Việt Nam
-    const plateRegex = /^[0-9]{2}[A-Z0-9][- -]?[0-9]{4,5}$/;
-    if (!plateRegex.test(licensePlate)) {
-      return res.status(400).json({ error: "Biển số xe không đúng định dạng Việt Nam (Ví dụ: 30A-99999 hoặc 51F-1234)." });
+    if (!isValidVietnamLicensePlate(formattedPlate)) {
+      return res.status(400).json({ error: "Biển số xe không đúng định dạng Việt Nam. Bắt buộc chứa 2 số tỉnh và 1-2 chữ cái sê-ri (Ví dụ: 49A-123.45 hoặc 51F-1234)." });
     }
 
-    const cleanedPlate = licensePlate.toUpperCase().trim();
-    const existingPlate = await Vehicle.findOne({ licensePlate: cleanedPlate });
+    const existingPlate = await Vehicle.findOne({ licensePlate: formattedPlate });
     if (existingPlate) {
       return res.status(400).json({ error: "Biển số xe này đã tồn tại trên hệ thống." });
     }
 
-    const newVehicle = await addVehicle(userId, { licensePlate, brand, model, color });
+    const newVehicle = await addVehicle(userId, { licensePlate: formattedPlate, brand, model, color });
     res.status(201).json(newVehicle);
   } catch (error) {
     res.status(500).json({ error: error.message });

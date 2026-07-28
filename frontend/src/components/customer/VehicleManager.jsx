@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
+import { formatVietnamLicensePlate, isValidVietnamLicensePlate } from '../../utils/licensePlateHelper.js';
 
 export default function VehicleManager({ userId, vehicles, onVehicleAdded, showAddFormDefault, onCloseForm }) {
   const [showForm, setShowForm] = useState(showAddFormDefault || false);
@@ -44,8 +45,16 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
     setError('');
     setLoading(true);
 
-    if (!plate) {
+    const formattedPlate = formatVietnamLicensePlate(plate);
+
+    if (!formattedPlate) {
       setError("Biển số xe là bắt buộc.");
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidVietnamLicensePlate(formattedPlate)) {
+      setError("Biển số xe không đúng định dạng Việt Nam. Bắt buộc chứa 2 số tỉnh và 1-2 chữ cái sê-ri (Ví dụ: 49A-123.45 hoặc 51F-1234).");
       setLoading(false);
       return;
     }
@@ -55,7 +64,7 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          licensePlate: plate,
+          licensePlate: formattedPlate,
           brand,
           model,
           color
@@ -110,8 +119,16 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
               type="text"
               className="form-input"
               value={plate}
-              onChange={(e) => setPlate(e.target.value.toUpperCase())}
-              placeholder="30A-XXXXX"
+              onChange={(e) => {
+                const val = e.target.value;
+                const formatted = formatVietnamLicensePlate(val);
+                setPlate(formatted);
+              }}
+              onBlur={(e) => {
+                const formatted = formatVietnamLicensePlate(e.target.value);
+                setPlate(formatted);
+              }}
+              placeholder="Ví dụ: 49A-123.45 hoặc 51F-1234"
               required
             />
           </div>
