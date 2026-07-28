@@ -46,7 +46,8 @@ export default function KpiDetailModal({
       zIndex: 1000
     }}>
       <div className="glass-panel" style={{
-        background: '#ffffff',
+        background: 'var(--bg-card)',
+        color: 'var(--text-main)',
         padding: '2rem',
         width: '650px',
         maxWidth: '95%',

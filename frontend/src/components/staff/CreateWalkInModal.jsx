@@ -144,7 +144,8 @@ export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user }) 
         zIndex: 1000
       }}>
         <div className="glass-panel" style={{
-          background: '#ffffff',
+          background: 'var(--bg-card)',
+          color: 'var(--text-main)',
           padding: '2rem',
           width: '450px',
           maxWidth: '95%',

@@ -322,7 +322,8 @@ export default function StatusLifecycleViewer() {
 function InfoCard({ icon, iconColor, title, items, itemColor, isCode = false }) {
   return (
     <div style={{
-      background: '#ffffff',
+      background: 'var(--bg-card)',
+      color: 'var(--text-main)',
       borderRadius: '10px',
       padding: '1rem 1.1rem',
       border: '1px solid var(--border-color)',
