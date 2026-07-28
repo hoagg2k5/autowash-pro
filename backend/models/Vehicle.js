@@ -6,7 +6,9 @@ const vehicleSchema = new mongoose.Schema({
     licensePlate: { type: String, required: true, unique: true },
   brand: { type: String, default: 'Khác' },
   model: { type: String, default: 'Khác' },
-  color: { type: String, default: 'Khác' }
+  color: { type: String, default: 'Khác' },
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date, default: null }
 }, { id: false });
 
 vehicleSchema.index({ userId: 1 });

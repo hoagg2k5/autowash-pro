@@ -45,7 +45,7 @@ export const listCustomers = async (req, res) => {
     });
     
     const list = customers.map(u => {
-      const vehicles = vehiclesByUserId[u.id] || [];
+      const vehicles = (vehiclesByUserId[u.id] || []).filter(v => !v.isDeleted);
       const userBookings = bookingsByUserId[u.id] || [];
       return {
         ...u.toObject(),

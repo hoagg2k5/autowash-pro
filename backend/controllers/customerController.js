@@ -21,7 +21,7 @@ export const getDashboard = async (req, res) => {
       return res.status(403).json({ error: "Bạn không có quyền truy cập thông tin này." });
     }
 
-    const [user, vehicles, bookings, pointsHistory, rules] = await Promise.all([
+    const [user, allVehicles, bookings, pointsHistory, rules] = await Promise.all([
       User.findOne({ id: userId }),
       Vehicle.find({ userId }),
       Booking.find({ userId }).sort({ createdAt: -1 }),
@@ -33,11 +33,13 @@ export const getDashboard = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy người dùng" });
     }
 
-    // Create lookup map of vehicles by id
+    // Create lookup map of ALL vehicles by id (including soft-deleted)
     const vehicleMap = {};
-    vehicles.forEach(v => {
+    allVehicles.forEach(v => {
       vehicleMap[v.id] = v;
     });
+
+    const activeVehicles = allVehicles.filter(v => !v.isDeleted);
 
     const populatedBookings = bookings.map(b => {
       const bObj = b.toObject ? b.toObject() : b;
@@ -75,7 +77,7 @@ export const getDashboard = async (req, res) => {
 
     res.json({
       user,
-      vehicles,
+      vehicles: activeVehicles,
       bookings: populatedBookings,
       pointsHistory,
       rules,
@@ -115,7 +117,7 @@ export const createVehicle = async (req, res) => {
     }
 
     const existingPlate = await Vehicle.findOne({ licensePlate: formattedPlate });
-    if (existingPlate) {
+    if (existingPlate && !existingPlate.isDeleted) {
       return res.status(400).json({ error: "Biển số xe này đã tồn tại trên hệ thống." });
     }
 
@@ -135,7 +137,7 @@ export const deleteVehicle = async (req, res) => {
       return res.status(403).json({ error: "Bạn không có quyền thao tác trên tài khoản này." });
     }
 
-    const vehicle = await Vehicle.findOne({ id: vehicleId, userId });
+    const vehicle = await Vehicle.findOne({ id: vehicleId, userId, isDeleted: { $ne: true } });
     if (!vehicle) {
       return res.status(404).json({ error: "Không tìm thấy xe hoặc xe này không thuộc về bạn." });
     }
@@ -148,7 +150,11 @@ export const deleteVehicle = async (req, res) => {
       return res.status(400).json({ error: "Không thể xóa xe này vì đang có lịch đặt sắp diễn ra hoặc đang thực hiện." });
     }
 
-    await Vehicle.deleteOne({ id: vehicleId, userId });
+    // Soft Delete (Xóa mềm): Đánh dấu isDeleted = true thay vì xóa hẳn khỏi database
+    vehicle.isDeleted = true;
+    vehicle.deletedAt = new Date();
+    await vehicle.save();
+
     res.json({ message: "Xóa xe thành công!" });
   } catch (error) {
     res.status(500).json({ error: error.message });

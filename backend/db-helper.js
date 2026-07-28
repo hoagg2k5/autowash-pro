@@ -64,15 +64,33 @@ export async function findUserByPhone(phone) {
 }
 
 export async function findVehiclesByUserId(userId) {
-  return await Vehicle.find({ userId });
+  return await Vehicle.find({ userId, isDeleted: { $ne: true } });
 }
 
 export async function addVehicle(userId, vehicleData) {
+  const cleanPlate = vehicleData.licensePlate.toUpperCase().trim();
+  const existing = await Vehicle.findOne({ licensePlate: cleanPlate });
+
+  if (existing) {
+    if (existing.isDeleted) {
+      existing.userId = userId;
+      existing.brand = vehicleData.brand || existing.brand;
+      existing.model = vehicleData.model || existing.model;
+      existing.color = vehicleData.color || existing.color;
+      existing.isDeleted = false;
+      existing.deletedAt = null;
+      await existing.save();
+      return existing;
+    }
+  }
+
   const newVehicle = new Vehicle({
     id: 'v-' + Math.random().toString(36).substr(2, 9),
     userId,
     ...vehicleData,
-    licensePlate: vehicleData.licensePlate.toUpperCase().trim()
+    licensePlate: cleanPlate,
+    isDeleted: false,
+    deletedAt: null
   });
   await newVehicle.save();
   return newVehicle;
