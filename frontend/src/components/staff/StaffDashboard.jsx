@@ -75,7 +75,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
     try {
       const branchName = user.branch || "AutoWash Pro - Quận 1";
       const token = sessionStorage.getItem('autowash_token');
-      const res = await fetch(`${API_BASE_URL}/api/bays?branch=${encodeURIComponent(branchName)}&status=Active`, {
+      const res = await fetch(`${API_BASE_URL}/api/bays?branch=${encodeURIComponent(branchName)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -83,12 +83,12 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       if (res.ok) {
         const data = await res.json();
         const bayNames = data.map(b => b.name);
-        setBays(bayNames.length > 0 ? bayNames : ["Khoang 1", "Khoang 2", "Khoang 3"]);
+        setBays(bayNames.length > 0 ? bayNames : []);
       } else {
-        setBays(["Khoang 1", "Khoang 2", "Khoang 3"]);
+        setBays([]);
       }
     } catch (err) {
-      setBays(["Khoang 1", "Khoang 2", "Khoang 3"]);
+      setBays([]);
     }
   };
 

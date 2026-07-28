@@ -566,11 +566,13 @@ export default function QueueView({
                 );
 
                 const isBayMaintenance = bay.status === 'Maintenance';
+                const isBayInactive = bay.status === 'Inactive' || bay.status === 'Off' || bay.status === 'Disabled';
+                const isBayUnavailable = isBayMaintenance || isBayInactive;
                 
                 // Card CSS Class logic
                 let cardClass = 'bay-ready';
                 let numClass = 'num-ready';
-                if (isBayMaintenance) {
+                if (isBayMaintenance || isBayInactive) {
                   cardClass = 'bay-maintenance';
                   numClass = 'num-maintenance';
                 } else if (occupyingBooking) {
@@ -584,7 +586,7 @@ export default function QueueView({
                 }
 
                 const isDraggedOver = draggedOverBayId === bay._id;
-                if (isDraggedOver && !isBayMaintenance && !occupyingBooking) {
+                if (isDraggedOver && !isBayUnavailable && !occupyingBooking) {
                   cardClass += ' drag-over';
                 }
                 const activeDragClass = draggingId ? 'dragging-active' : '';
@@ -607,10 +609,20 @@ export default function QueueView({
                     <div className="bay-content-area">
                       {isBayMaintenance ? (
                         <>
-                            <span className="status-text-maintenance">{bay.name.toUpperCase()} - BẢO TRÌ</span>
+                          <span className="status-text-maintenance">{bay.name.toUpperCase()} - BẢO TRÌ</span>
                           <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Không khả dụng</div>
                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                             {bay.description || 'Bảo trì máy móc / dọn dẹp.'}
+                          </div>
+                        </>
+                      ) : isBayInactive ? (
+                        <>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '0.15rem 0.5rem', borderRadius: '4px', display: 'inline-block', marginBottom: '0.2rem' }}>
+                            {bay.name.toUpperCase()} - TẮT
+                          </span>
+                          <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Tạm ngừng hoạt động</div>
+                          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            {bay.description || 'Khoang rửa này đang ở trạng thái tắt.'}
                           </div>
                         </>
                       ) : occupyingBooking ? (
@@ -722,10 +734,10 @@ export default function QueueView({
 
                     {/* Right side operational buttons */}
                     <div style={{ marginLeft: '1rem', display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                      {isBayMaintenance ? (
+                      {isBayUnavailable ? (
                         <button 
                           className="btn btn-secondary btn-sm"
-                          style={{ borderColor: '#f97316', color: '#f97316', background: 'rgba(249, 115, 22, 0.02)', padding: '0.35rem 0.75rem', fontWeight: 'bold' }}
+                          style={{ borderColor: isBayInactive ? '#ef4444' : '#f97316', color: isBayInactive ? '#ef4444' : '#f97316', background: isBayInactive ? 'rgba(239, 68, 68, 0.05)' : 'rgba(249, 115, 22, 0.02)', padding: '0.35rem 0.75rem', fontWeight: 'bold' }}
                           onClick={() => handleToggleBayStatus(bay)}
                         >
                           Mở
