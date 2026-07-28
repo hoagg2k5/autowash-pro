@@ -37,33 +37,41 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const getAuthHeaders = () => {
+    const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   const fetchData = async (isSilent = false) => {
     try {
       if (!isSilent) {
         setLoading(true);
       }
       
+      const headers = getAuthHeaders();
+
       const [bookingsRes, customersRes, rulesRes, promoRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/bookings`),
-        fetch(`${API_BASE_URL}/api/admin/customers`),
-        fetch(`${API_BASE_URL}/api/admin/rules`),
-        fetch(`${API_BASE_URL}/api/admin/promotions`)
+        fetch(`${API_BASE_URL}/api/bookings`, { headers, credentials: 'include' }),
+        fetch(`${API_BASE_URL}/api/admin/customers`, { headers, credentials: 'include' }),
+        fetch(`${API_BASE_URL}/api/admin/rules`, { headers, credentials: 'include' }),
+        fetch(`${API_BASE_URL}/api/admin/promotions`, { headers, credentials: 'include' })
       ]);
 
-      if (!bookingsRes.ok || !customersRes.ok || !rulesRes.ok || !promoRes.ok) {
-        throw new Error("Không thể tải thông tin dữ liệu quản trị.");
-      }
+      const bookingsData = bookingsRes.ok ? await bookingsRes.json() : [];
+      const customersData = customersRes.ok ? await customersRes.json() : [];
+      const rulesData = rulesRes.ok ? await rulesRes.json() : null;
+      const promoData = promoRes.ok ? await promoRes.json() : [];
 
-      const bookingsData = await bookingsRes.json();
-      const customersData = await customersRes.json();
-      const rulesData = await rulesRes.json();
-      const promoData = await promoRes.json();
-
-      setBookings(bookingsData);
-      setCustomers(customersData);
-      setRules(rulesData);
-      setPromotions(promoData);
+      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
+      setCustomers(Array.isArray(customersData) ? customersData : []);
+      setRules(rulesData && !rulesData.error ? rulesData : null);
+      setPromotions(Array.isArray(promoData) ? promoData : []);
+      setError('');
     } catch (err) {
+      console.error("Lỗi fetchData Admin:", err);
       setError(err.message);
     } finally {
       if (!isSilent) {
@@ -171,7 +179,8 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/rules`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
+        credentials: 'include',
         body: JSON.stringify(updatedRules)
       });
 
@@ -190,7 +199,8 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/promotions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
+        credentials: 'include',
         body: JSON.stringify(newPromo)
       });
 
@@ -208,7 +218,9 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
   const handleTogglePromo = async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/promotions/${id}/toggle`, {
-        method: 'POST'
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include'
       });
       if (!response.ok) throw new Error("Thao tác thất bại.");
       fetchData(true);
@@ -221,7 +233,8 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/promotions/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
+        credentials: 'include',
         body: JSON.stringify(updatedPromo)
       });
 
@@ -239,7 +252,9 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
   const handleDeletePromo = async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/promotions/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+        credentials: 'include'
       });
       if (!response.ok) {
         const data = await response.json();
@@ -255,7 +270,11 @@ export default function AdminDashboard({ user, onLogout, setPendingCount, setFee
   const handleRunMonthlyReview = async () => {
     if (!window.confirm("Bắt đầu thực hiện quy trình rà soát tháng? Hệ thống sẽ rà soát lại cấp bậc hội viên dựa trên cấu hình tích lũy mới.")) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/run-review`, { method: 'POST' });
+      const response = await fetch(`${API_BASE_URL}/api/admin/run-review`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include'
+      });
       const data = await response.json();
       toast.success(data.message);
       fetchData(true);

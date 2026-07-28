@@ -19,10 +19,17 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
     if (user?.branch) return;
     setStaffLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/staffs`);
+      const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
+      const response = await fetch(`${API_BASE_URL}/api/admin/staffs`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include'
+      });
       if (response.ok) {
         const data = await response.json();
-        setStaffs(data);
+        setStaffs(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error("Lỗi tải danh sách nhân viên:", err);
@@ -36,7 +43,7 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
       const res = await fetch(`${API_BASE_URL}/api/branches`);
       if (res.ok) {
         const data = await res.json();
-        setBranches(data);
+        setBranches(Array.isArray(data) ? data : []);
         if (data.length > 0 && !staffForm.branch) {
           setStaffForm(prev => ({ ...prev, branch: data[0].name }));
         }
@@ -59,9 +66,14 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
         : `${API_BASE_URL}/api/admin/staffs`;
       const method = editingStaff ? 'PUT' : 'POST';
 
+      const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
         body: JSON.stringify(staffForm)
       });
       const data = await response.json();
@@ -78,8 +90,13 @@ export default function AdminStaffs({ user, API_BASE_URL }) {
   const handleDeleteStaff = async (id) => {
     if (!window.confirm("Xác nhận xóa tài khoản nhân sự này?")) return;
     try {
+      const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
       const response = await fetch(`${API_BASE_URL}/api/admin/staffs/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include'
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Xóa thất bại.");

@@ -91,9 +91,14 @@ export default function AdminServices() {
         method = 'PUT';
       }
 
+      const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
 
@@ -113,8 +118,13 @@ export default function AdminServices() {
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa gói dịch vụ này? Hành động này không thể hoàn tác.')) return;
     try {
+      const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
       const res = await fetch(`${API_BASE_URL}/api/admin/services/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include'
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Không thể xóa dịch vụ.');

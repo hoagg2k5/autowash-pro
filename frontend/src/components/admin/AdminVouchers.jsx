@@ -23,10 +23,17 @@ export default function AdminVouchers() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`${API_BASE_URL}/api/admin/vouchers`);
+      const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/vouchers`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include'
+      });
       if (!res.ok) throw new Error('Không thể tải danh sách mã giảm giá');
       const data = await res.json();
-      setVouchers(data);
+      setVouchers(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -168,9 +175,14 @@ export default function AdminVouchers() {
         method = 'PUT';
       }
 
+      const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
 
@@ -190,8 +202,13 @@ export default function AdminVouchers() {
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này? Hành động này không thể hoàn tác.')) return;
     try {
+      const token = sessionStorage.getItem('autowash_token') || localStorage.getItem('autowash_token');
       const res = await fetch(`${API_BASE_URL}/api/admin/vouchers/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include'
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Không thể xóa voucher.');

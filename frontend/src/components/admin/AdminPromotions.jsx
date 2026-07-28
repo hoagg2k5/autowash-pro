@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from '../shared/toast.js';
 
 export default function AdminPromotions({ promotions, onCreatePromo, onTogglePromo, onEditPromo, onDeletePromo, rules }) {
+  const safePromotions = Array.isArray(promotions) ? promotions : [];
   const [editingId, setEditingId] = useState(null); // null means adding new
   const [promoTitle, setPromoTitle] = useState('');
   const [promoDesc, setPromoDesc] = useState('');
@@ -120,11 +121,11 @@ export default function AdminPromotions({ promotions, onCreatePromo, onTogglePro
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <h3 style={{ marginBottom: '1.25rem' }}>CHIẾN DỊCH KHUYẾN MÃI ĐANG CHẠY</h3>
         
-        {promotions.length === 0 ? (
+        {safePromotions.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>Chưa có chiến dịch nào được tạo.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {promotions.map(promo => (
+            {safePromotions.map(promo => (
               <div 
                 key={promo.id} 
                 style={{ 
@@ -149,7 +150,7 @@ export default function AdminPromotions({ promotions, onCreatePromo, onTogglePro
                 <div style={{ margin: '0.25rem 0' }}>
                   <span className="text-xs" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Tập khách hàng áp dụng:</span>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {promo.targetTiers.map(t => (
+                    {(Array.isArray(promo.targetTiers) ? promo.targetTiers : []).map(t => (
                       <span key={t} className={`tier-indicator tier-${t}`} style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>{t}</span>
                     ))}
                   </div>
