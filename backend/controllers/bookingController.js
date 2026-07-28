@@ -23,6 +23,7 @@ import bcrypt from 'bcryptjs';
 import { sendEmail, getBookingConfirmationTemplate, getBookingStatusUpdateTemplate } from '../utils/email.js';
 import PointHistory from '../models/PointHistory.js';
 import { logAdminAction } from '../utils/auditLogger.js';
+import { formatVietnamLicensePlate } from '../utils/licensePlateHelper.js';
 import { createPaymentUrl, verifyResponse, callRefundApi } from '../utils/vnpayHelper.js';
 
 
@@ -494,9 +495,17 @@ export const getByPlate = async (req, res) => {
     if (!licensePlate) {
       return res.status(400).json({ error: "Biển số xe là bắt buộc." });
     }
-    const plateUpper = licensePlate.toUpperCase().trim();
+    const rawUpper = licensePlate.toUpperCase().trim();
+    const formattedQuery = formatVietnamLicensePlate(licensePlate);
+    const alphaNumQuery = rawUpper.replace(/[^A-Z0-9]/g, '');
 
-    const vehicle = await Vehicle.findOne({ licensePlate: plateUpper });
+    let vehicle = await Vehicle.findOne({
+      $or: [
+        { licensePlate: formattedQuery },
+        { licensePlate: rawUpper },
+        { licensePlate: new RegExp(alphaNumQuery.split('').join('[-.\\s]?'), 'i') }
+      ]
+    });
     if (!vehicle) {
       return res.status(404).json({ error: "Không tìm thấy xe với biển số này trên hệ thống." });
     }

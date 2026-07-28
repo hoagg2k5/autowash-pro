@@ -138,10 +138,12 @@ export default function QueueView({
   const filteredQueue = sortedQueue.filter(b => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase().trim();
+    const cleanTerm = term.replace(/[^a-z0-9]/g, '');
     const plate = (b.licensePlate || '').toLowerCase();
+    const cleanPlate = plate.replace(/[^a-z0-9]/g, '');
     const name = (b.customerName || '').toLowerCase();
     const id = (b.id || '').toLowerCase();
-    return plate.includes(term) || name.includes(term) || id.includes(term);
+    return plate.includes(term) || (cleanTerm && cleanPlate.includes(cleanTerm)) || name.includes(term) || id.includes(term);
   });
 
   // Automatically select first element if selected element leaves the queue
