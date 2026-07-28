@@ -16,6 +16,7 @@ export default function QueueView({
   const [loadingBays, setLoadingBays] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
   const [draggedOverBayId, setDraggedOverBayId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [, setTick] = useState(0);
 
   const getBayDisplayNum = (name, index) => {
@@ -133,6 +134,16 @@ export default function QueueView({
     return timeA - timeB;
   });
 
+  // Filter queue by license plate / customer name / booking ID search
+  const filteredQueue = sortedQueue.filter(b => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase().trim();
+    const plate = (b.licensePlate || '').toLowerCase();
+    const name = (b.customerName || '').toLowerCase();
+    const id = (b.id || '').toLowerCase();
+    return plate.includes(term) || name.includes(term) || id.includes(term);
+  });
+
   // Automatically select first element if selected element leaves the queue
   useEffect(() => {
     if (selectedBookingId && !sortedQueue.some(b => b.id === selectedBookingId)) {
@@ -155,6 +166,9 @@ export default function QueueView({
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    try {
+      e.dataTransfer.dropEffect = 'move';
+    } catch (err) {}
   };
 
   const handleDragEnter = (e, bay) => {
@@ -788,32 +802,76 @@ export default function QueueView({
 
         {/* RIGHT COLUMN: QUEUE LIST */}
         <div>
-          <div className="flex-between" style={{ marginBottom: '1.25rem' }}>
+          <div className="flex-between" style={{ marginBottom: '0.75rem' }}>
             <h3 className="bay-section-title">Hàng Đợi Rửa Xe</h3>
             {sortedQueue.length > 0 && (
               <span 
                 className="q-badge-tier animate-bounce"
                 style={{ background: '#ef4444', borderRadius: '20px', padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
               >
-                {sortedQueue.length} CHỜ
+                {filteredQueue.length}/{sortedQueue.length} CHỜ
               </span>
             )}
           </div>
 
-          {sortedQueue.length === 0 ? (
+          {/* Ô Tìm Kiếm Biển Số Xe / Khách hàng / Mã Đơn trong Hàng Đợi */}
+          <div style={{ marginBottom: '1rem', position: 'relative' }}>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="🔍 Tìm biển số xe, tên khách, mã đơn..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.5rem 2.2rem 0.5rem 0.8rem',
+                fontSize: '0.85rem',
+                borderRadius: '8px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                outline: 'none'
+              }}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: '0.6rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  padding: 0
+                }}
+                title="Xóa tìm kiếm"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {filteredQueue.length === 0 ? (
             <div style={{
               textAlign: 'center',
-              padding: '4rem 2rem',
+              padding: '3rem 1.5rem',
               background: 'var(--bg-card)',
               borderRadius: '12px',
               border: '1px dashed var(--border-color)',
-              color: 'var(--text-muted)'
+              color: 'var(--text-muted)',
+              fontSize: '0.875rem'
             }}>
-              Hàng đợi trống. Tất cả xe đều đã được xếp vào khoang!
+              {searchTerm.trim() 
+                ? `Không tìm thấy xe nào khớp với "${searchTerm.trim()}" trong hàng đợi.`
+                : 'Hàng đợi trống. Tất cả xe đều đã được xếp vào khoang!'}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {sortedQueue.map((b, index) => {
+              {filteredQueue.map((b, index) => {
                 const isWalkin = b.bookingType === 'Walk-in';
                 const isSelected = b.id === selectedBookingId;
                 const isLateBooking = isLate(b);

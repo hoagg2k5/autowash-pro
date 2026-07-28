@@ -1024,7 +1024,7 @@ export const redeemVoucher = async (req, res) => {
 
     // Sinh mã Voucher cá nhân ngẫu nhiên với tiền tố RW-
     const randomCode = 'RW-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }); // Hạn 30 ngày
 
     // Tạo bản ghi Voucher mới cho user này
     const newVoucher = new Voucher({

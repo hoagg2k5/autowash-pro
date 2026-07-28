@@ -18,7 +18,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
   const [branches, setBranches] = useState([]);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
 
   const [bays, setBays] = useState(["Khoang 1", "Khoang 2", "Khoang 3"]);
   const [bayFilter, setBayFilter] = useState('Tất cả');

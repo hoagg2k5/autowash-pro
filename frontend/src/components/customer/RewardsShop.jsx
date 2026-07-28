@@ -156,7 +156,14 @@ export default function RewardsShop({ dbUser, onRedeemSuccess }) {
           loadingMyVouchers ? (
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Đang tải kho quà tặng...</p>
           ) : myVouchers.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', border: '2.5px dashed var(--border-color)', borderRadius: '12px' }}>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '2.5rem', 
+              color: 'var(--text-muted)', 
+              fontSize: '0.85rem',
+              border: '2.5px dashed var(--border-color)',
+              borderRadius: '12px'
+            }}>
               Kho voucher trống. Hãy rửa xe tích điểm hoặc đổi quà từ điểm số dư của bạn nhé!
             </div>
           ) : (

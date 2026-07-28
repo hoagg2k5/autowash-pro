@@ -199,6 +199,7 @@ export default function AdminPromotions({ promotions, onCreatePromo, onTogglePro
         <h3 style={{ marginBottom: '1.25rem' }}>
           {editingId ? '📝 CẬP NHẬT KHUYẾN MÃI TIER' : '✨ THÊM KHUYẾN MÃI TIER MỚI'}
         </h3>
+        {promoSuccess && <div className="alert alert-success">{promoSuccess}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
