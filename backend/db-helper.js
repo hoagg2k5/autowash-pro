@@ -288,10 +288,14 @@ export async function createBooking(userId, bookingData) {
   const basePointsEarned = Math.floor(totalPaid / rules.pointsPerVndRate);
   const pointsEarned = Math.floor(basePointsEarned * tierSetting.pointMultiplier);
 
+  const carDetailsStr = vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : '';
+
   const newBooking = new Booking({
     id: newBookingId,
     userId,
     vehicleId: bookingData.vehicleId,
+    licensePlate: vehicle ? vehicle.licensePlate : (bookingData.licensePlate || ''),
+    carDetails: carDetailsStr,
     bookingDate: bookingData.bookingDate,
     timeSlot: bookingData.timeSlot,
     servicePackage: service.name,

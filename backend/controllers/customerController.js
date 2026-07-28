@@ -40,11 +40,12 @@ export const getDashboard = async (req, res) => {
     });
 
     const populatedBookings = bookings.map(b => {
+      const bObj = b.toObject ? b.toObject() : b;
       const vehicle = vehicleMap[b.vehicleId];
       return {
-        ...b.toObject(),
-        licensePlate: vehicle ? vehicle.licensePlate : 'N/A',
-        carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : 'N/A'
+        ...bObj,
+        licensePlate: vehicle ? vehicle.licensePlate : (bObj.licensePlate || 'N/A'),
+        carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : (bObj.carDetails || 'Xe đã gỡ khỏi TK')
       };
     });
     

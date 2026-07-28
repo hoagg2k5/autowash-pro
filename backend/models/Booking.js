@@ -4,6 +4,8 @@ const bookingSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true }, // ID cũ
   userId: { type: String, required: true },
   vehicleId: { type: String, required: true },
+  licensePlate: { type: String },
+  carDetails: { type: String },
   bookingDate: { type: String, required: true }, // Dạng YYYY-MM-DD
   timeSlot: { type: String, required: true },
   servicePackage: { type: String, required: true },

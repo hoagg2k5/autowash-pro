@@ -191,15 +191,16 @@ export const listBookings = async (req, res) => {
     });
 
     const list = bookings.map(b => {
+      const bObj = b.toObject ? b.toObject() : b;
       const user = userMap[b.userId];
       const vehicle = vehicleMap[b.vehicleId];
       return {
-        ...b.toObject(),
+        ...bObj,
         customerName: user ? user.fullName : 'Ẩn danh',
         customerPhone: user ? user.phone : '',
         customerTier: user ? user.loyaltyTier : 'Member',
-        licensePlate: vehicle ? vehicle.licensePlate : 'N/A',
-        carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : 'N/A'
+        licensePlate: vehicle ? vehicle.licensePlate : (bObj.licensePlate || 'N/A'),
+        carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : (bObj.carDetails || 'Xe đã gỡ khỏi TK')
       };
     });
 
