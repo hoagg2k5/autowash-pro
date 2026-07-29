@@ -44,7 +44,8 @@ export default function BookingStep2({
   setSelectedBay,
   loadingBays,
   prevStep,
-  nextStep
+  nextStep,
+  branchSelectRef
 }) {
   const handleDateSelect = (dateStr) => {
     setBookingDate(dateStr);
@@ -59,6 +60,7 @@ export default function BookingStep2({
       <div className="form-group">
         <label>Chọn Chi Nhánh Rửa Xe (Gần bạn nhất) *</label>
         <select
+          ref={branchSelectRef}
           className="form-input"
           value={selectedBranch}
           onChange={(e) => setSelectedBranch(e.target.value)}

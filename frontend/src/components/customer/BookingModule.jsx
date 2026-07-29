@@ -19,6 +19,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
 
   const bookingContainerRef = useRef(null);
   const vehicleSelectRef = useRef(null);
+  const branchSelectRef = useRef(null);
 
   // Form selections state
   const [selectedVehicle, setSelectedVehicle] = useState('');
@@ -417,7 +418,14 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
     } else if (currentStep === 2) {
       if (!selectedBranch) {
         setError("Vui lòng chọn chi nhánh rửa xe.");
-        bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (branchSelectRef.current) {
+          branchSelectRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (branchSelectRef.current.tagName === 'SELECT') {
+            branchSelectRef.current.focus();
+          }
+        } else if (bookingContainerRef.current) {
+          bookingContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         return;
       }
       if (!bookingDate) {
@@ -663,6 +671,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
           loadingBays={loadingBays}
           prevStep={prevStep}
           nextStep={nextStep}
+          branchSelectRef={branchSelectRef}
         />
       )}
 
