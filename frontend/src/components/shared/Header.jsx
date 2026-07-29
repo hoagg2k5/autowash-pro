@@ -480,21 +480,31 @@ export default function Header({
                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-950/70 px-2 py-0.5 rounded-full uppercase">
                                   <Sparkles className="w-3 h-3" /> Chương Trình Khuyến Mãi
                                 </span>
-                                <span className="text-[10px] text-slate-400">{p.startDate} ~ {p.endDate}</span>
+                                <span className="text-[10px] text-slate-400 font-medium">{p.startDate} ~ {p.endDate}</span>
                               </div>
 
                               <div className="mt-0.5">
-                                <div className="text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center justify-between">
-                                  <span>{p.title}</span>
-                                  <span className="text-sky-600 dark:text-sky-400 font-black">-{p.discountPercentage}%</span>
+                                {/* Tiêu Đề Chiến Dịch */}
+                                <div className="text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-start justify-between gap-2">
+                                  <span className="leading-snug">{p.title}</span>
+                                  <span className="text-sky-600 dark:text-sky-400 font-black text-xs shrink-0 bg-sky-100/80 dark:bg-sky-950/80 px-1.5 py-0.5 rounded">
+                                    -{p.discountPercentage}%
+                                  </span>
                                 </div>
-                                {p.description && (
-                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 m-0 mt-1 leading-snug">
+
+                                {/* Mô Tả Chiến Dịch */}
+                                {p.description ? (
+                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 m-0 mt-1 leading-snug font-normal">
                                     {p.description}
                                   </p>
+                                ) : (
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 italic m-0 mt-1 leading-snug">
+                                    Ưu đãi giảm {p.discountPercentage}% dịch vụ rửa xe dành cho hội viên.
+                                  </p>
                                 )}
-                                <div className="text-[10px] text-slate-400 mt-1 font-medium">
-                                  Áp dụng hạng: {p.targetTiers && p.targetTiers.length > 0 ? p.targetTiers.join(', ') : 'Tất cả hội viên'}
+
+                                <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium flex items-center justify-between">
+                                  <span>Áp dụng: {p.targetTiers && p.targetTiers.length > 0 ? p.targetTiers.join(', ') : 'Tất cả hội viên'}</span>
                                 </div>
                               </div>
                             </div>
