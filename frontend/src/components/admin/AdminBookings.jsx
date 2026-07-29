@@ -400,8 +400,8 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                         </div>
                       )}
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'nowrap', alignItems: 'center', width: 'max-content' }}>
+                    <td style={{ minWidth: '160px', width: '160px' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'nowrap', alignItems: 'center' }}>
                         {b.status === 'Pending' && (
                           <button className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => handleConfirmBooking(b.id)}>
                             Xác Nhận
