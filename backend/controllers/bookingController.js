@@ -88,6 +88,10 @@ async function autoCancelNoShowBookings(io) {
       const updatedBookings = [];
       for (const b of bookingsToCancel) {
         const cancelled = await cancelBooking(b.id, 'Hệ thống tự động hủy do quá giờ hẹn không tới (No-show).', true);
+        if (b.paymentStatus === 'Paid' && b.paymentMethod === 'Online') {
+          cancelled.paymentStatus = 'Refund Pending';
+          await cancelled.save();
+        }
         updatedBookings.push(cancelled);
       }
 
