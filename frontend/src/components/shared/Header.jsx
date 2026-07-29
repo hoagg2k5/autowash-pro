@@ -426,49 +426,82 @@ export default function Header({
                       return (
                         <>
                           {/* Render Vouchers */}
-                          {vList.map(v => (
-                            <div 
-                              key={v._id || v.code}
-                              className="p-3 rounded-lg border border-amber-200/70 dark:border-amber-900/50 bg-gradient-to-r from-amber-50/60 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-950/20 flex flex-col gap-1.5 transition-all hover:shadow-xs text-left"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/70 px-2 py-0.5 rounded-full uppercase">
-                                  <Ticket className="w-3 h-3" /> Voucher Đặt Xe
-                                </span>
-                                <span className="text-[10px] text-slate-400">HSD: {v.expiryDate}</span>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-2 mt-0.5">
-                                <div>
-                                  <div className="text-xs font-black text-slate-800 dark:text-slate-100">
-                                    Giảm {v.discountVnd ? formatVnd(v.discountVnd) : `${v.discountPercent}%`}
-                                  </div>
-                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                                    {v.minSpent > 0 ? `Đơn tối thiểu ${formatVnd(v.minSpent)}` : 'Áp dụng cho mọi đơn hàng'}
-                                  </div>
+                          {vList.map(v => {
+                            const isFreeVoucher = !v.pointsRequired || v.pointsRequired === 0;
+                            return (
+                              <div 
+                                key={v._id || v.code}
+                                className="p-3 rounded-lg border border-amber-200/70 dark:border-amber-900/50 bg-gradient-to-r from-amber-50/60 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-950/20 flex flex-col gap-1.5 transition-all hover:shadow-xs text-left"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/70 px-2 py-0.5 rounded-full uppercase">
+                                    {isFreeVoucher ? (
+                                      <>
+                                        <Ticket className="w-3 h-3 text-amber-600" /> Voucher Khuyến Mãi (Miễn phí)
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Gift className="w-3 h-3 text-orange-600" /> Voucher Đổi Điểm Mới
+                                      </>
+                                    )}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-medium">HSD: {v.expiryDate}</span>
                                 </div>
 
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleCopyCode(v.code, e)}
-                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-mono font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors shadow-2xs cursor-pointer"
-                                  title="Sao chép mã để sử dụng"
-                                >
-                                  {copiedCode === v.code ? (
-                                    <>
-                                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                                      <span className="text-emerald-600 dark:text-emerald-400">Đã chép</span>
-                                    </>
+                                <div className="flex items-center justify-between gap-2 mt-0.5">
+                                  <div>
+                                    <div className="text-xs font-black text-slate-800 dark:text-slate-100">
+                                      Giảm {v.discountVnd ? formatVnd(v.discountVnd) : `${v.discountPercent}%`}
+                                      {v.minSpent > 0 && <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400 ml-1">(Đơn từ {formatVnd(v.minSpent)})</span>}
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                      {isFreeVoucher ? (
+                                        'Khuyến mãi trực tiếp - Nhập mã khi đặt lịch'
+                                      ) : (
+                                        <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                                          Cần {v.pointsRequired} điểm tích lũy để đổi mã này
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {isFreeVoucher ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleCopyCode(v.code, e)}
+                                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-mono font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors shadow-2xs cursor-pointer shrink-0"
+                                      title="Sao chép mã để sử dụng"
+                                    >
+                                      {copiedCode === v.code ? (
+                                        <>
+                                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                          <span className="text-emerald-600 dark:text-emerald-400">Đã chép</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>{v.code}</span>
+                                          <Copy className="w-3 h-3 opacity-70" />
+                                        </>
+                                      )}
+                                    </button>
                                   ) : (
-                                    <>
-                                      <span>{v.code}</span>
-                                      <Copy className="w-3 h-3 opacity-70" />
-                                    </>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowNotifications(false);
+                                        navigate('/customer/profile?tab=rewards');
+                                      }}
+                                      className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs cursor-pointer shrink-0 border-none"
+                                      title="Đến cửa hàng đổi thưởng"
+                                    >
+                                      <span>Đổi Ngay</span>
+                                    </button>
                                   )}
-                                </button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
 
                           {/* Render Promotions */}
                           {pList.map(p => (
