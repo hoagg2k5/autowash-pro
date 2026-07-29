@@ -329,7 +329,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
       ) : (
         <>
           <div className="table-container">
-            <table style={{ minWidth: '1300px' }}>
+            <table style={{ minWidth: '1200px' }}>
               <thead>
                 <tr>
                   <th>Thông tin khách</th>
@@ -401,7 +401,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                       )}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'nowrap', alignItems: 'center', width: 'max-content' }}>
                         {b.status === 'Pending' && (
                           <button className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => handleConfirmBooking(b.id)}>
                             Xác Nhận
