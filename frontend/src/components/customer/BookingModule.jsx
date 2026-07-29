@@ -416,23 +416,17 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
       bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (currentStep === 2) {
       if (!selectedBranch) {
-        const errorMsg = "Vui lòng chọn chi nhánh rửa xe.";
-        setError(errorMsg);
-        toast.error(errorMsg);
+        setError("Vui lòng chọn chi nhánh rửa xe.");
         bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       if (!bookingDate) {
-        const errorMsg = "Vui lòng chọn ngày rửa xe.";
-        setError(errorMsg);
-        toast.error(errorMsg);
+        setError("Vui lòng chọn ngày rửa xe.");
         bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       if (!selectedSlot) {
-        const errorMsg = "Vui lòng chọn khung giờ hẹn.";
-        setError(errorMsg);
-        toast.error(errorMsg);
+        setError("Vui lòng chọn khung giờ hẹn.");
         bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
@@ -462,9 +456,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
       }
 
       if (isSlotPassed) {
-        const errorMsg = "Khung giờ hẹn đã chọn đã trôi qua. Vui lòng chọn khung giờ khác.";
-        setError(errorMsg);
-        toast.error(errorMsg);
+        setError("Khung giờ hẹn đã chọn đã trôi qua. Vui lòng chọn khung giờ khác.");
         bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
