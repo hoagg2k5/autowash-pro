@@ -19,7 +19,6 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
 
   const bookingContainerRef = useRef(null);
   const vehicleSelectRef = useRef(null);
-  const [vehicleHighlight, setVehicleHighlight] = useState(false);
 
   // Form selections state
   const [selectedVehicle, setSelectedVehicle] = useState('');
@@ -401,11 +400,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
 
     if (currentStep === 1) {
       if (!selectedVehicle) {
-        const errorMsg = "Vui lòng thêm và chọn xe ô tô để tiếp tục.";
-        setError(errorMsg);
-        toast.error(errorMsg);
-        setVehicleHighlight(true);
-        setTimeout(() => setVehicleHighlight(false), 2500);
+        setError("Vui lòng thêm và chọn xe ô tô để tiếp tục.");
 
         if (vehicleSelectRef.current) {
           vehicleSelectRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -653,7 +648,6 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
           nextStep={nextStep}
           formatVnd={formatVnd}
           vehicleSelectRef={vehicleSelectRef}
-          vehicleHighlight={vehicleHighlight}
         />
       )}
 
