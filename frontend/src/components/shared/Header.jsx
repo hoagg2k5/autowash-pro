@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShowerHead, User, Wrench, Crown, LogOut, Home, Sun, Moon, Ticket } from 'lucide-react';
+import { ShowerHead, User, Wrench, Crown, LogOut, Home, Sun, Moon, Ticket, Bell, Copy, Check, Gift, Sparkles, X } from 'lucide-react';
 import { Button } from '../ui/Button.jsx';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { API_BASE_URL } from '../../config.js';
+import { toast } from './toast.js';
 
 function useDragScroll() {
   const ref = useRef(null);
@@ -84,6 +86,86 @@ export default function Header({
 
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // Notification states
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState({ promotions: [], vouchers: [] });
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [activeNotifTab, setActiveNotifTab] = useState('all');
+  const [copiedCode, setCopiedCode] = useState('');
+  const notifRef = useRef(null);
+
+  const fetchNotifications = async () => {
+    if (!currentUser) return;
+    setLoadingNotifications(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/customers/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+        const total = (data.promotions?.length || 0) + (data.vouchers?.length || 0);
+        const lastSeen = Number(localStorage.getItem(`seen_notif_total_${currentUser.id}`) || 0);
+        if (total > lastSeen) {
+          setUnreadCount(total - lastSeen);
+        } else {
+          setUnreadCount(0);
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải thông báo:", err);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchNotifications();
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!showNotifications) return;
+    const handleCloseNotif = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    window.addEventListener('click', handleCloseNotif);
+    return () => window.removeEventListener('click', handleCloseNotif);
+  }, [showNotifications]);
+
+  const toggleNotifications = (e) => {
+    e.stopPropagation();
+    setShowDropdown(false);
+    if (!showNotifications) {
+      fetchNotifications();
+      setUnreadCount(0);
+      const total = (notifications.promotions?.length || 0) + (notifications.vouchers?.length || 0);
+      if (currentUser) {
+        localStorage.setItem(`seen_notif_total_${currentUser.id}`, String(total));
+      }
+    }
+    setShowNotifications(!showNotifications);
+  };
+
+  const handleCopyCode = (code, e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    toast.success(`Đã sao chép mã voucher: ${code}`);
+    setTimeout(() => setCopiedCode(''), 2000);
+  };
+
+  const formatVnd = (amount) => {
+    if (!amount) return '0 ₫';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
+
   useEffect(() => {
     if (isDark) {
       document.body.classList.add('dark');
@@ -103,6 +185,7 @@ export default function Header({
 
   const toggleDropdown = (e) => {
     e.stopPropagation();
+    setShowNotifications(false);
     setShowDropdown(!showDropdown);
   };
 
@@ -249,6 +332,188 @@ export default function Header({
       )}
 
       <div className="nav-buttons flex items-center gap-3">
+        {/* Notification Bell Icon */}
+        {currentUser && (
+          <div className="relative" ref={notifRef}>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors relative cursor-pointer"
+              onClick={toggleNotifications}
+              title="Thông báo & Ưu đãi từ Admin"
+              style={{ outline: 'none' }}
+            >
+              <Bell className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Button>
+
+            {showNotifications && (
+              <div 
+                className="absolute right-0 mt-2.5 w-80 sm:w-96 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[1000] overflow-hidden animate-fade-in"
+                style={{ transformOrigin: 'top right' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Tooltip Arrow Pointer */}
+                <div className="absolute -top-[5px] right-3 w-2.5 h-2.5 bg-white dark:bg-slate-800 border-t border-l border-slate-200 dark:border-slate-700 rotate-45"></div>
+
+                {/* Popover Header */}
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/80 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
+                      <Bell className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 m-0 leading-tight">Thông Báo & Khuyến Mãi</h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 m-0">Voucher & Khuyến mãi từ Quản trị viên</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowNotifications(false)}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Tabs Header */}
+                <div className="flex border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/40 dark:bg-slate-800/40 px-3 text-[11px] font-semibold text-slate-500">
+                  <button
+                    onClick={() => setActiveNotifTab('all')}
+                    className={`py-2 px-2.5 border-b-2 font-bold transition-all cursor-pointer border-t-0 border-l-0 border-r-0 bg-transparent ${activeNotifTab === 'all' ? 'border-sky-500 text-sky-600 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  >
+                    Tất cả ({(notifications.promotions?.length || 0) + (notifications.vouchers?.length || 0)})
+                  </button>
+                  <button
+                    onClick={() => setActiveNotifTab('vouchers')}
+                    className={`py-2 px-2.5 border-b-2 font-bold transition-all cursor-pointer border-t-0 border-l-0 border-r-0 bg-transparent ${activeNotifTab === 'vouchers' ? 'border-sky-500 text-sky-600 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  >
+                    Vouchers ({notifications.vouchers?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setActiveNotifTab('promotions')}
+                    className={`py-2 px-2.5 border-b-2 font-bold transition-all cursor-pointer border-t-0 border-l-0 border-r-0 bg-transparent ${activeNotifTab === 'promotions' ? 'border-sky-500 text-sky-600 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  >
+                    Khuyến Mãi ({notifications.promotions?.length || 0})
+                  </button>
+                </div>
+
+                {/* Notification Items List */}
+                <div className="max-h-80 overflow-y-auto p-2.5 space-y-2 custom-scrollbar">
+                  {loadingNotifications ? (
+                    <div className="py-6 text-center text-xs text-slate-400">Đang kiểm tra thông báo mới...</div>
+                  ) : (
+                    (() => {
+                      const showVouchers = activeNotifTab === 'all' || activeNotifTab === 'vouchers';
+                      const showPromos = activeNotifTab === 'all' || activeNotifTab === 'promotions';
+
+                      const vList = showVouchers ? (notifications.vouchers || []) : [];
+                      const pList = showPromos ? (notifications.promotions || []) : [];
+
+                      if (vList.length === 0 && pList.length === 0) {
+                        return (
+                          <div className="py-8 text-center px-4">
+                            <Gift className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2 opacity-60" />
+                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 m-0">Không có ưu đãi nào mới</p>
+                            <p className="text-[11px] text-slate-400 m-0 mt-0.5">Các chương trình khuyến mãi và voucher do Admin phát hành sẽ hiển thị tại đây.</p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <>
+                          {/* Render Vouchers */}
+                          {vList.map(v => (
+                            <div 
+                              key={v._id || v.code}
+                              className="p-3 rounded-lg border border-amber-200/70 dark:border-amber-900/50 bg-gradient-to-r from-amber-50/60 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-950/20 flex flex-col gap-1.5 transition-all hover:shadow-xs text-left"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/70 px-2 py-0.5 rounded-full uppercase">
+                                  <Ticket className="w-3 h-3" /> Voucher Đặt Xe
+                                </span>
+                                <span className="text-[10px] text-slate-400">HSD: {v.expiryDate}</span>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-2 mt-0.5">
+                                <div>
+                                  <div className="text-xs font-black text-slate-800 dark:text-slate-100">
+                                    Giảm {v.discountVnd ? formatVnd(v.discountVnd) : `${v.discountPercent}%`}
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    {v.minSpent > 0 ? `Đơn tối thiểu ${formatVnd(v.minSpent)}` : 'Áp dụng cho mọi đơn hàng'}
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleCopyCode(v.code, e)}
+                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-mono font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors shadow-2xs cursor-pointer"
+                                  title="Sao chép mã để sử dụng"
+                                >
+                                  {copiedCode === v.code ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                      <span className="text-emerald-600 dark:text-emerald-400">Đã chép</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>{v.code}</span>
+                                      <Copy className="w-3 h-3 opacity-70" />
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Render Promotions */}
+                          {pList.map(p => (
+                            <div 
+                              key={p.id || p._id}
+                              className="p-3 rounded-lg border border-sky-200/70 dark:border-sky-900/50 bg-gradient-to-r from-sky-50/60 to-indigo-50/40 dark:from-sky-950/30 dark:to-indigo-950/20 flex flex-col gap-1.5 transition-all hover:shadow-xs text-left"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-950/70 px-2 py-0.5 rounded-full uppercase">
+                                  <Sparkles className="w-3 h-3" /> Chương Trình Khuyến Mãi
+                                </span>
+                                <span className="text-[10px] text-slate-400">{p.startDate} ~ {p.endDate}</span>
+                              </div>
+
+                              <div className="mt-0.5">
+                                <div className="text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center justify-between">
+                                  <span>{p.title}</span>
+                                  <span className="text-sky-600 dark:text-sky-400 font-black">-{p.discountPercentage}%</span>
+                                </div>
+                                {p.description && (
+                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 m-0 mt-1 leading-snug">
+                                    {p.description}
+                                  </p>
+                                )}
+                                <div className="text-[10px] text-slate-400 mt-1 font-medium">
+                                  Áp dụng hạng: {p.targetTiers && p.targetTiers.length > 0 ? p.targetTiers.join(', ') : 'Tất cả hội viên'}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      );
+                    })()
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-3 py-2 bg-slate-50/90 dark:bg-slate-800/90 border-t border-slate-100 dark:border-slate-700/60 text-center">
+                  <span className="text-[10px] text-slate-400">Được tạo & quản lý trực tiếp bởi Admin hệ thống</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {location.pathname !== '/' && (
           <Button 
             variant="outline" 
@@ -366,3 +631,4 @@ export default function Header({
     </header>
   );
 }
+

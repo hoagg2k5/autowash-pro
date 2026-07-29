@@ -8,6 +8,7 @@ import PointHistory from '../models/PointHistory.js';
 import LoyaltyRules from '../models/LoyaltyRules.js';
 import Voucher from '../models/Voucher.js';
 import UserVoucher from '../models/UserVoucher.js';
+import Promotion from '../models/Promotion.js';
 import { addVehicle } from '../db-helper.js';
 import { formatVietnamLicensePlate, isValidVietnamLicensePlate } from '../utils/licensePlateHelper.js';
 
@@ -427,6 +428,45 @@ export const getRedeemableVouchers = async (req, res) => {
     });
 
     res.json(vouchers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getNotifications = async (req, res) => {
+  try {
+    const user = req.user ? await User.findOne({ id: req.user.id }) : null;
+    const userTier = user ? (user.loyaltyTier || 'Member') : 'Member';
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+    // Fetch Active Promotions created by Admin
+    const activePromotions = await Promotion.find({
+      isActive: true,
+      startDate: { $lte: today },
+      endDate: { $gte: today }
+    }).sort({ startDate: -1 }).lean();
+
+    const filteredPromotions = activePromotions.filter(p => {
+      if (!p.targetTiers || p.targetTiers.length === 0) return true;
+      return p.targetTiers.includes(userTier);
+    });
+
+    // Fetch Active Vouchers created by Admin
+    const activeVouchers = await Voucher.find({
+      isActive: true,
+      expiryDate: { $gte: today }
+    }).sort({ expiryDate: 1 }).lean();
+
+    const filteredVouchers = activeVouchers.filter(v => {
+      if (!v.targetTiers || v.targetTiers.length === 0) return true;
+      return v.targetTiers.includes(userTier);
+    });
+
+    res.json({
+      promotions: filteredPromotions,
+      vouchers: filteredVouchers,
+      userTier
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
