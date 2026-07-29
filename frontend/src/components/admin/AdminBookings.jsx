@@ -341,7 +341,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                   <th>Gói dịch vụ</th>
                   <th>Phải thu</th>
                   <th>Trạng thái</th>
-                  <th style={{ minWidth: '140px' }}>Thao tác</th>
+                  <th style={{ minWidth: '160px' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -418,13 +418,13 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                           </button>
                         )}
                         {isRefundable(b) && (
-                          <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', background: '#dc2626', color: 'white', whiteSpace: 'nowrap' }} onClick={() => handleCancelWash(b.id, true)}>
-                            Hoàn tiền & Hủy
+                          <button className="btn btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderRadius: '6px', background: '#ef4444', color: 'white', whiteSpace: 'nowrap', fontWeight: '500', cursor: 'pointer' }} onClick={() => handleCancelWash(b.id, true)}>
+                            Hủy & Hoàn
                           </button>
                         )}
                         {b.paymentStatus === 'Refund Pending' && (
-                          <button className="btn btn-danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', background: '#e11d48', color: 'white', whiteSpace: 'nowrap', position: 'relative', zIndex: 10, cursor: 'pointer' }} onClick={() => { console.log('REFUND CLICK', b.id); handleRefundBooking(b.id); }}>
-                            Duyệt Hoàn Tiền
+                          <button className="btn btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderRadius: '6px', background: '#f43f5e', color: 'white', whiteSpace: 'nowrap', fontWeight: '500', position: 'relative', zIndex: 10, cursor: 'pointer' }} onClick={() => { console.log('REFUND CLICK', b.id); handleRefundBooking(b.id); }}>
+                            Duyệt Hoàn
                           </button>
                         )}
                       </div>
