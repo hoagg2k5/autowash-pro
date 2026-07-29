@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 
@@ -16,6 +16,10 @@ const TIME_SLOTS = [
 export default function BookingModule({ dbUser, vehicles, rules, onBookingSuccess, onOpenAddVehicle }) {
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1); // 1, 2, 3
+
+  const bookingContainerRef = useRef(null);
+  const vehicleSelectRef = useRef(null);
+  const [vehicleHighlight, setVehicleHighlight] = useState(false);
 
   // Form selections state
   const [selectedVehicle, setSelectedVehicle] = useState('');
@@ -397,21 +401,44 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
 
     if (currentStep === 1) {
       if (!selectedVehicle) {
-        setError("Vui lòng thêm và chọn xe ô tô để tiếp tục.");
+        const errorMsg = "Vui lòng thêm và chọn xe ô tô để tiếp tục.";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setVehicleHighlight(true);
+        setTimeout(() => setVehicleHighlight(false), 2500);
+
+        if (vehicleSelectRef.current) {
+          vehicleSelectRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (vehicleSelectRef.current.tagName === 'SELECT') {
+            vehicleSelectRef.current.focus();
+          }
+        } else if (bookingContainerRef.current) {
+          bookingContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         return;
       }
       setCurrentStep(2);
+      bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (currentStep === 2) {
       if (!selectedBranch) {
-        setError("Vui lòng chọn chi nhánh rửa xe.");
+        const errorMsg = "Vui lòng chọn chi nhánh rửa xe.";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       if (!bookingDate) {
-        setError("Vui lòng chọn ngày rửa xe.");
+        const errorMsg = "Vui lòng chọn ngày rửa xe.";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       if (!selectedSlot) {
-        setError("Vui lòng chọn khung giờ hẹn.");
+        const errorMsg = "Vui lòng chọn khung giờ hẹn.";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
 
@@ -440,17 +467,22 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
       }
 
       if (isSlotPassed) {
-        setError("Khung giờ hẹn đã chọn đã trôi qua. Vui lòng chọn khung giờ khác.");
+        const errorMsg = "Khung giờ hẹn đã chọn đã trôi qua. Vui lòng chọn khung giờ khác.";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
 
       setCurrentStep(3);
+      bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
   const prevStep = () => {
     setError('');
     setCurrentStep(prev => Math.max(1, prev - 1));
+    bookingContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleSubmit = async (e) => {
@@ -536,7 +568,7 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
   const currentVehicleObj = vehicles.find(v => v.id === selectedVehicle);
 
   return (
-    <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
+    <div ref={bookingContainerRef} className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
       <div className="flex-between" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
         <h3 style={{ fontSize: '1.25rem' }}>ĐẶT LỊCH HẸN RỬA XE</h3>
         <span className="badge-info">Hạng {dbUser.loyaltyTier}: Đặt trước {windowDays} ngày</span>
@@ -620,6 +652,8 @@ export default function BookingModule({ dbUser, vehicles, rules, onBookingSucces
           onOpenAddVehicle={onOpenAddVehicle}
           nextStep={nextStep}
           formatVnd={formatVnd}
+          vehicleSelectRef={vehicleSelectRef}
+          vehicleHighlight={vehicleHighlight}
         />
       )}
 

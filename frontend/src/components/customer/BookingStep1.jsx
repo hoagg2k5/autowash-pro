@@ -9,26 +9,71 @@ export default function BookingStep1({
   setSelectedPackage,
   onOpenAddVehicle,
   nextStep,
-  formatVnd
+  formatVnd,
+  vehicleSelectRef,
+  vehicleHighlight
 }) {
   return (
     <div>
       {/* Vehicle Selection */}
-      <div className="form-group">
-        <label>Chọn Xe Ô Tô Cần Rửa *</label>
+      <div 
+        className="form-group"
+        style={{
+          padding: vehicleHighlight ? '1rem' : '0',
+          borderRadius: '12px',
+          border: vehicleHighlight ? '2px solid #ef4444' : '2px solid transparent',
+          boxShadow: vehicleHighlight ? '0 0 20px rgba(239, 68, 68, 0.35)' : 'none',
+          backgroundColor: vehicleHighlight ? 'rgba(239, 68, 68, 0.05)' : 'transparent',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        <label style={{ 
+          color: vehicleHighlight ? '#ef4444' : 'var(--text-main)', 
+          fontWeight: vehicleHighlight ? 700 : 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          Chọn Xe Ô Tô Cần Rửa *
+          {vehicleHighlight && (
+            <span style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 600 }}>
+              (Bắt buộc chọn xe)
+            </span>
+          )}
+        </label>
         {vehicles.length === 0 ? (
-          <div style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px dashed var(--border-color)', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '0.75rem', fontSize: '0.9rem' }}>Bạn chưa liên kết xe ô tô nào vào tài khoản.</p>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={onOpenAddVehicle}>
+          <div 
+            ref={vehicleSelectRef}
+            tabIndex={-1}
+            style={{ 
+              padding: '1.5rem', 
+              background: vehicleHighlight ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-secondary)', 
+              borderRadius: '8px', 
+              border: vehicleHighlight ? '1.5px dashed #ef4444' : '1px dashed var(--border-color)', 
+              textAlign: 'center',
+              outline: 'none',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <p style={{ color: vehicleHighlight ? '#ef4444' : 'var(--text-muted)', marginBottom: '0.75rem', fontSize: '0.9rem', fontWeight: vehicleHighlight ? 600 : 400 }}>
+              Bạn chưa liên kết xe ô tô nào vào tài khoản. Vui lòng thêm xe trước khi đặt lịch!
+            </p>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onOpenAddVehicle} style={{ borderColor: vehicleHighlight ? '#ef4444' : undefined }}>
               + Thêm xe ô tô mới
             </button>
           </div>
         ) : (
           <select
+            ref={vehicleSelectRef}
             className="form-input"
             value={selectedVehicle}
             onChange={(e) => setSelectedVehicle(e.target.value)}
             required
+            style={{
+              borderColor: vehicleHighlight ? '#ef4444' : undefined,
+              boxShadow: vehicleHighlight ? '0 0 10px rgba(239, 68, 68, 0.3)' : undefined,
+              transition: 'all 0.3s ease'
+            }}
           >
             <option value="" disabled>-- Chọn xe --</option>
             {vehicles.map(v => (
