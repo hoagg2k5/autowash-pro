@@ -367,7 +367,7 @@ export default function Header({
                       <Bell className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 m-0 leading-tight">Thông Báo & Khuyến Mãi</h4>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 m-0 leading-tight">Thông báo về các khuyến mãi hiện có</h4>
                     </div>
                   </div>
                   <button 
