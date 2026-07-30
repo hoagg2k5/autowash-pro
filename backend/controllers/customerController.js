@@ -44,11 +44,31 @@ export const getDashboard = async (req, res) => {
 
     const populatedBookings = bookings.map(b => {
       const bObj = b.toObject ? b.toObject() : b;
-      const vehicle = vehicleMap[b.vehicleId];
+      let vehicle = vehicleMap[b.vehicleId];
+
+      if (!vehicle || vehicle.brand === "Khách vãng lai" || vehicle.brand === "Khác") {
+        const alphaNumPlate = (bObj.licensePlate || "").toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const realVehicle = allVehicles.find(v => 
+          v.brand !== "Khách vãng lai" && 
+          v.brand !== "Khác" && 
+          v.licensePlate.toUpperCase().replace(/[^A-Z0-9]/g, '') === alphaNumPlate
+        );
+        if (realVehicle) {
+          vehicle = realVehicle;
+        }
+      }
+
+      let formattedCarDetails = '';
+      if (vehicle && vehicle.brand && vehicle.brand !== 'Khách vãng lai' && vehicle.brand !== 'Khác') {
+        formattedCarDetails = `${vehicle.brand} ${vehicle.model} (${vehicle.color})`;
+      } else if (bObj.carDetails && !bObj.carDetails.includes('Khách vãng lai')) {
+        formattedCarDetails = bObj.carDetails;
+      }
+
       return {
         ...bObj,
         licensePlate: vehicle ? vehicle.licensePlate : (bObj.licensePlate || 'N/A'),
-        carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : (bObj.carDetails || 'Xe đã gỡ khỏi TK')
+        carDetails: formattedCarDetails
       };
     });
     
