@@ -975,10 +975,10 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                 Chi nhánh: <span style={{ fontWeight: 600, float: 'right' }}>{selectedBookingForQr.branch || "AutoWash Pro"}</span>
               </div>
               <div style={{ marginBottom: '0.4rem' }}>
-                Giờ hẹn: <span style={{ fontWeight: 600, float: 'right', color: 'var(--primary)' }}>🕒 {selectedBookingForQr.timeSlot}</span>
+                Giờ hẹn: <span style={{ fontWeight: 600, float: 'right', color: 'var(--primary)' }}>{selectedBookingForQr.timeSlot}</span>
               </div>
               <div style={{ marginBottom: '0.4rem' }}>
-                Ngày hẹn: <span style={{ fontWeight: 600, float: 'right' }}>📅 {formatDateStr(selectedBookingForQr.bookingDate)}</span>
+                Ngày hẹn: <span style={{ fontWeight: 600, float: 'right' }}>{formatDateStr(selectedBookingForQr.bookingDate)}</span>
               </div>
               <div style={{ marginBottom: '0.4rem' }}>
                 Gói dịch vụ: <span style={{ fontWeight: 600, float: 'right' }}>{selectedBookingForQr.servicePackage}</span>
@@ -1017,7 +1017,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                 style={{ padding: '0.6rem' }} 
                 onClick={() => window.print()}
               >
-                🖨️ In Hóa Đơn
+                In Hóa Đơn
               </button>
             </div>
           </div>
