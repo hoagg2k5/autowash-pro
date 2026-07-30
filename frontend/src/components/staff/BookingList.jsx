@@ -256,7 +256,7 @@ export default function BookingList({
 
                   {/* Row 2: Tên khách hàng & Số điện thoại */}
                   <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-main)' }}>
-                    <span>👤 {b.customerName}</span>
+                    <span>{b.customerName}</span>
                     <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>- {b.customerPhone}</span>
                   </h4>
 
@@ -355,7 +355,7 @@ export default function BookingList({
                       border: 'none',
                       fontWeight: 600
                     }}>
-                      {(b.paymentMethod === 'Online' || b.paymentMethod === 'VNPAY') ? 'VNPay' : 'Tiền mặt'} - {b.paymentStatus === 'Paid' ? 'Đã thu' : 'Chưa thu'}
+                      {(b.paymentMethod === 'Online' || b.paymentMethod === 'VNPAY') ? 'VNPay' : 'Tiền mặt'}
                     </span>
                   </div>
                 </div>
