@@ -259,7 +259,7 @@ export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user }) 
         position: 'relative'
       }}>
         <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          ➕ ĐẶT LỊCH
+          ĐẶT LỊCH
         </h3>
         <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
           Tạo trực tiếp đơn rửa xe tại chi nhánh: <strong>{user?.branch || "AutoWash Pro - Quận 1"}</strong>. Đơn này sẽ tự động đưa vào hàng đợi rửa xe (trạng thái Chờ Rửa).

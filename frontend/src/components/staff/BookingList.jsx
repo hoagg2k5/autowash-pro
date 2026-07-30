@@ -289,10 +289,10 @@ export default function BookingList({
                 {/* Right side: Khung giờ hẹn & Gói dịch vụ */}
                 <div style={{ textAlign: 'right', minWidth: '200px' }}>
                   <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>
-                    📅 {formatDateStr(b.bookingDate)}
+                    {formatDateStr(b.bookingDate)}
                   </div>
                   <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem', marginTop: '0.15rem' }}>
-                    🕒 {b.timeSlot}
+                    {b.timeSlot}
                   </div>
                   <div style={{ marginTop: '0.4rem', fontSize: '0.9rem', fontWeight: 600 }}>
                     Gói: <span className="status-badge status-Confirmed" style={{ textDecoration: 'none', background: 'var(--bg-secondary)', color: 'var(--primary)', border: '1px solid var(--border-color)' }}>{b.servicePackage}</span>
@@ -332,7 +332,6 @@ export default function BookingList({
                       }}
                       title="Sao chép mã"
                     >
-                      📋
                     </button>
                   </div>
 
@@ -355,7 +354,7 @@ export default function BookingList({
                       border: 'none',
                       fontWeight: 600
                     }}>
-                      {b.paymentMethod === 'Online' ? '💳 Online' : '💵 Tiền mặt'} - {b.paymentStatus === 'Paid' ? 'Đã thu' : 'Chưa thu'}
+                      {(b.paymentMethod === 'Online' || b.paymentMethod === 'VNPAY') ? 'VNPay' : 'Tiền mặt'} - {b.paymentStatus === 'Paid' ? 'Đã thu' : 'Chưa thu'}
                     </span>
                   </div>
                 </div>
