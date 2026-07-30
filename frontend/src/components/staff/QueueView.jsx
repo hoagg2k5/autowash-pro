@@ -112,7 +112,8 @@ export default function QueueView({
   );
 
   const getPriorityScore = (b) => {
-    if (b.bookingType === 'Walk-in') return 0;
+    // Chỉ gán điểm ưu tiên = 0 đối với khách vãng lai vãng lai thực sự chưa đăng ký tài khoản (isWalkInOnly)
+    if (b.bookingType === 'Walk-in' && (b.isWalkInOnly || b.customerName === "Khách vãng lai")) return 0;
     switch (b.customerTier) {
       case 'Platinum': return 4;
       case 'Gold': return 3;
@@ -491,6 +492,10 @@ export default function QueueView({
         .q-badge-type.walkin {
           background: rgba(234, 179, 8, 0.1);
           color: #ca8a04;
+        }
+        .q-badge-type.direct {
+          background: rgba(14, 165, 233, 0.12);
+          color: #0284c7;
         }
         .q-badge-tier {
           font-size: 0.65rem;
@@ -886,7 +891,8 @@ export default function QueueView({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {filteredQueue.map((b, index) => {
-                const isWalkin = b.bookingType === 'Walk-in';
+                const isTrueWalkin = b.bookingType === 'Walk-in' && (b.isWalkInOnly || b.customerName === "Khách vãng lai");
+                const isDirectWalkin = b.bookingType === 'Walk-in' && !isTrueWalkin;
                 const isSelected = b.id === selectedBookingId;
                 const isLateBooking = isLate(b);
 
@@ -900,7 +906,7 @@ export default function QueueView({
                     onDragEnd={handleDragEnd}
                     style={{
                       borderLeft: `4px solid ${
-                        isWalkin ? '#64748b' :
+                        isTrueWalkin ? '#64748b' :
                         b.customerTier === 'Platinum' ? '#c084fc' :
                         b.customerTier === 'Gold' ? '#eab308' :
                         b.customerTier === 'Silver' ? '#9ca3af' : 'var(--primary)'
@@ -935,8 +941,8 @@ export default function QueueView({
 
                       {/* Badges container */}
                       <div className="q-badges-container">
-                        <span className={`q-badge-type ${isWalkin ? 'walkin' : ''}`}>
-                          {isWalkin ? 'Vãng lai' : 'Đặt trước'}
+                        <span className={`q-badge-type ${isTrueWalkin ? 'walkin' : isDirectWalkin ? 'direct' : ''}`}>
+                          {isTrueWalkin ? 'Vãng lai' : isDirectWalkin ? 'Trực tiếp' : 'Đặt trước'}
                         </span>
                         <span 
                           className="q-badge-tier"

@@ -203,6 +203,7 @@ export const listBookings = async (req, res) => {
         customerName: user ? user.fullName : 'Ẩn danh',
         customerPhone: user ? user.phone : '',
         customerTier: user ? user.loyaltyTier : 'Member',
+        isWalkInOnly: user ? !!user.isWalkInOnly : true,
         licensePlate: vehicle ? vehicle.licensePlate : (bObj.licensePlate || 'N/A'),
         carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : (bObj.carDetails || 'Xe đã gỡ khỏi TK')
       };
@@ -711,6 +712,7 @@ export const getBookingDetail = async (req, res) => {
       customerName: user ? user.fullName : 'Ẩn danh',
       customerPhone: user ? user.phone : '',
       customerTier: user ? user.loyaltyTier : 'Member',
+      isWalkInOnly: user ? !!user.isWalkInOnly : true,
       licensePlate: vehicle ? vehicle.licensePlate : 'N/A',
       carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : 'N/A'
     });
@@ -983,8 +985,10 @@ export const createWalkInBooking = async (req, res) => {
     const bookingObj = {
       ...newBooking.toObject(),
       licensePlate: plateUpper,
-      customerName: user.name,
-      customerPhone: user.phone
+      customerName: user.fullName || user.name || "Khách vãng lai",
+      customerPhone: user.phone || "",
+      customerTier: user.loyaltyTier || 'Member',
+      isWalkInOnly: !!user.isWalkInOnly
     };
 
     res.status(201).json({ message: "Tạo lịch vãng lai thành công. Đơn hàng đã được đưa vào hàng đợi.", booking: bookingObj });
