@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 
+const formatDateVN = (dateStr) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return dateStr;
+};
+
 export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSlot, quickBookBay, timelineDate, user, bookings = [] }) {
   const [selectedBookingId, setSelectedBookingId] = useState('');
   const [qbLoading, setQbLoading] = useState(false);
@@ -86,7 +95,7 @@ export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSl
           Xếp xe vào Khoang Rửa Nhanh
         </h3>
         <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-          Xếp vào: <strong>{quickBookBay}</strong> | Giờ: <strong>{quickBookSlot}</strong> | Ngày: <strong>{timelineDate}</strong>
+          Xếp vào: <strong>{quickBookBay}</strong> | Giờ: <strong>{quickBookSlot}</strong> | Ngày: <strong>{formatDateVN(timelineDate)}</strong>
         </p>
 
         <form onSubmit={handleQuickBookSubmit}>
@@ -133,7 +142,7 @@ export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSl
               fontSize: '0.85rem'
             }}>
               <div style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '0.35rem' }}>
-                🚗 Thông Tin Xe Được Chọn
+                Thông Tin Xe Được Chọn
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', color: 'var(--text-main)' }}>
                 <div><strong>Khách hàng:</strong> {selectedBooking.customerName}</div>
