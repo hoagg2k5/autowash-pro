@@ -127,7 +127,7 @@ export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSl
                 fontSize: '0.85rem',
                 color: 'var(--text-muted)'
               }}>
-                ℹ️ Chưa có xe nào check-in thuộc khung giờ <strong>{quickBookSlot}</strong> (hoặc tất cả các xe trong khung giờ này đã được xếp khoang).
+                Chưa có xe nào check-in thuộc khung giờ <strong>{quickBookSlot}</strong>.
               </div>
             )}
           </div>
