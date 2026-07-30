@@ -243,7 +243,7 @@ export default function BookingList({
 
                     {(b.customerTier && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
                       <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`} onClick={(e) => e.stopPropagation()}>
-                        {(b.customerTier === 'Platinum' || b.customerTier === 'Gold') ? '💎 ƯU TIÊN ' : 'HẠNG '}{b.customerTier.toUpperCase()}
+                        {(b.customerTier === 'Platinum' || b.customerTier === 'Gold') ? 'ƯU TIÊN ' : 'HẠNG '}{b.customerTier.toUpperCase()}
                       </span>
                     )}
 
