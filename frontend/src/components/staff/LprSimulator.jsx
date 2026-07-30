@@ -274,7 +274,7 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
       `}</style>
       <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem 0', fontFamily: 'var(--font-heading)', color: '#38bdf8' }}>
         <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></span>
-        📷 GIẢ LẬP CAMERA QUÉT BIỂN SỐ TỰ ĐỘNG (LPR)
+        GIẢ LẬP CAMERA QUÉT BIỂN SỐ TỰ ĐỘNG (LPR)
       </h4>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>

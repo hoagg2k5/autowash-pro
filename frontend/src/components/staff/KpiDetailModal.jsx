@@ -60,13 +60,13 @@ export default function KpiDetailModal({
         {/* Header */}
         <div className="flex-between" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
           <h3 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
-            {activeKpiDetail === 'total' && "📅 TỔNG LỊCH HẸN HÔM NAY"}
-            {activeKpiDetail === 'Pending' && "⏳ XE CHỜ XÁC NHẬN HÔM NAY"}
-            {activeKpiDetail === 'Confirmed' && "📅 XE ĐÃ XÁC NHẬN HÔM NAY"}
-            {activeKpiDetail === 'Waiting' && "🕒 XE ĐANG TRONG HÀNG ĐỢI HÔM NAY"}
-            {activeKpiDetail === 'In Progress' && "⚡ XE ĐANG RỬA HÔM NAY"}
-            {activeKpiDetail === 'Completed' && "✅ XE HOÀN TẤT HÔM NAY"}
-            {activeKpiDetail === 'Cancelled' && "❌ XE ĐÃ HỦY HÔM NAY"}
+            {activeKpiDetail === 'total' && "TỔNG LỊCH HẸN HÔM NAY"}
+            {activeKpiDetail === 'Pending' && "XE CHỜ XÁC NHẬN HÔM NAY"}
+            {activeKpiDetail === 'Confirmed' && "XE ĐÃ XÁC NHẬN HÔM NAY"}
+            {activeKpiDetail === 'Waiting' && "XE ĐANG TRONG HÀNG ĐỢI HÔM NAY"}
+            {activeKpiDetail === 'In Progress' && "XE ĐANG RỬA HÔM NAY"}
+            {activeKpiDetail === 'Completed' && "XE HOÀN TẤT HÔM NAY"}
+            {activeKpiDetail === 'Cancelled' && "XE ĐÃ HỦY HÔM NAY"}
             <span className="badge-info" style={{ fontSize: '0.8rem', padding: '0.2rem 0.6rem' }}>
               {
                 activeKpiDetail === 'total' ? todayBookings.length :
@@ -135,7 +135,7 @@ export default function KpiDetailModal({
                       <code style={{ fontSize: '0.95rem', color: 'var(--primary)', fontWeight: 'bold' }}>{b.licensePlate}</code>
                       {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
                         <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`}>
-                          💎 Ưu Tiên {b.customerTier}
+                          Ưu Tiên {b.customerTier}
                         </span>
                       )}
                       <span className={`status-badge ${getStatusClass(b.status)}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
@@ -150,7 +150,7 @@ export default function KpiDetailModal({
                     <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{b.carDetails} | Gói {b.servicePackage} | Khoang: <strong style={{ color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</strong></div>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>🕒 {b.timeSlot}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>{b.timeSlot}</div>
 
                     {/* Direct action buttons in modal */}
                     <div style={{ display: 'flex', gap: '0.25rem' }}>

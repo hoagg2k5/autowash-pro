@@ -72,7 +72,7 @@ export default function QuickCheckout({ bookings = [], onSuccess }) {
   return (
     <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
       <h4 style={{ color: 'var(--primary)', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        💳 CHECK-OUT & THANH TOÁN QUA MÃ ĐƠN
+        CHECK-OUT & THANH TOÁN QUA MÃ ĐƠN
       </h4>
       <p className="text-xs" style={{ marginBottom: '1rem' }}>Nhập mã đơn hoặc quét mã QR từ điện thoại của khách hàng để hoàn tất dịch vụ.</p>
       
@@ -98,7 +98,7 @@ export default function QuickCheckout({ bookings = [], onSuccess }) {
         return (
           <div style={{ marginBottom: '1.25rem' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
-              ⏳ ĐƠN CHỜ THANH TOÁN ({unpaidBookings.length}):
+              ĐƠN CHỜ THANH TOÁN ({unpaidBookings.length}):
             </span>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', maxHeight: '110px', overflowY: 'auto', padding: '0.25rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-secondary)' }}>
               {unpaidBookings.map(b => (
