@@ -510,7 +510,11 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                         className="btn btn-primary"
                         style={{ background: '#3b82f6', color: '#fff', padding: '0.5rem 1.2rem', fontWeight: 'bold' }}
                         onClick={async () => {
-                          await handleAction(scanResult.booking.id, 'start');
+                          if (scanResult.booking.bay) {
+                            await handleAction(scanResult.booking.id, 'start');
+                          } else {
+                            toast.info("Đã chuyển sang màn hình Hàng Đợi. Vui lòng kéo thả hoặc bấm Assign để gán khoang rửa.");
+                          }
                           navigate('/staff/dashboard/queue');
                         }}
                       >
