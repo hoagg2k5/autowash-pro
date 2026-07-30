@@ -117,7 +117,13 @@ export const createVehicle = async (req, res) => {
       return res.status(400).json({ error: "Biển số xe không đúng định dạng. Vui lòng nhập lại theo mẫu (Ví dụ: 30A-123.45 hoặc 30A12345)" });
     }
 
-    const existingPlate = await Vehicle.findOne({ licensePlate: formattedPlate });
+    const alphaNumPlate = formattedPlate.replace(/[^A-Z0-9]/g, '');
+    const existingPlate = await Vehicle.findOne({
+      $or: [
+        { licensePlate: formattedPlate },
+        { licensePlate: new RegExp(alphaNumPlate.split('').join('[-.\\s]?'), 'i') }
+      ]
+    });
     if (existingPlate && !existingPlate.isDeleted) {
       return res.status(400).json({ error: "Biển số xe này đã tồn tại trên hệ thống." });
     }

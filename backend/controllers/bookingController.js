@@ -889,21 +889,40 @@ export const createWalkInBooking = async (req, res) => {
       userId = "customer-id";
     }
 
-    // 2. Tìm hoặc tạo xe dựa trên biển số xe cho user này
-    let vehicle = await Vehicle.findOne({ licensePlate: plateUpper });
+    // 2. Tìm hoặc tạo xe dựa trên biển số xe cho user này (so sánh linh hoạt bỏ qua dấu chấm, gạch ngang)
+    const formattedPlate = formatVietnamLicensePlate(licensePlate);
+    const alphaNumPlate = plateUpper.replace(/[^A-Z0-9]/g, '');
+
+    let vehicle = await Vehicle.findOne({
+      $or: [
+        { licensePlate: formattedPlate },
+        { licensePlate: plateUpper },
+        { licensePlate: new RegExp(alphaNumPlate.split('').join('[-.\\s]?'), 'i') }
+      ]
+    });
+
+    if (!vehicle && userId && userId !== "customer-id") {
+      const userVehicles = await Vehicle.find({ userId });
+      vehicle = userVehicles.find(v => v.licensePlate.toUpperCase().replace(/[^A-Z0-9]/g, '') === alphaNumPlate);
+    }
+
     if (!vehicle) {
       vehicle = new Vehicle({
         id: 'v-' + Math.random().toString(36).substr(2, 9),
         userId: userId,
-        licensePlate: plateUpper,
+        licensePlate: formattedPlate || plateUpper,
         brand: "Khách vãng lai",
         model: "Vãng lai",
         color: "Khác"
       });
       await vehicle.save();
     } else {
+      let isUpdated = false;
       if (vehicle.userId === "customer-id" && userId !== "customer-id") {
         vehicle.userId = userId;
+        isUpdated = true;
+      }
+      if (isUpdated) {
         await vehicle.save();
       }
     }
