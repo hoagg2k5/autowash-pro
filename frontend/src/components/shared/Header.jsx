@@ -96,7 +96,7 @@ export default function Header({
   const notifRef = useRef(null);
 
   const fetchNotifications = async () => {
-    if (!currentUser) return;
+    if (!currentUser || currentUser.role !== 'customer') return;
     setLoadingNotifications(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/customers/notifications`, {
@@ -123,7 +123,7 @@ export default function Header({
   };
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && currentUser.role === 'customer') {
       fetchNotifications();
     }
   }, [currentUser]);
@@ -332,8 +332,8 @@ export default function Header({
       )}
 
       <div className="nav-buttons flex items-center gap-3">
-        {/* Notification Bell Icon */}
-        {currentUser && (
+        {/* Notification Bell Icon - Customer Role Only */}
+        {currentUser && currentUser.role === 'customer' && (
           <div className="relative" ref={notifRef}>
             <Button 
               variant="outline" 
