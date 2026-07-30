@@ -241,9 +241,9 @@ export default function BookingList({
                       ({b.carDetails || 'Chưa rõ dòng xe'})
                     </span>
 
-                    {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
+                    {(b.customerTier && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
                       <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`} onClick={(e) => e.stopPropagation()}>
-                        💎 Ưu Tiên {b.customerTier}
+                        {(b.customerTier === 'Platinum' || b.customerTier === 'Gold') ? '💎 ƯU TIÊN ' : 'HẠNG '}{b.customerTier.toUpperCase()}
                       </span>
                     )}
 

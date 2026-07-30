@@ -354,9 +354,9 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
                     <td style={{ whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
                         <code style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>{b.licensePlate}</code>
-                        {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress')) && (
-                          <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`} title={`Khách hàng ưu tiên hạng ${b.customerTier}`} style={{ padding: '0.1rem 0.3rem', fontSize: '0.65rem' }}>
-                            VIP
+                        {(b.customerTier && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'In Progress')) && (
+                          <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`} title={`Khách hàng hạng ${b.customerTier}`} style={{ padding: '0.1rem 0.35rem', fontSize: '0.65rem' }}>
+                            {b.customerTier.toUpperCase()}
                           </span>
                         )}
                       </div>

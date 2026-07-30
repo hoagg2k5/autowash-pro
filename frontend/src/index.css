@@ -777,6 +777,14 @@ tr:hover td {
   animation: vip-pulse-platinum 2s infinite;
 }
 
+.vip-priority-badge.vip-silver {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+.vip-priority-badge.vip-member {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+}
+
 /* Fade-in animation for dynamic form elements */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-8px); }

@@ -133,9 +133,9 @@ export default function KpiDetailModal({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                       <code style={{ fontSize: '0.95rem', color: 'var(--primary)', fontWeight: 'bold' }}>{b.licensePlate}</code>
-                      {((b.customerTier === 'Platinum' || b.customerTier === 'Gold') && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
+                      {(b.customerTier && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
                         <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`}>
-                          Ưu Tiên {b.customerTier}
+                          {(b.customerTier === 'Platinum' || b.customerTier === 'Gold') ? 'ƯU TIÊN ' : 'HẠNG '}{b.customerTier.toUpperCase()}
                         </span>
                       )}
                       <span className={`status-badge ${getStatusClass(b.status)}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
