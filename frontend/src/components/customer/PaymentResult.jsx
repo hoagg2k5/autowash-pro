@@ -8,6 +8,7 @@ export default function PaymentResult({ user }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [paymentInfo, setPaymentInfo] = useState(null);
+  const [countdown, setCountdown] = useState(5);
   const navigate = useNavigate();
   const verifiedRef = useRef(false);
 
@@ -28,12 +29,6 @@ export default function PaymentResult({ user }) {
 
         setPaymentInfo(data.booking);
         toast.success('Thanh toán đơn hàng thành công!');
-        
-        // Auto-redirect to dashboard after 5 seconds
-        setTimeout(() => {
-          navigate('/customer/dashboard');
-        }, 5000);
-
       } catch (err) {
         setError(err.message);
         toast.error(err.message);
@@ -43,7 +38,24 @@ export default function PaymentResult({ user }) {
     };
 
     verifyPayment();
-  }, [searchParams, navigate]);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!paymentInfo || error || loading) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          navigate('/customer/dashboard');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [paymentInfo, error, loading, navigate]);
 
   const formatVnd = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -208,7 +220,7 @@ export default function PaymentResult({ user }) {
             </button>
 
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Tự động chuyển hướng sau 5 giây...
+              Tự động chuyển hướng sau {countdown} giây...
             </span>
           </div>
         )}
