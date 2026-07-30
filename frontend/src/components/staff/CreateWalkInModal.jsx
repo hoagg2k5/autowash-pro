@@ -289,7 +289,7 @@ export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user, in
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Nhập tên khách vãng lai" 
+              placeholder="Nhập tên khách hàng" 
               value={customerName} 
               onChange={(e) => setCustomerName(e.target.value)}
             />
@@ -300,7 +300,7 @@ export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user, in
             <input 
               type="tel" 
               className="form-input" 
-              placeholder="Nhập số điện thoại để tích điểm" 
+              placeholder="Nhập số điện thoại" 
               value={customerPhone} 
               onChange={(e) => setCustomerPhone(e.target.value)}
             />
