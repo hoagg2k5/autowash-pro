@@ -185,7 +185,7 @@ export default function AdminBranches() {
       {/* Editor Form Panel */}
       <div id="branch-form" className="glass-panel" style={{ padding: '2rem' }}>
         <h3 style={{ marginBottom: '1.25rem' }}>
-          {editingId ? '📝 CẬP NHẬT CHI NHÁNH' : '🏢 THÊM CHI NHÁNH MỚI'}
+          {editingId ? 'CẬP NHẬT CHI NHÁNH' : 'THÊM CHI NHÁNH MỚI'}
         </h3>
         
         <form onSubmit={handleSubmit}>

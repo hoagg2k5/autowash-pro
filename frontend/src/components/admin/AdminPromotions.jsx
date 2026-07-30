@@ -198,7 +198,7 @@ export default function AdminPromotions({ promotions, onCreatePromo, onTogglePro
       {/* New Promotion Designer */}
       <div id="promo-form" className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
         <h3 style={{ marginBottom: '1.25rem' }}>
-          {editingId ? '📝 CẬP NHẬT KHUYẾN MÃI TIER' : '✨ THÊM KHUYẾN MÃI TIER MỚI'}
+          {editingId ? 'CẬP NHẬT KHUYẾN MÃI' : 'THÊM KHUYẾN MÃI MỚI'}
         </h3>
 
         <form onSubmit={handleSubmit}>

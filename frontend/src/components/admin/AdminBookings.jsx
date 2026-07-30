@@ -242,7 +242,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
         }}>
           <div className="flex-between" style={{ margin: '0 0 1.25rem 0', flexWrap: 'wrap', gap: '0.75rem' }}>
             <h4 style={{ margin: 0, color: '#38bdf8', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              📊 GIÁM SÁT KHOANG RỬA ({branchFilter === 'Tất cả' ? 'Tất cả chi nhánh' : branchFilter})
+              GIÁM SÁT KHOANG RỬA ({branchFilter === 'Tất cả' ? 'Tất cả chi nhánh' : branchFilter})
             </h4>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>Ngày giám sát:</span>
@@ -294,7 +294,7 @@ export default function AdminBookings({ bookings, user, handleConfirmBooking, ha
               return (
                 <div key={slot} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.6rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#cbd5e1', marginBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.2rem' }}>
-                    🕒 {slot}
+                    {slot}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                     {bays.map(bayName => {

@@ -212,7 +212,7 @@ export default function AdminServices() {
       {/* Editor Form Panel */}
       <div id="service-form" className="glass-panel" style={{ padding: '2rem' }}>
         <h3 style={{ marginBottom: '1.25rem' }}>
-          {editingId ? '📝 CẬP NHẬT GÓI RỬA XE' : '✨ THÊM GÓI RỬA XE MỚI'}
+          {editingId ? 'CẬP NHẬT GÓI RỬA XE' : 'THÊM GÓI RỬA XE MỚI'}
         </h3>
         
         <form onSubmit={handleSubmit}>

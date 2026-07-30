@@ -229,7 +229,7 @@ export default function AdminBays() {
       {/* Editor Form Panel */}
       <div id="bay-form" className="glass-panel" style={{ padding: '2rem' }}>
         <h3 style={{ marginBottom: '1.25rem' }}>
-          {editingId ? '📝 CẬP NHẬT KHOANG RỬA' : '🚿 THÊM KHOANG RỬA MỚI'}
+          {editingId ? 'CẬP NHẬT KHOANG RỬA' : 'THÊM KHOANG RỬA MỚI'}
         </h3>
         
         <form onSubmit={handleSubmit}>
