@@ -237,9 +237,11 @@ export default function BookingList({
                       {b.licensePlate}
                     </span>
 
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                      ({b.carDetails || 'Chưa rõ dòng xe'})
-                    </span>
+                    {b.carDetails && !b.carDetails.includes('Khách vãng lai') && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        ({b.carDetails})
+                      </span>
+                    )}
 
                     {(b.customerTier && (b.status === 'Pending' || b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress')) && (
                       <span className={`vip-priority-badge vip-${b.customerTier.toLowerCase()}`} onClick={(e) => e.stopPropagation()}>

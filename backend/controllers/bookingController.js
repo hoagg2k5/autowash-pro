@@ -194,10 +194,38 @@ export const listBookings = async (req, res) => {
       vehicleMap[v.id] = v;
     });
 
+    try {
+      const walkInVehicles = vehicles.filter(v => v.brand === 'Khách vãng lai' && v.userId !== 'customer-id');
+      for (const v of walkInVehicles) {
+        const realVehicle = vehicles.find(rv => rv.userId === v.userId && rv.brand !== 'Khách vãng lai' && rv.brand !== 'Khác');
+        if (realVehicle) {
+          await Booking.updateMany({ vehicleId: v.id }, { $set: { vehicleId: realVehicle.id } });
+          await Vehicle.deleteOne({ id: v.id });
+        }
+      }
+    } catch (e) {
+      console.error("Cleanup error:", e);
+    }
+
     const list = bookings.map(b => {
       const bObj = b.toObject ? b.toObject() : b;
       const user = userMap[b.userId];
-      const vehicle = vehicleMap[b.vehicleId];
+      let vehicle = vehicleMap[b.vehicleId];
+
+      if (user && vehicle && (vehicle.brand === "Khách vãng lai" || vehicle.brand === "Khác")) {
+        const userVehicles = vehicles.filter(v => v.userId === user.id && v.brand !== "Khách vãng lai" && v.brand !== "Khác");
+        if (userVehicles.length > 0) {
+          vehicle = userVehicles[0];
+        }
+      }
+
+      let formattedCarDetails = '';
+      if (vehicle && vehicle.brand && vehicle.brand !== 'Khách vãng lai' && vehicle.brand !== 'Khác') {
+        formattedCarDetails = `${vehicle.brand} ${vehicle.model} (${vehicle.color})`;
+      } else if (bObj.carDetails && !bObj.carDetails.includes('Khách vãng lai')) {
+        formattedCarDetails = bObj.carDetails;
+      }
+
       return {
         ...bObj,
         customerName: user ? user.fullName : 'Ẩn danh',
@@ -205,7 +233,7 @@ export const listBookings = async (req, res) => {
         customerTier: user ? user.loyaltyTier : 'Member',
         isWalkInOnly: user ? !!user.isWalkInOnly : true,
         licensePlate: vehicle ? vehicle.licensePlate : (bObj.licensePlate || 'N/A'),
-        carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : (bObj.carDetails || 'Xe đã gỡ khỏi TK')
+        carDetails: formattedCarDetails
       };
     });
 
@@ -704,8 +732,19 @@ export const getBookingDetail = async (req, res) => {
       return res.status(403).json({ error: "Bạn không có quyền truy cập thông tin đơn hàng này." });
     }
 
-    const user = await User.findOne({ id: booking.userId });
-    const vehicle = await Vehicle.findOne({ id: booking.vehicleId });
+    let vehicle = await Vehicle.findOne({ id: booking.vehicleId });
+    if (user && vehicle && (vehicle.brand === "Khách vãng lai" || vehicle.brand === "Khác")) {
+      const realVehicle = await Vehicle.findOne({ userId: user.id, brand: { $nin: ["Khách vãng lai", "Khác"] }, isDeleted: { $ne: true } });
+      if (realVehicle) {
+        vehicle = realVehicle;
+        await Booking.updateOne({ _id: booking._id }, { $set: { vehicleId: realVehicle.id } });
+      }
+    }
+
+    let formattedCarDetails = '';
+    if (vehicle && vehicle.brand && vehicle.brand !== 'Khách vãng lai' && vehicle.brand !== 'Khác') {
+      formattedCarDetails = `${vehicle.brand} ${vehicle.model} (${vehicle.color})`;
+    }
 
     res.json({
       ...booking.toObject(),
@@ -714,7 +753,7 @@ export const getBookingDetail = async (req, res) => {
       customerTier: user ? user.loyaltyTier : 'Member',
       isWalkInOnly: user ? !!user.isWalkInOnly : true,
       licensePlate: vehicle ? vehicle.licensePlate : 'N/A',
-      carDetails: vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.color})` : 'N/A'
+      carDetails: formattedCarDetails
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

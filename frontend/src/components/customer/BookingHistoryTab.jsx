@@ -468,7 +468,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
 
                           <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                             Xe cần rửa: <code style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.95rem' }}>{b.licensePlate}</code>
-                            {b.carDetails && b.carDetails !== 'N/A' && <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem' }}>({b.carDetails})</span>}
+                            {b.carDetails && b.carDetails !== 'N/A' && !b.carDetails.includes('Khách vãng lai') && <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem' }}>({b.carDetails})</span>}
                           </p>
                         </div>
 

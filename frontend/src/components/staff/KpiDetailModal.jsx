@@ -147,7 +147,7 @@ export default function KpiDetailModal({
                       </span>
                     </div>
                     <div className="text-sm" style={{ fontWeight: 600 }}>{b.customerName} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({b.customerPhone})</span></div>
-                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{b.carDetails} | Gói {b.servicePackage} | Khoang: <strong style={{ color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</strong></div>
+                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{b.carDetails && !b.carDetails.includes('Khách vãng lai') ? `${b.carDetails} | ` : ''}Gói {b.servicePackage} | Khoang: <strong style={{ color: 'var(--primary)' }}>{b.bay || 'Chưa xếp'}</strong></div>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>{b.timeSlot}</div>

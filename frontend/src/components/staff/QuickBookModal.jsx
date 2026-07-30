@@ -97,7 +97,7 @@ export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSl
         position: 'relative'
       }}>
         <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>
-          📝 Xếp xe vào Khoang Rửa Nhanh
+          Xếp xe vào Khoang Rửa Nhanh
         </h3>
         <p className="text-xs" style={{ color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
           Xếp vào: <strong>{quickBookBay}</strong> | Giờ: <strong>{quickBookSlot}</strong> | Ngày: <strong>{timelineDate}</strong>
