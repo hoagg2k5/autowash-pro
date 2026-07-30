@@ -307,11 +307,16 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
     if (statusFilter !== 'All' && b.status !== statusFilter) return false;
 
     if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase().trim();
+      const cleanQ = q.replace(/[^a-z0-9]/g, '');
+      const plate = (b.licensePlate || '').toLowerCase();
+      const cleanPlate = plate.replace(/[^a-z0-9]/g, '');
+
       const phoneMatch = b.customerPhone && b.customerPhone.toLowerCase().includes(q);
-      const plateMatch = b.licensePlate && b.licensePlate.toLowerCase().includes(q);
+      const plateMatch = plate.includes(q) || (cleanQ && cleanPlate.includes(cleanQ));
       const nameMatch = b.customerName && b.customerName.toLowerCase().includes(q);
-      return phoneMatch || plateMatch || nameMatch;
+      const idMatch = b.id && b.id.toLowerCase().includes(q);
+      return phoneMatch || plateMatch || nameMatch || idMatch;
     }
 
     return true;
