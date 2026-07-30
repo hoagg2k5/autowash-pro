@@ -244,7 +244,7 @@ export default function BookingStep3({
             }}
           >
             <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>Chuyển khoản Online</span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>Quét mã QR VietQR / MoMo nhận ngay</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>Thanh toán bằng VNPay</span>
           </div>
         </div>
       </div>

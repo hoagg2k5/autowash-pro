@@ -103,26 +103,16 @@ export default function OnlinePaymentModal({
                   toast.error("Không tìm thấy đường dẫn thanh toán từ cổng VNPay.");
                 }
               }}
-              className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mb-4"
+              className="w-full py-3.5 bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 hover:brightness-110 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mb-3 cursor-pointer"
             >
               Đi Đến Cổng Thanh Toán VNPay ➔
             </button>
           </div>
 
-          {/* Quick Simulation Fallback Button */}
-          <button
-            type="button"
-            onClick={handleSimulatePaymentSuccess}
-            disabled={isSimulatingPayment}
-            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mb-2"
-          >
-            {isSimulatingPayment ? 'Đang xác nhận...' : 'Giả Lập Thanh Toán Thành Công (Test)'}
-          </button>
-
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm transition-all"
+            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm transition-all cursor-pointer"
           >
             Đóng / Thanh toán sau
           </button>
