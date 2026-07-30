@@ -36,6 +36,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
   const [bays, setBays] = useState([]);
   const [showQuickBook, setShowQuickBook] = useState(false);
   const [showWalkInModal, setShowWalkInModal] = useState(false);
+  const [walkInInitialPlate, setWalkInInitialPlate] = useState('');
   const [quickBookSlot, setQuickBookSlot] = useState('');
   const [quickBookBay, setQuickBookBay] = useState('');
 
@@ -517,6 +518,10 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
                 todayStr={todayStr} 
                 currentBranch={user.branch || "AutoWash Pro - Quận 1"} 
                 onRefresh={fetchBookings} 
+                onOpenWalkInModal={(plate) => {
+                  setWalkInInitialPlate(plate || '');
+                  setShowWalkInModal(true);
+                }}
               />
               <QuickCheckout bookings={bookings} onSuccess={() => fetchBookings(true)} />
             </div>
@@ -683,6 +688,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
         onClose={() => setShowWalkInModal(false)}
         onSuccess={() => fetchBookings(true)}
         user={user}
+        initialLicensePlate={walkInInitialPlate}
       />
     </div>
   );

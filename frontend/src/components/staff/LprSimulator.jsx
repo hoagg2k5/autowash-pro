@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 import { formatVietnamLicensePlate } from '../../utils/licensePlateHelper.js';
 
-export default function LprSimulator({ bookings, todayStr, currentBranch, onRefresh }) {
+export default function LprSimulator({ bookings, todayStr, currentBranch, onRefresh, onOpenWalkInModal }) {
   const navigate = useNavigate();
   const [plateQuery, setPlateQuery] = useState('');
   const [scanning, setScanning] = useState(false);
@@ -568,10 +568,17 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                     <button
                       type="button"
                       className="btn btn-primary"
-                      style={{ background: '#eab308', color: '#0f172a', fontWeight: 'bold', padding: '0.4rem 1rem' }}
-                      onClick={() => { setShowWalkin(true); }}
+                      style={{ background: '#eab308', color: '#0f172a', fontWeight: 'bold', padding: '0.45rem 1.25rem' }}
+                      onClick={() => {
+                        const plate = scanResult?.licensePlate || scanResult?.vehicle?.licensePlate || plateQuery;
+                        if (onOpenWalkInModal) {
+                          onOpenWalkInModal(plate);
+                        } else {
+                          setShowWalkin(true);
+                        }
+                      }}
                     >
-                      ➕ Tạo Lịch Vãng Lai Nhanh (Walk-in)
+                      Đặt Đơn
                     </button>
                   ) : (
                     renderWalkinForm()
@@ -599,10 +606,17 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                 <button
                   type="button"
                   className="btn btn-primary"
-                  style={{ background: '#eab308', color: '#0f172a', fontWeight: 'bold', padding: '0.4rem 1rem' }}
-                  onClick={() => { setShowWalkin(true); }}
+                  style={{ background: '#eab308', color: '#0f172a', fontWeight: 'bold', padding: '0.45rem 1.25rem' }}
+                  onClick={() => {
+                    const plate = scanResult?.licensePlate || scanResult?.vehicle?.licensePlate || plateQuery;
+                    if (onOpenWalkInModal) {
+                      onOpenWalkInModal(plate);
+                    } else {
+                      setShowWalkin(true);
+                    }
+                  }}
                 >
-                  ➕ Tạo Lịch Vãng Lai Nhanh (Walk-in)
+                  Đặt Đơn
                 </button>
               ) : (
                 renderWalkinForm()

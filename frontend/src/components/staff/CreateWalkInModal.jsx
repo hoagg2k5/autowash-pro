@@ -28,7 +28,7 @@ const getCurrentTimeSlot = () => {
   return "17:00 - 18:00";
 };
 
-export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user }) {
+export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user, initialLicensePlate = '' }) {
   const [licensePlate, setLicensePlate] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -56,13 +56,13 @@ export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user }) 
       };
       fetchServices();
       // Reset form fields
-      setLicensePlate('');
+      setLicensePlate(initialLicensePlate ? formatVietnamLicensePlate(initialLicensePlate) : '');
       setCustomerName('');
       setCustomerPhone('');
       setTimeSlot(getCurrentTimeSlot());
       setCreatedBooking(null);
     }
-  }, [isOpen]);
+  }, [isOpen, initialLicensePlate]);
 
   if (!isOpen) return null;
 
