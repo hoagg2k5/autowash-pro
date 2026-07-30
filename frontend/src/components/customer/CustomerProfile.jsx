@@ -34,7 +34,6 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
     if (tab === 'xecuatoi' || tab === 'vehicles') return 'xecuatoi';
     if (tab === 'orders') return 'donmua';
     if (tab === 'password') return 'doimatkhau';
-    if (tab === 'notifications') return 'caidat';
     if (tab === 'rewards') return 'diemthuong';
     if (tab === 'profile') return 'hoso';
     return 'hoso';
@@ -47,7 +46,6 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
     else if (tab === 'xecuatoi' || tab === 'vehicles') setActiveTab('xecuatoi');
     else if (tab === 'orders') setActiveTab('donmua');
     else if (tab === 'password') setActiveTab('doimatkhau');
-    else if (tab === 'notifications') setActiveTab('caidat');
     else if (tab === 'rewards') setActiveTab('diemthuong');
     else if (tab === 'profile') setActiveTab('hoso');
     else setActiveTab('hoso');
@@ -392,14 +390,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
                   >
                     Đổi Mật Khẩu
                   </button>
-                  <button
-                    onClick={() => navigate('/customer/profile?tab=notifications')}
-                    className={`text-xs py-1.5 text-left border-none bg-transparent cursor-pointer transition-all ${
-                      activeTab === 'caidat' ? 'text-[#ee4d2d] font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#ee4d2d]'
-                    }`}
-                  >
-                    Cài Đặt Thông Báo
-                  </button>
+
                   <button
                     onClick={() => navigate('/customer/profile?tab=vehicles')}
                     className={`text-xs py-1.5 text-left border-none bg-transparent cursor-pointer transition-all ${
@@ -677,26 +668,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
             </div>
           )}
 
-          {/* Other tabs placeholder screens (e.g. settings, etc.) */}
-          {activeTab === 'caidat' && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-800 mb-5 shadow-sm">
-                <Bell className="w-9 h-9 text-[#ee4d2d]" />
-              </div>
-              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 capitalize">
-                Cài Đặt Thông Báo
-              </h3>
-              <p className="text-xs text-slate-400 mt-2 max-w-[320px] leading-relaxed">
-                Tính năng này đang được đồng bộ hóa và bảo mật thông tin. Vui lòng liên hệ quản trị viên để cập nhật chi tiết.
-              </p>
-              <button 
-                onClick={() => navigate('/customer/profile?tab=profile')}
-                className="mt-6 border border-[#ee4d2d] text-[#ee4d2d] rounded-sm text-xs font-semibold px-4 py-2 hover:bg-red-50 dark:hover:bg-red-950/20 bg-transparent transition-all cursor-pointer"
-              >
-                Quay Lại Hồ Sơ
-              </button>
-            </div>
-          )}
+
 
           {activeTab === 'khovoucher' && dbUser && (
             <div>

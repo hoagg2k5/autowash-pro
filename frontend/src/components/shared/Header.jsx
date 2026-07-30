@@ -368,7 +368,6 @@ export default function Header({
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 m-0 leading-tight">Thông Báo & Khuyến Mãi</h4>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 m-0">Voucher & Khuyến mãi từ Quản trị viên</p>
                     </div>
                   </div>
                   <button 
@@ -490,10 +489,10 @@ export default function Header({
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setShowNotifications(false);
-                                        navigate('/customer/profile?tab=rewards');
+                                        navigate('/customer/profile?tab=vouchers');
                                       }}
                                       className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs cursor-pointer shrink-0 border-none"
-                                      title="Đến cửa hàng đổi thưởng"
+                                      title="Đến kho voucher để đổi mã"
                                     >
                                       <span>Đổi Ngay</span>
                                     </button>
@@ -548,10 +547,7 @@ export default function Header({
                   )}
                 </div>
 
-                {/* Footer */}
-                <div className="px-3 py-2 bg-slate-50/90 dark:bg-slate-800/90 border-t border-slate-100 dark:border-slate-700/60 text-center">
-                  <span className="text-[10px] text-slate-400">Được tạo & quản lý trực tiếp bởi Admin hệ thống</span>
-                </div>
+
               </div>
             )}
           </div>
