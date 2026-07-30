@@ -546,50 +546,7 @@ export default function CustomerProfile({ user, onLogout, onUpdateUser }) {
                       {loading ? 'Đang lưu...' : 'Lưu'}
                     </button>
                   </div>
-
                 </form>
-
-                {/* Avatar upload section */}
-                <div className="w-full lg:w-[280px] shrink-0 lg:border-l border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center p-6 gap-4">
-                  
-                  {/* Circular Preview */}
-                  <div 
-                    className="w-36 h-36 rounded-full border-2 border-slate-100 shadow-inner bg-slate-50 overflow-hidden flex items-center justify-center relative group cursor-pointer"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {profile.avatar ? (
-                      <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-16 h-16 text-slate-300 fill-slate-100" />
-                    )}
-                    <div className="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-
-                  {/* Choose Image file input */}
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleAvatarChange} 
-                    className="hidden" 
-                    accept=".jpg,.jpeg,.png"
-                  />
-
-                  <button 
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border border-slate-300 dark:border-slate-600 rounded-sm text-xs font-semibold px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 transition-all cursor-pointer"
-                  >
-                    Chọn Ảnh
-                  </button>
-
-                  <div className="text-[11px] text-slate-400 text-center leading-relaxed">
-                    Dụng lượng file tối đa 1 MB <br />
-                    Định dạng: .JPEG, .PNG
-                  </div>
-
-                </div>
               </div>
             </div>
           )}

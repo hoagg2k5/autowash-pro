@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
 
 export default function LprSimulator({ bookings, todayStr, currentBranch, onRefresh }) {
+  const navigate = useNavigate();
   const [plateQuery, setPlateQuery] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
@@ -507,9 +509,12 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                         type="button"
                         className="btn btn-primary"
                         style={{ background: '#3b82f6', color: '#fff', padding: '0.5rem 1.2rem', fontWeight: 'bold' }}
-                        onClick={() => handleAction(scanResult.booking.id, 'start')}
+                        onClick={async () => {
+                          await handleAction(scanResult.booking.id, 'start');
+                          navigate('/staff/dashboard/queue');
+                        }}
                       >
-                        Bắt Đầu Rửa (Vào Khoang)
+                        Bắt Đầu Rửa
                       </button>
                     )}
                     {scanResult.booking.status === 'In Progress' && (
