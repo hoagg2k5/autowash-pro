@@ -2,6 +2,7 @@ import express from 'express';
 import { 
   getDashboard, 
   createVehicle, 
+  updateVehicle,
   deleteVehicle,
   changePassword, 
   updateProfile,
@@ -23,6 +24,7 @@ router.get('/redeemable-vouchers', getRedeemableVouchers);
 router.post('/redeem-voucher', redeemVoucher);
 router.get('/:id/dashboard', getDashboard);
 router.post('/:id/vehicles', createVehicle);
+router.put('/:id/vehicles/:vehicleId', updateVehicle);
 router.delete('/:id/vehicles/:vehicleId', deleteVehicle);
 router.post('/:id/change-password', changePassword);
 router.put('/:id/profile', updateProfile);

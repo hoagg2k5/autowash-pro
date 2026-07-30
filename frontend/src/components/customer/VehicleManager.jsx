@@ -5,6 +5,7 @@ import { formatVietnamLicensePlate, isValidVietnamLicensePlate } from '../../uti
 
 export default function VehicleManager({ userId, vehicles, onVehicleAdded, showAddFormDefault, onCloseForm }) {
   const [showForm, setShowForm] = useState(showAddFormDefault || false);
+  const [editingVehicleId, setEditingVehicleId] = useState(null);
   const [plate, setPlate] = useState('');
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
@@ -15,9 +16,30 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
   // Sync state with prop triggers
   React.useEffect(() => {
     if (showAddFormDefault) {
+      setEditingVehicleId(null);
       setShowForm(true);
     }
   }, [showAddFormDefault]);
+
+  const handleStartEdit = (v) => {
+    setEditingVehicleId(v.id);
+    setPlate(v.licensePlate);
+    setBrand((v.brand === 'Khách vãng lai' || v.brand === 'Chưa cập nhật') ? '' : v.brand);
+    setModel((v.model === 'Vãng lai' || v.model === 'Chưa cập nhật') ? '' : v.model);
+    setColor(v.color === 'Khác' ? '' : v.color);
+    setError('');
+    setShowForm(true);
+  };
+
+  const resetFormState = () => {
+    setEditingVehicleId(null);
+    setPlate('');
+    setBrand('');
+    setModel('');
+    setColor('');
+    setError('');
+    setShowForm(false);
+  };
 
   const handleDelete = async (vehicleId, plate) => {
     const confirm = window.confirm(`Bạn có chắc chắn muốn xóa xe biển số ${plate} khỏi tài khoản không?`);
@@ -60,9 +82,19 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/customers/${userId}/vehicles`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const isEdit = !!editingVehicleId;
+      const url = isEdit 
+        ? `${API_BASE_URL}/api/customers/${userId}/vehicles/${editingVehicleId}`
+        : `${API_BASE_URL}/api/customers/${userId}/vehicles`;
+      
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        },
         body: JSON.stringify({
           licensePlate: formattedPlate,
           brand,
@@ -72,13 +104,10 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Không thể liên kết phương tiện.");
+      if (!response.ok) throw new Error(data.error || (isEdit ? "Không thể cập nhật xe." : "Không thể liên kết phương tiện."));
 
-      setPlate('');
-      setBrand('');
-      setModel('');
-      setColor('');
-      setShowForm(false);
+      toast.success(data.message || (isEdit ? "Cập nhật thông tin xe thành công!" : "Liên kết phương tiện thành công!"));
+      resetFormState();
       
       if (onVehicleAdded) onVehicleAdded();
       if (onCloseForm) onCloseForm();
@@ -99,8 +128,17 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
           className="btn btn-secondary" 
           style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
           onClick={() => {
-            setShowForm(!showForm);
-            if (onCloseForm && showForm) onCloseForm();
+            if (showForm) {
+              resetFormState();
+              if (onCloseForm) onCloseForm();
+            } else {
+              setEditingVehicleId(null);
+              setPlate('');
+              setBrand('');
+              setModel('');
+              setColor('');
+              setShowForm(true);
+            }
           }}
         >
           {showForm ? 'Đóng' : '+ Thêm xe'}
@@ -109,7 +147,9 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
 
       {showForm && (
         <form onSubmit={handleSubmit} style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-          <h4 style={{ marginBottom: '0.75rem', fontSize: '0.95rem', color: 'var(--primary)' }}>ĐĂNG KÝ XE Ô TÔ MỚI</h4>
+          <h4 style={{ marginBottom: '0.75rem', fontSize: '0.95rem', color: 'var(--primary)' }}>
+            {editingVehicleId ? 'CẬP NHẬT THÔNG TIN XE' : 'ĐĂNG KÝ XE Ô TÔ MỚI'}
+          </h4>
           
           {error && <div className="alert alert-danger" style={{ padding: '0.5rem', fontSize: '0.8rem', marginBottom: '0.75rem' }}>{error}</div>}
           
@@ -140,7 +180,7 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
               className="form-input"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              placeholder="Toyota, Ford..."
+              placeholder="Toyota, Ford, BMW..."
             />
           </div>
           
@@ -151,7 +191,7 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
               className="form-input"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder="Camry, Everest..."
+              placeholder="Camry, Everest, M3..."
             />
           </div>
 
@@ -166,9 +206,16 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.5rem' }} disabled={loading}>
-            {loading ? 'Đang liên kết...' : 'Liên Kết Phương Tiện'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {editingVehicleId && (
+              <button type="button" className="btn btn-secondary" style={{ flex: 1, padding: '0.5rem' }} onClick={resetFormState}>
+                Hủy
+              </button>
+            )}
+            <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.5rem' }} disabled={loading}>
+              {loading ? (editingVehicleId ? 'Đang lưu...' : 'Đang liên kết...') : (editingVehicleId ? 'Lưu Cập Nhật' : 'Liên Kết Phương Tiện')}
+            </button>
+          </div>
         </form>
       )}
 
@@ -182,10 +229,30 @@ export default function VehicleManager({ userId, vehicles, onVehicleAdded, showA
             <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
               <div>
                 <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>{v.licensePlate}</strong>
-                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{v.brand} {v.model} ({v.color})</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {(v.brand === 'Khách vãng lai' || v.brand === 'Chưa cập nhật') ? 'Chưa cập nhật thông tin xe' : `${v.brand} ${v.model} (${v.color})`}
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span className="badge-info" style={{ fontSize: '0.65rem' }}>Đã đồng bộ</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => handleStartEdit(v)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid var(--primary)',
+                    color: 'var(--primary)',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '4px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.background = 'rgba(2, 132, 199, 0.1)'}
+                  onMouseOut={(e) => e.target.style.background = 'transparent'}
+                >
+                  Sửa
+                </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(v.id, v.licensePlate)}

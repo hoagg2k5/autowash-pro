@@ -188,6 +188,56 @@ export const deleteVehicle = async (req, res) => {
   }
 };
 
+export const updateVehicle = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const vehicleId = req.params.vehicleId;
+
+    if (req.user.role !== 'admin' && req.user.role !== 'staff' && req.user.id !== userId) {
+      return res.status(403).json({ error: "Bạn không có quyền thao tác trên tài khoản này." });
+    }
+
+    const vehicle = await Vehicle.findOne({ id: vehicleId, userId, isDeleted: { $ne: true } });
+    if (!vehicle) {
+      return res.status(404).json({ error: "Không tìm thấy xe hoặc xe này không thuộc về bạn." });
+    }
+
+    let { licensePlate, brand, model, color } = req.body;
+
+    if (licensePlate && licensePlate.trim() !== '') {
+      const formattedPlate = formatVietnamLicensePlate(licensePlate);
+      if (!isValidVietnamLicensePlate(formattedPlate)) {
+        return res.status(400).json({ error: "Biển số xe không đúng định dạng." });
+      }
+      if (formattedPlate !== vehicle.licensePlate) {
+        const alphaNumPlate = formattedPlate.replace(/[^A-Z0-9]/g, '');
+        const existingPlate = await Vehicle.findOne({
+          id: { $ne: vehicle.id },
+          $or: [
+            { licensePlate: formattedPlate },
+            { licensePlate: new RegExp(alphaNumPlate.split('').join('[-.\\s]?'), 'i') }
+          ],
+          isDeleted: { $ne: true }
+        });
+        if (existingPlate) {
+          return res.status(400).json({ error: "Biển số xe này đã thuộc về xe khác trên hệ thống." });
+        }
+        vehicle.licensePlate = formattedPlate;
+      }
+    }
+
+    if (brand !== undefined) vehicle.brand = brand.trim() || "Chưa cập nhật";
+    if (model !== undefined) vehicle.model = model.trim() || "Chưa cập nhật";
+    if (color !== undefined) vehicle.color = color.trim() || "Khác";
+
+    await vehicle.save();
+
+    res.json({ message: "Cập nhật thông tin xe thành công!", vehicle });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const changePassword = async (req, res) => {
   try {
     const userId = req.params.id;
