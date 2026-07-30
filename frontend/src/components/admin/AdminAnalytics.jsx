@@ -4,20 +4,28 @@ import { API_BASE_URL } from '../../config.js';
 export default function AdminAnalytics({ bookings, promotions, user }) {
   const [hoveredBar, setHoveredBar] = useState(null);
   const [branches, setBranches] = useState([]);
+  const [servicesList, setServicesList] = useState([]);
 
   useEffect(() => {
-    const fetchBranches = async () => {
+    const fetchAnalyticsData = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/branches`);
-        if (response.ok) {
-          const data = await response.json();
+        const [branchRes, serviceRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/branches`),
+          fetch(`${API_BASE_URL}/api/services`)
+        ]);
+        if (branchRes.ok) {
+          const data = await branchRes.json();
           setBranches(data.map(b => b.name));
         }
+        if (serviceRes.ok) {
+          const sData = await serviceRes.json();
+          setServicesList(sData);
+        }
       } catch (err) {
-        console.error("Error fetching branches for analytics:", err);
+        console.error("Error fetching data for analytics:", err);
       }
     };
-    fetchBranches();
+    fetchAnalyticsData();
   }, []);
 
   const formatVnd = (amount) => {
@@ -63,15 +71,53 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
 
   const maxRevenue = Math.max(...dailyData.map(d => d.revenue), 200000); // Minimum 200k for height scaling
 
-  // Giai đoạn 2: Phân bố tỷ trọng gói dịch vụ rửa xe
-  const expressCount = completedBookings.filter(b => b.servicePackage === 'Express').length;
-  const deluxeCount = completedBookings.filter(b => b.servicePackage === 'Deluxe').length;
-  const premiumCount = completedBookings.filter(b => b.servicePackage === 'Premium Ultimate' || b.servicePackage === 'Premium').length;
-  const totalCompletedCount = completedBookings.length || 1;
+  // Giai đoạn 2: Phân bố tỷ trọng gói dịch vụ rửa xe (Tự động hiển thị tất cả các gói dịch vụ)
+  const COLOR_PALETTE = [
+    { bar: 'bg-sky-400', hex: '#38bdf8' },
+    { bar: 'bg-blue-600', hex: '#2563eb' },
+    { bar: 'bg-indigo-600', hex: '#4f46e5' },
+    { bar: 'bg-purple-600', hex: '#9333ea' },
+    { bar: 'bg-emerald-500', hex: '#10b981' },
+    { bar: 'bg-amber-500', hex: '#f59e0b' },
+    { bar: 'bg-rose-500', hex: '#f43f5e' },
+    { bar: 'bg-teal-500', hex: '#14b8a6' },
+  ];
 
-  const expressPct = Math.round((expressCount / totalCompletedCount) * 100);
-  const deluxePct = Math.round((deluxeCount / totalCompletedCount) * 100);
-  const premiumPct = Math.round((premiumCount / totalCompletedCount) * 100);
+  const packageMap = new Map();
+  servicesList.forEach(s => {
+    if (s.name && !packageMap.has(s.name.trim())) {
+      packageMap.set(s.name.trim(), s.name.trim());
+    }
+  });
+
+  completedBookings.forEach(b => {
+    if (b.servicePackage) {
+      const nameTrim = b.servicePackage.trim();
+      if (!packageMap.has(nameTrim)) {
+        packageMap.set(nameTrim, nameTrim);
+      }
+    }
+  });
+
+  if (packageMap.size === 0) {
+    ['Express', 'Deluxe', 'Premium Ultimate'].forEach(name => packageMap.set(name, name));
+  }
+
+  const totalCompletedCount = completedBookings.length;
+
+  const packageStats = Array.from(packageMap.values()).map(pkgName => {
+    const count = completedBookings.filter(b => {
+      if (!b.servicePackage) return false;
+      const bPkg = b.servicePackage.trim();
+      if (bPkg === pkgName) return true;
+      if (pkgName === 'Premium Ultimate' && bPkg === 'Premium') return true;
+      if (pkgName === 'Premium' && bPkg === 'Premium Ultimate') return true;
+      return false;
+    }).length;
+
+    const pct = totalCompletedCount > 0 ? Math.round((count / totalCompletedCount) * 100) : 0;
+    return { name: pkgName, count, pct };
+  });
 
   return (
     <>
@@ -219,48 +265,28 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
             TỶ TRỌNG GÓI DỊCH VỤ RỬA XE
           </h3>
 
-          <div className="flex flex-col gap-5 justify-center h-full" style={{ minHeight: '180px' }}>
-            {/* Express Package */}
-            <div>
-              <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                <span>Gói Express</span>
-                <span>{expressCount} lượt ({expressPct}%)</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="bg-sky-400 h-full rounded-full transition-all duration-1000 ease-out" 
-                  style={{ width: `${expressPct}%` }}
-                ></div>
-              </div>
-            </div>
+          <div className="flex flex-col gap-4 justify-start overflow-y-auto max-h-[260px] pr-1" style={{ minHeight: '180px' }}>
+            {packageStats.map((item, index) => {
+              const color = COLOR_PALETTE[index % COLOR_PALETTE.length];
+              const displayName = item.name.toLowerCase().startsWith('gói ') 
+                ? item.name 
+                : `Gói ${item.name}`;
 
-            {/* Deluxe Package */}
-            <div>
-              <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                <span>Gói Deluxe</span>
-                <span>{deluxeCount} lượt ({deluxePct}%)</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out" 
-                  style={{ width: `${deluxePct}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Premium Ultimate Package */}
-            <div>
-              <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                <span>Gói Premium Ultimate</span>
-                <span>{premiumCount} lượt ({premiumPct}%)</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="bg-indigo-600 h-full rounded-full transition-all duration-1000 ease-out" 
-                  style={{ width: `${premiumPct}%` }}
-                ></div>
-              </div>
-            </div>
+              return (
+                <div key={item.name}>
+                  <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
+                    <span>{displayName}</span>
+                    <span>{item.count} lượt ({item.pct}%)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div 
+                      className={`${color.bar} h-full rounded-full transition-all duration-1000 ease-out`}
+                      style={{ width: `${item.pct}%`, backgroundColor: color.hex }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
