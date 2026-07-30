@@ -557,6 +557,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
             handleUndoCheckin={handleUndoCheckin}
             staffs={staffs}
             handleAssignStaff={handleAssignStaff}
+            bays={bays}
           />
         </div>
       )}

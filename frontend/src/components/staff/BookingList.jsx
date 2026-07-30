@@ -32,7 +32,8 @@ export default function BookingList({
   handleAssignBay,
   handleUndoCheckin,
   staffs = [],
-  handleAssignStaff
+  handleAssignStaff,
+  bays = []
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedBookingId, setExpandedBookingId] = useState(null);
@@ -261,7 +262,24 @@ export default function BookingList({
 
                   {/* Row 3: Khoang rửa & Nhân viên phụ trách */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '0.4rem' }} onClick={(e) => e.stopPropagation()}>
-                    <span>Khoang rửa: <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{b.bay || 'Chưa xếp'}</span></span>
+                    <span>Khoang rửa:</span>
+                    {(b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress') ? (
+                      <select
+                        className="form-input"
+                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', width: '130px', display: 'inline-block' }}
+                        value={b.bay || ''}
+                        onChange={(e) => handleAssignBay(b.id, e.target.value)}
+                      >
+                        <option value="">-- Chưa xếp --</option>
+                        {(bays && bays.length > 0 ? bays : ['Khoang 1', 'Khoang 2', 'Khoang 3']).map(bayName => (
+                          <option key={bayName} value={bayName}>
+                            {bayName}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{b.bay || 'Chưa xếp'}</span>
+                    )}
                     <span style={{ color: 'var(--text-muted)' }}>|</span>
                     <span>Nhân viên phụ trách:</span>
                     {(b.status === 'Confirmed' || b.status === 'Waiting' || b.status === 'In Progress') ? (
@@ -445,12 +463,13 @@ export default function BookingList({
                       ) : (
                         <>
                           <button
+                            type="button"
                             className="btn btn-secondary"
-                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', cursor: 'not-allowed', opacity: 0.6 }}
-                            disabled
-                            title="Vui lòng gán khoang rửa trước khi bắt đầu"
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', cursor: 'pointer', opacity: 0.85 }}
+                            onClick={() => toast.info("Vui lòng chọn khoang rửa ở mục 'Khoang rửa' ngay tại đơn này để xếp khoang cho khách.")}
+                            title="Bấm để xem hướng dẫn chọn khoang rửa"
                           >
-                            ⏳ Chờ Xếp Khoang
+                            Chờ Xếp Khoang
                           </button>
                           {handleUndoCheckin && (
                             <button
