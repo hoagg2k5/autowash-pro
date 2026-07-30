@@ -40,9 +40,6 @@ export default function HeroSection({ onStartBooking }) {
         </div>
       </div>
 
-      <div className="absolute top-1/4 left-1/12 text-3xl opacity-10 select-none animate-bounce-slow">💧</div>
-      <div className="absolute bottom-1/4 right-1/12 text-4xl opacity-15 select-none animate-pulse">🫧</div>
-      <div className="absolute top-1/2 right-1/15 text-2xl opacity-15 select-none">✨</div>
     </section>
   );
 }
