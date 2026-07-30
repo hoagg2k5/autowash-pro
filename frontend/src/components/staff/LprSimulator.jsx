@@ -509,7 +509,7 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                         style={{ background: '#3b82f6', color: '#fff', padding: '0.5rem 1.2rem', fontWeight: 'bold' }}
                         onClick={() => handleAction(scanResult.booking.id, 'start')}
                       >
-                        ⚡ Bắt Đầu Rửa (Vào Khoang)
+                        Bắt Đầu Rửa (Vào Khoang)
                       </button>
                     )}
                     {scanResult.booking.status === 'In Progress' && (

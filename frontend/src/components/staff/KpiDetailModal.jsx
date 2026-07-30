@@ -203,7 +203,7 @@ export default function KpiDetailModal({
                               style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#3b82f6' }}
                               onClick={() => { handleStartWash(b.id); }}
                             >
-                              ⚡ Rửa xe
+                              Rửa xe
                             </button>
                           ) : (
                             <>
@@ -218,7 +218,7 @@ export default function KpiDetailModal({
                                   fontWeight: 600
                                 }}
                               >
-                                ⏳ Chờ Xếp
+                                Chờ Xếp
                               </span>
                               {handleUndoCheckin && (
                                 <button
