@@ -178,9 +178,15 @@ export const listBookings = async (req, res) => {
     const vehicleIds = [...new Set(bookings.map(b => b.vehicleId))];
 
     // Fetch corresponding users and vehicles in parallel
+    const userIdsFiltered = userIds.filter(id => id !== 'customer-id');
     const [users, vehicles] = await Promise.all([
       User.find({ id: { $in: userIds } }),
-      Vehicle.find({ id: { $in: vehicleIds } })
+      Vehicle.find({
+        $or: [
+          { id: { $in: vehicleIds } },
+          { userId: { $in: userIdsFiltered } }
+        ]
+      })
     ]);
 
     // Build O(1) lookup maps
