@@ -463,7 +463,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                           </div>
 
                           <div style={{ marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>
-                            📅 {formatDateStr(b.bookingDate)} | 🕒 {b.timeSlot}
+                            {formatDateStr(b.bookingDate)} | {b.timeSlot}
                           </div>
 
                           <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
@@ -511,7 +511,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                                   }}
                                   title="Sao chép mã"
                                 >
-                                  📋 Sao chép
+                                  Sao chép
                                 </button>
                               </p>
 
@@ -640,7 +640,7 @@ export default function BookingHistoryTab({ bookings, pointsHistory, onCancelBoo
                                     setSelectedBookingForPayment(b);
                                   }}
                                 >
-                                  💳 Thanh toán online
+                                  Thanh toán online
                                 </button>
                               )}
                               {showFeedback && (
