@@ -136,6 +136,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
 
   // Lifecycle Progression Actions
   const handleConfirm = async (id) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Confirmed' } : b));
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/confirm`, { method: 'POST' });
       const data = await res.json();
@@ -144,10 +145,12 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
+      fetchBookings(true);
     }
   };
 
   const handleCheckin = async (id) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Waiting' } : b));
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/checkin`, { method: 'POST' });
       const data = await res.json();
@@ -156,10 +159,12 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
+      fetchBookings(true);
     }
   };
 
   const handleUndoCheckin = async (id) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Confirmed' } : b));
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/undo-checkin`, { method: 'POST' });
       const data = await res.json();
@@ -168,11 +173,12 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
+      fetchBookings(true);
     }
   };
 
-
   const handleStartWash = async (id) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'In Progress' } : b));
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/start`, { method: 'POST' });
       const data = await res.json();
@@ -181,10 +187,12 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
+      fetchBookings(true);
     }
   };
 
   const handleCompleteWash = async (id) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Completed', paymentStatus: 'Paid' } : b));
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/complete/${id}`, { method: 'POST' });
       const data = await res.json();
@@ -193,10 +201,12 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
+      fetchBookings(true);
     }
   };
 
   const handleCancelWash = async (id) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Cancelled' } : b));
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/cancel/${id}`, { method: 'POST' });
       const data = await res.json();
@@ -205,6 +215,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
+      fetchBookings(true);
     }
   };
 
@@ -215,6 +226,8 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
   };
 
   const handleAssignBay = async (bookingId, bayId) => {
+    // Instant optimistic UI update for drag & drop
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, bay: bayId } : b));
     try {
       const res = await fetch(`${API_BASE_URL}/api/staff/assign-bay`, {
         method: 'POST',
@@ -227,6 +240,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
+      fetchBookings(true);
     }
   };
 
@@ -248,6 +262,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
   };
 
   const handleAssignStaff = async (bookingId, staffId) => {
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, assignedStaffId: staffId } : b));
     try {
       const token = sessionStorage.getItem('autowash_token');
       const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/assign-staff`, {
@@ -264,6 +279,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
       fetchBookings(true);
     } catch (err) {
       toast.error(err.message);
+      fetchBookings(true);
     }
   };
 
