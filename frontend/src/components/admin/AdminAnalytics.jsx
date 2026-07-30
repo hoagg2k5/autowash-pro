@@ -5,6 +5,9 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
   const [hoveredBar, setHoveredBar] = useState(null);
   const [branches, setBranches] = useState([]);
   const [servicesList, setServicesList] = useState([]);
+  const [chartMode, setChartMode] = useState('7days'); // '7days' | 'monthly'
+  const currentYearStr = new Date().getFullYear().toString();
+  const [selectedYear, setSelectedYear] = useState(currentYearStr);
 
   useEffect(() => {
     const fetchAnalyticsData = async () => {
@@ -70,6 +73,27 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
   });
 
   const maxRevenue = Math.max(...dailyData.map(d => d.revenue), 200000); // Minimum 200k for height scaling
+
+  // Tính toán doanh thu 12 tháng theo năm được chọn
+  const monthlyData = Array.from({ length: 12 }, (_, i) => {
+    const monthNum = String(i + 1).padStart(2, '0');
+    const yearMonth = `${selectedYear}-${monthNum}`;
+    const monthBookings = bookings.filter(b => b.bookingDate && b.bookingDate.startsWith(yearMonth));
+    const completed = monthBookings.filter(b => b.status === 'Completed');
+    const revenue = completed.reduce((sum, b) => sum + b.totalPaid, 0);
+    return {
+      monthLabel: `Tháng ${i + 1}`,
+      shortLabel: `T${i + 1}`,
+      yearMonth,
+      totalCount: monthBookings.length,
+      completedCount: completed.length,
+      cancelledCount: monthBookings.filter(b => b.status === 'Cancelled').length,
+      revenue
+    };
+  });
+
+  const maxMonthlyRevenue = Math.max(...monthlyData.map(d => d.revenue), 500000);
+  const yearlyTotalRevenue = monthlyData.reduce((sum, d) => sum + d.revenue, 0);
 
   // Giai đoạn 2: Phân bố tỷ trọng gói dịch vụ rửa xe (Tự động hiển thị tất cả các gói dịch vụ)
   const COLOR_PALETTE = [
@@ -149,11 +173,63 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
 
       {/* Giai đoạn 2: Biểu đồ SVG trực quan */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Biểu đồ xu hướng doanh thu 7 ngày */}
+        {/* Biểu đồ xu hướng doanh thu */}
         <div className="glass-panel lg:col-span-2" style={{ padding: '2rem' }}>
-          <h3 className="text-base font-bold mb-4 text-slate-800 flex items-center gap-2">
-            XU HƯỚNG DOANH THU 7 NGÀY QUA (Đơn hoàn tất)
-          </h3>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              {chartMode === '7days' ? 'XU HƯỚNG DOANH THU 7 NGÀY QUA' : `DOANH THU 12 THÁNG (NĂM ${selectedYear})`}
+            </h3>
+            
+            <div className="flex items-center gap-2">
+              {chartMode === 'monthly' && (
+                <select
+                  className="form-input text-xs font-semibold px-2 py-1 border rounded bg-white dark:bg-slate-800"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  style={{ borderRadius: '6px' }}
+                >
+                  <option value="2026">Năm 2026</option>
+                  <option value="2025">Năm 2025</option>
+                  <option value="2024">Năm 2024</option>
+                </select>
+              )}
+              
+              <div className="flex bg-slate-100 p-1 rounded-lg text-xs font-semibold" style={{ gap: '0.25rem' }}>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{
+                    padding: '0.3rem 0.75rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    background: chartMode === '7days' ? 'var(--primary)' : 'transparent',
+                    color: chartMode === '7days' ? '#ffffff' : 'var(--text-muted)',
+                    border: 'none',
+                    borderRadius: '6px'
+                  }}
+                  onClick={() => setChartMode('7days')}
+                >
+                  7 Ngày Gần Nhất
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{
+                    padding: '0.3rem 0.75rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    background: chartMode === 'monthly' ? 'var(--primary)' : 'transparent',
+                    color: chartMode === 'monthly' ? '#ffffff' : 'var(--text-muted)',
+                    border: 'none',
+                    borderRadius: '6px'
+                  }}
+                  onClick={() => setChartMode('monthly')}
+                >
+                  Theo Từng Tháng
+                </button>
+              </div>
+            </div>
+          </div>
           
           <div style={{ position: 'relative', height: '240px', width: '100%' }}>
             {/* SVG Chart Container */}
@@ -172,56 +248,98 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
                 />
               ))}
 
-              {/* Draw Bars */}
-              {dailyData.map((d, index) => {
-                const barWidth = 40;
-                const gap = 35;
-                const startX = 60 + index * (barWidth + gap);
-                const chartHeight = 140;
-                const barHeight = (d.revenue / maxRevenue) * chartHeight;
-                const startY = 170 - barHeight;
+              {/* Render 7-day or 12-month Bars */}
+              {chartMode === '7days' ? (
+                dailyData.map((d, index) => {
+                  const barWidth = 40;
+                  const gap = 35;
+                  const startX = 60 + index * (barWidth + gap);
+                  const chartHeight = 140;
+                  const barHeight = (d.revenue / maxRevenue) * chartHeight;
+                  const startY = 170 - barHeight;
 
-                return (
-                  <g 
-                    key={d.date}
-                    onMouseEnter={() => setHoveredBar({ index, x: startX + 20, y: startY - 10, ...d })}
-                    onMouseLeave={() => setHoveredBar(null)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {/* Background hover guide */}
-                    <rect 
-                      x={startX - 10} 
-                      y="15" 
-                      width={barWidth + 20} 
-                      height="170" 
-                      fill="transparent"
-                      className="hover:fill-slate-50 transition-colors duration-200"
-                    />
-                    
-                    {/* The actual data bar */}
-                    <rect
-                      x={startX}
-                      y={startY}
-                      width={barWidth}
-                      height={barHeight}
-                      rx="4"
-                      fill={hoveredBar?.index === index ? 'var(--primary)' : 'var(--secondary)'}
-                      style={{ transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
-                    />
-                    
-                    {/* Label of date */}
-                    <text
-                      x={startX + barWidth / 2}
-                      y="192"
-                      textAnchor="middle"
-                      fill="var(--text-muted)"
-                      style={{ fontSize: '11px', fontWeight: 500 }}
+                  return (
+                    <g 
+                      key={d.date}
+                      onMouseEnter={() => setHoveredBar({ index, x: startX + 20, y: startY - 10, title: d.date, revenue: d.revenue, count: d.count })}
+                      onMouseLeave={() => setHoveredBar(null)}
+                      style={{ cursor: 'pointer' }}
                     >
-                      {formatShortDate(d.date)}
-                    </text>
-                  </g>
-                );
-              })}
+                      <rect 
+                        x={startX - 10} 
+                        y="15" 
+                        width={barWidth + 20} 
+                        height="170" 
+                        fill="transparent"
+                        className="hover:fill-slate-50 transition-colors duration-200"
+                      />
+                      <rect
+                        x={startX}
+                        y={startY}
+                        width={barWidth}
+                        height={barHeight}
+                        rx="4"
+                        fill={hoveredBar?.index === index ? 'var(--primary)' : 'var(--secondary)'}
+                        style={{ transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                      />
+                      <text
+                        x={startX + barWidth / 2}
+                        y="192"
+                        textAnchor="middle"
+                        fill="var(--text-muted)"
+                        style={{ fontSize: '11px', fontWeight: 500 }}
+                      >
+                        {formatShortDate(d.date)}
+                      </text>
+                    </g>
+                  );
+                })
+              ) : (
+                monthlyData.map((d, index) => {
+                  const barWidth = 28;
+                  const gap = 16;
+                  const startX = 50 + index * (barWidth + gap);
+                  const chartHeight = 140;
+                  const barHeight = (d.revenue / maxMonthlyRevenue) * chartHeight;
+                  const startY = 170 - barHeight;
+
+                  return (
+                    <g 
+                      key={d.yearMonth}
+                      onMouseEnter={() => setHoveredBar({ index, x: startX + 14, y: startY - 10, title: d.monthLabel, revenue: d.revenue, count: d.completedCount })}
+                      onMouseLeave={() => setHoveredBar(null)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <rect 
+                        x={startX - 5} 
+                        y="15" 
+                        width={barWidth + 10} 
+                        height="170" 
+                        fill="transparent"
+                        className="hover:fill-slate-50 transition-colors duration-200"
+                      />
+                      <rect
+                        x={startX}
+                        y={startY}
+                        width={barWidth}
+                        height={barHeight}
+                        rx="4"
+                        fill={hoveredBar?.index === index ? '#10b981' : '#38bdf8'}
+                        style={{ transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                      />
+                      <text
+                        x={startX + barWidth / 2}
+                        y="192"
+                        textAnchor="middle"
+                        fill="var(--text-muted)"
+                        style={{ fontSize: '10px', fontWeight: 600 }}
+                      >
+                        {d.shortLabel}
+                      </text>
+                    </g>
+                  );
+                })
+              )}
 
               {/* Axis Line */}
               <line x1="40" y1="170" x2="580" y2="170" stroke="#cbd5e1" strokeWidth="1.5" />
@@ -250,7 +368,7 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
                 }}
               >
                 <div style={{ fontWeight: 600, borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '3px', marginBottom: '3px' }}>
-                  {hoveredBar.date}
+                  {hoveredBar.title}
                 </div>
                 <div>Doanh thu: <strong style={{ color: '#38bdf8' }}>{formatVnd(hoveredBar.revenue)}</strong></div>
                 <div>Đơn rửa xong: <strong>{hoveredBar.count} đơn</strong></div>
@@ -290,6 +408,64 @@ export default function AdminAnalytics({ bookings, promotions, user }) {
           </div>
         </div>
       </div>
+
+      {/* Bảng báo cáo chi tiết Doanh Thu Theo Từng Tháng */}
+      {chartMode === 'monthly' && (
+        <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+          <div className="flex-between mb-4" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--primary)', fontFamily: 'var(--font-heading)' }}>
+              BÁO CÁO DOANH THU THEO TỪNG THÁNG (NĂM {selectedYear})
+            </h3>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Tổng doanh thu năm {selectedYear}: <strong style={{ color: 'var(--primary)', fontSize: '1rem' }}>{formatVnd(yearlyTotalRevenue)}</strong>
+            </span>
+          </div>
+
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tháng</th>
+                  <th>Tổng Đơn Đặt</th>
+                  <th>Đã Hoàn Tất</th>
+                  <th>Đã Hủy</th>
+                  <th>Doanh Thu Thực Tế</th>
+                  <th>Tỷ Lệ Đóng Góp (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyData.map(m => {
+                  const sharePct = yearlyTotalRevenue > 0 ? Math.round((m.revenue / yearlyTotalRevenue) * 100) : 0;
+
+                  return (
+                    <tr key={m.yearMonth}>
+                      <td><strong>{m.monthLabel} / {selectedYear}</strong></td>
+                      <td>{m.totalCount} đơn</td>
+                      <td>
+                        <span style={{ color: 'var(--status-completed)', fontWeight: 600 }}>{m.completedCount} đơn</span>
+                      </td>
+                      <td>
+                        <span style={{ color: 'var(--status-cancelled)' }}>{m.cancelledCount} đơn</span>
+                      </td>
+                      <td style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1rem' }}>
+                        {formatVnd(m.revenue)}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ flex: 1, background: 'var(--bg-secondary)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: `${sharePct}%`, background: 'var(--primary)', height: '100%', borderRadius: '4px' }} />
+                          </div>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600, minWidth: '35px' }}>{sharePct}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Doanh thu theo chi nhánh */}
       {!user?.branch && (

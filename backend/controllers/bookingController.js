@@ -956,6 +956,7 @@ export const createWalkInBooking = async (req, res) => {
       id: 'b-' + Math.random().toString(36).substr(2, 9),
       userId: userId,
       vehicleId: vehicle.id,
+      licensePlate: plateUpper,
       bookingDate: todayStr,
       timeSlot: timeSlot,
       servicePackage: service.name,
@@ -979,7 +980,14 @@ export const createWalkInBooking = async (req, res) => {
 
     emitBookingUpdated(req, newBooking, plateUpper);
 
-    res.status(201).json({ message: "Tạo lịch vãng lai thành công. Đơn hàng đã được đưa vào hàng đợi.", booking: newBooking });
+    const bookingObj = {
+      ...newBooking.toObject(),
+      licensePlate: plateUpper,
+      customerName: user.name,
+      customerPhone: user.phone
+    };
+
+    res.status(201).json({ message: "Tạo lịch vãng lai thành công. Đơn hàng đã được đưa vào hàng đợi.", booking: bookingObj });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

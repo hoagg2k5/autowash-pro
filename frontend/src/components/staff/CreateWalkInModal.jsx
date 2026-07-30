@@ -115,7 +115,10 @@ export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user }) 
       if (!res.ok) throw new Error(data.error || 'Tạo đơn vãng lai thất bại.');
 
       toast.success(data.message || `Đã tạo đơn vãng lai cho xe ${licensePlate.toUpperCase()} thành công.`);
-      setCreatedBooking(data.booking);
+      setCreatedBooking({
+        ...data.booking,
+        licensePlate: data.booking?.licensePlate || licensePlate.toUpperCase().trim()
+      });
       if (onSuccess) onSuccess();
     } catch (err) {
       toast.error(err.message);
