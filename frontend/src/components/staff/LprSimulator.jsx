@@ -561,7 +561,7 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                      Xe <strong>{scanResult.vehicle.licensePlate}</strong> thuộc sở hữu của <strong>{scanResult.user?.fullName}</strong>.
                   </p>
                   <p style={{ color: '#f59e0b', fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
-                    ⚠️ Không tìm thấy lịch đặt trước cho xe này trong hôm nay.
+                    Xe biển số <strong>{scanResult.vehicle.licensePlate}</strong> chưa có lịch hôm nay. Chọn đặt đơn để tạo đơn ngay.
                   </p>
 
                   {!showWalkin ? (
@@ -599,7 +599,7 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                 🔍 CHƯA ĐĂNG KÝ: Biển số {scanResult.licensePlate} không tồn tại trên hệ thống.
               </p>
               <p style={{ fontSize: '0.85rem', color: '#cbd5e1', margin: '0 0 1rem 0' }}>
-                Hệ thống sẽ tự động liên kết xe này vào tài khoản khách vãng lai và đặt chỗ.
+                Xe biển số <strong>{scanResult.licensePlate}</strong> chưa có lịch hôm nay và chưa được đăng kí trong hệ thống. Chọn đặt đơn để tạo đơn ngay.
               </p>
 
               {!showWalkin ? (
