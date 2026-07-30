@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
+import { formatVietnamLicensePlate } from '../../utils/licensePlateHelper.js';
 
 export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSlot, quickBookBay, timelineDate, user }) {
   const [qbPlate, setQbPlate] = useState('');
@@ -110,7 +111,8 @@ export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSl
               className="form-input" 
               placeholder="Ví dụ: 30A-99999" 
               value={qbPlate} 
-              onChange={(e) => setQbPlate(e.target.value.toUpperCase())}
+              onChange={(e) => setQbPlate(formatVietnamLicensePlate(e.target.value))}
+              onBlur={(e) => setQbPlate(formatVietnamLicensePlate(e.target.value))}
               required
             />
           </div>

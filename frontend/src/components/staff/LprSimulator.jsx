@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
+import { formatVietnamLicensePlate } from '../../utils/licensePlateHelper.js';
 
 export default function LprSimulator({ bookings, todayStr, currentBranch, onRefresh }) {
   const navigate = useNavigate();
@@ -393,7 +394,8 @@ export default function LprSimulator({ bookings, todayStr, currentBranch, onRefr
                   placeholder="Ví dụ: 30A-99999"
                   style={{ background: '#1e293b', border: '1px solid #475569', color: '#fff', fontSize: '0.9rem', padding: '0.45rem', textTransform: 'uppercase' }}
                   value={plateQuery}
-                  onChange={(e) => setPlateQuery(e.target.value)}
+                  onChange={(e) => setPlateQuery(formatVietnamLicensePlate(e.target.value))}
+                  onBlur={(e) => setPlateQuery(formatVietnamLicensePlate(e.target.value))}
                 />
                 <button
                   type="submit"

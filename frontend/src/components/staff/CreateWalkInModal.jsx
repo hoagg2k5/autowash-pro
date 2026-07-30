@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
+import { formatVietnamLicensePlate } from '../../utils/licensePlateHelper.js';
 
 const TIME_SLOTS = [
   "08:00 - 09:00",
@@ -273,7 +274,8 @@ export default function CreateWalkInModal({ isOpen, onClose, onSuccess, user }) 
               className="form-input" 
               placeholder="Ví dụ: 30A-99999" 
               value={licensePlate} 
-              onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
+              onChange={(e) => setLicensePlate(formatVietnamLicensePlate(e.target.value))}
+              onBlur={(e) => setLicensePlate(formatVietnamLicensePlate(e.target.value))}
               style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '0.5px' }}
               required
             />
