@@ -1,68 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config.js';
 import { toast } from '../shared/toast.js';
-import { formatVietnamLicensePlate } from '../../utils/licensePlateHelper.js';
 
-export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSlot, quickBookBay, timelineDate, user }) {
-  const [qbPlate, setQbPlate] = useState('');
-  const [qbPackage, setQbPackage] = useState('Express');
+export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSlot, quickBookBay, timelineDate, user, bookings = [] }) {
+  const [selectedBookingId, setSelectedBookingId] = useState('');
   const [qbLoading, setQbLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedBookingId('');
+    }
+  }, [isOpen, quickBookSlot, quickBookBay]);
 
   if (!isOpen) return null;
 
+  // Lọc danh sách các xe ĐÃ CHECK-IN (Confirmed / Waiting) thuộc khung giờ này và chưa được phân khoang
+  const availableBookings = (bookings || []).filter(b => {
+    const sameDate = b.bookingDate === timelineDate;
+    const sameSlot = b.timeSlot === quickBookSlot;
+    const isCheckedIn = b.status === 'Confirmed' || b.status === 'Waiting';
+    const notAssigned = !b.bay || b.bay === 'Chưa xếp' || b.bay === '';
+
+    return sameDate && sameSlot && isCheckedIn && notAssigned;
+  });
+
+  const selectedBooking = availableBookings.find(b => b.id === selectedBookingId);
+
   const handleQuickBookSubmit = async (e) => {
     e.preventDefault();
-    if (!qbPlate.trim()) {
-      toast.warning("Vui lòng nhập biển số xe.");
+    if (!selectedBookingId) {
+      toast.warning("Vui lòng chọn 1 xe đã check-in thuộc khung giờ này.");
       return;
     }
     setQbLoading(true);
     try {
-      let finalUserId = "customer-id";
-      let finalVehicleId = "vehicle-id";
-
-      const searchRes = await fetch(`${API_BASE_URL}/api/bookings/by-plate?licensePlate=${encodeURIComponent(qbPlate.toUpperCase().trim())}`);
-      if (searchRes.ok) {
-        const data = await searchRes.json();
-        if (data.vehicle) {
-          finalUserId = data.vehicle.userId;
-          finalVehicleId = data.vehicle.id;
-        }
-      } else {
-        const regRes = await fetch(`${API_BASE_URL}/api/customers/customer-id/vehicles`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            licensePlate: qbPlate.toUpperCase().trim(),
-            brand: "Khách vãng lai",
-            model: "Vãng lai",
-            color: "Khác"
-          })
-        });
-        const regData = await regRes.json();
-        if (!regRes.ok) throw new Error(regData.error || 'Lỗi đăng ký xe vãng lai.');
-        finalVehicleId = regData.id;
-      }
-
-      const bookRes = await fetch(`${API_BASE_URL}/api/bookings/book`, {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${selectedBookingId}/assign-bay`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('autowash_token')}`
+        },
         body: JSON.stringify({
-          userId: finalUserId,
-          vehicleId: finalVehicleId,
-          bookingDate: timelineDate,
-          timeSlot: quickBookSlot,
-          servicePackage: qbPackage,
-          branch: user.branch || "AutoWash Pro - Quận 1",
-          bay: quickBookBay
+          bay: quickBookBay,
+          status: 'In Progress'
         })
       });
-      const bookData = await bookRes.json();
-      if (!bookRes.ok) throw new Error(bookData.error || 'Lỗi đặt lịch nhanh.');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Không thể xếp khoang cho đơn này.');
 
-      await fetch(`${API_BASE_URL}/api/bookings/${bookData.id}/confirm`, { method: 'POST' });
-
-      toast.success(`Đã tạo lịch đặt xe ${qbPlate.toUpperCase()} thành công tại ${quickBookBay} vào giờ ${quickBookSlot}.`);
+      toast.success(`Đã xếp xe ${selectedBooking ? selectedBooking.licensePlate : ''} vào ${quickBookBay} thành công!`);
       onSuccess();
       onClose();
     } catch (err) {
@@ -90,7 +76,7 @@ export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSl
         background: 'var(--bg-card)',
         color: 'var(--text-main)',
         padding: '2rem',
-        width: '450px',
+        width: '480px',
         maxWidth: '95%',
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
         borderRadius: '16px',
@@ -104,31 +90,59 @@ export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSl
         </p>
 
         <form onSubmit={handleQuickBookSubmit}>
-          <div className="form-group" style={{ marginBottom: '1rem' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Biển Số Xe *</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="Ví dụ: 30A-99999" 
-              value={qbPlate} 
-              onChange={(e) => setQbPlate(formatVietnamLicensePlate(e.target.value))}
-              onBlur={(e) => setQbPlate(formatVietnamLicensePlate(e.target.value))}
-              required
-            />
+          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+              Chọn Xe Đã Check-in (Khung giờ {quickBookSlot}) *
+            </label>
+
+            {availableBookings.length > 0 ? (
+              <select 
+                className="form-input" 
+                value={selectedBookingId} 
+                onChange={(e) => setSelectedBookingId(e.target.value)}
+                required
+              >
+                <option value="">-- Chọn xe đã check-in thuộc khung giờ {quickBookSlot} --</option>
+                {availableBookings.map(b => (
+                  <option key={b.id} value={b.id}>
+                    {b.licensePlate} - {b.customerName} ({b.servicePackage}) {b.customerTier ? `[${b.customerTier}]` : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div style={{
+                background: 'var(--bg-secondary)',
+                padding: '0.85rem',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                fontSize: '0.85rem',
+                color: 'var(--text-muted)'
+              }}>
+                ℹ️ Chưa có xe nào check-in thuộc khung giờ <strong>{quickBookSlot}</strong> (hoặc tất cả các xe trong khung giờ này đã được xếp khoang).
+              </div>
+            )}
           </div>
 
-          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Gói Dịch Vụ *</label>
-            <select 
-              className="form-input" 
-              value={qbPackage} 
-              onChange={(e) => setQbPackage(e.target.value)}
-            >
-              <option value="Express">Express (100.000 đ)</option>
-              <option value="Deluxe">Deluxe (200.000 đ)</option>
-              <option value="Premium Ultimate">Premium Ultimate (400.000 đ)</option>
-            </select>
-          </div>
+          {selectedBooking && (
+            <div style={{
+              background: 'rgba(2, 132, 199, 0.06)',
+              border: '1px solid rgba(2, 132, 199, 0.2)',
+              borderRadius: '10px',
+              padding: '0.85rem 1rem',
+              marginBottom: '1.25rem',
+              fontSize: '0.85rem'
+            }}>
+              <div style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '0.35rem' }}>
+                🚗 Thông Tin Xe Được Chọn
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', color: 'var(--text-main)' }}>
+                <div><strong>Khách hàng:</strong> {selectedBooking.customerName}</div>
+                <div><strong>SĐT:</strong> {selectedBooking.customerPhone || 'Chưa cập nhật'}</div>
+                <div><strong>Gói dịch vụ:</strong> {selectedBooking.servicePackage}</div>
+                <div><strong>Hạng ưu tiên:</strong> {selectedBooking.customerTier || 'Member'}</div>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
             <button 
@@ -143,7 +157,7 @@ export default function QuickBookModal({ isOpen, onClose, onSuccess, quickBookSl
               type="submit" 
               className="btn btn-primary" 
               style={{ flex: 2, background: 'var(--primary)', color: '#fff', fontWeight: 'bold' }}
-              disabled={qbLoading}
+              disabled={qbLoading || availableBookings.length === 0 || !selectedBookingId}
             >
               {qbLoading ? 'Đang xếp...' : '✓ Xếp Vào Khoang'}
             </button>

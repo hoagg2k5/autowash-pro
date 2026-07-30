@@ -680,6 +680,7 @@ export default function StaffDashboard({ user, onLogout, setQueueCount }) {
         quickBookBay={quickBookBay}
         timelineDate={dashboardDate}
         user={user}
+        bookings={bookings}
       />
 
       {/* Modal Đặt Lịch Vãng Lai */}
